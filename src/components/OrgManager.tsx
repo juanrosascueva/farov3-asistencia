@@ -2,6 +2,7 @@ import { useState } from "react";
 import { useMutation, useQuery } from "convex/react";
 import { api } from "../../convex/_generated/api";
 import { useAuth } from "../hooks/useAuth";
+import Modal from "./Modal";
 
 export default function OrgManager() {
   const { user, token } = useAuth();
@@ -31,6 +32,7 @@ function UserManager() {
   const [password, setPassword] = useState("");
   const [name, setName] = useState("");
   const [role, setRole] = useState<string>("leader");
+  const [scopesUser, setScopesUser] = useState<any | null>(null);
 
   const users = useQuery(api.users.listUsers, token ? { token } : "skip");
   const register = useMutation(api.users.register);
@@ -107,13 +109,31 @@ function UserManager() {
           <div key={u._id} className="flex items-center gap-3 py-2 px-3 rounded-xl bg-ink/[0.02] border border-ink/5">
             <span className={`w-2 h-2 rounded-full shrink-0 ${u.isActive ? "bg-green-500" : "bg-red-400"}`} />
             <span className="flex-1 text-sm font-medium min-w-0 truncate">{u.name}</span>
-            <span className="text-[10px] capitalize text-ink/40">{u.role}</span>
+            <span className="text-[10px] capitalize text-ink/40 mr-1">{u.role}</span>
+            {u.role !== "pastor" && (
+              <button
+                onClick={() => setScopesUser(u)}
+                className="w-6 h-6 rounded-full bg-ink/5 flex items-center justify-center text-ink/30 hover:text-teal-600 hover:bg-teal-50 transition shrink-0"
+                title="Gestionar ámbitos de acceso"
+              >
+                <svg className="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+                  <rect x="3" y="11" width="18" height="11" rx="2" ry="2" />
+                  <path d="M7 11V7a5 5 0 0110 0v4" />
+                </svg>
+              </button>
+            )}
           </div>
         ))}
         {(!users || users.length === 0) && (
           <p className="text-xs text-ink/30 py-2">No hay usuarios registrados</p>
         )}
       </div>
+
+      {scopesUser && (
+        <Modal title={`Gestionar accesos: ${scopesUser.name}`} onClose={() => setScopesUser(null)}>
+          <UserScopesManager userId={scopesUser._id} />
+        </Modal>
+      )}
     </div>
   );
 }
@@ -348,6 +368,212 @@ function GroupManager({ ministryId, ministryName }: { ministryId: string; minist
           <p className="text-[10px] text-ink/20 py-1 text-center">Sin grupos</p>
         )}
       </div>
+    </div>
+  );
+}
+
+interface UserScopesManagerProps {
+  userId: string;
+}
+
+function UserScopesManager({ userId }: UserScopesManagerProps) {
+  const { token } = useAuth();
+  const [selectedRole, setSelectedRole] = useState<string>("leader");
+  const [selectedCampusId, setSelectedCampusId] = useState<string>("");
+  const [selectedMinistryId, setSelectedMinistryId] = useState<string>("");
+  const [selectedGroupId, setSelectedGroupId] = useState<string>("");
+
+  const scopes = useQuery(api.userScopes.list, token ? { token, userId: userId as any } : "skip");
+  const campuses = useQuery(api.campus.list, token ? { token } : "skip");
+  const ministries = useQuery(
+    api.ministry.list,
+    token && selectedCampusId ? { token, campusId: selectedCampusId as any } : "skip"
+  );
+  const groups = useQuery(
+    api.group.list,
+    token && selectedMinistryId ? { token, ministryId: selectedMinistryId as any } : "skip"
+  );
+
+  const createScope = useMutation(api.userScopes.create);
+  const removeScope = useMutation(api.userScopes.remove);
+
+  const handleAddScope = async () => {
+    if (!token) return;
+    try {
+      await createScope({
+        token,
+        userId: userId as any,
+        role: selectedRole as any,
+        campusId: selectedCampusId ? (selectedCampusId as any) : undefined,
+        ministryId: selectedMinistryId ? (selectedMinistryId as any) : undefined,
+        groupId: selectedGroupId ? (selectedGroupId as any) : undefined,
+      });
+      setSelectedCampusId("");
+      setSelectedMinistryId("");
+      setSelectedGroupId("");
+    } catch (err: any) {
+      alert(err.message);
+    }
+  };
+
+  const handleRemoveScope = async (id: string) => {
+    if (!token) return;
+    try {
+      await removeScope({ token, id: id as any });
+    } catch (err: any) {
+      alert(err.message);
+    }
+  };
+
+  return (
+    <div className="p-5 space-y-4">
+      <div>
+        <p className="text-xs font-semibold text-ink/40 uppercase tracking-wide mb-2">
+          Ámbitos de acceso asignados
+        </p>
+        <div className="space-y-2 max-h-48 overflow-y-auto pr-1">
+          {scopes && scopes.length > 0 ? (
+            scopes.map((s) => (
+              <ScopeRow key={s._id} scope={s} onDelete={() => handleRemoveScope(s._id)} />
+            ))
+          ) : (
+            <p className="text-xs text-ink/30 italic py-2 text-center">
+              Sin ámbitos asignados. Este usuario no podrá acceder a ningún adolescente.
+            </p>
+          )}
+        </div>
+      </div>
+
+      <div className="pt-3 border-t border-ink/5 space-y-3">
+        <p className="text-xs font-semibold text-ink/40 uppercase tracking-wide">
+          Asignar nuevo ámbito
+        </p>
+        <div className="space-y-2 bg-ink/[0.01] border border-ink/5 rounded-xl p-3">
+          <div>
+            <label className="text-[11px] font-semibold text-ink/50 mb-1 block">Rol en este ámbito</label>
+            <select
+              value={selectedRole}
+              onChange={(e) => setSelectedRole(e.target.value)}
+              className="w-full bg-card border border-ink/10 rounded-xl px-3 py-1.5 text-xs"
+            >
+              <option value="leader">Líder</option>
+              <option value="helper">Ayudante</option>
+              <option value="coordinador">Coordinador</option>
+              <option value="director">Director</option>
+            </select>
+          </div>
+
+          <div>
+            <label className="text-[11px] font-semibold text-ink/50 mb-1 block">Sede / Campus (opcional)</label>
+            <select
+              value={selectedCampusId}
+              onChange={(e) => {
+                setSelectedCampusId(e.target.value);
+                setSelectedMinistryId("");
+                setSelectedGroupId("");
+              }}
+              className="w-full bg-card border border-ink/10 rounded-xl px-3 py-1.5 text-xs"
+            >
+              <option value="">-- Toda la iglesia --</option>
+              {(campuses || []).map((c) => (
+                <option key={c._id} value={c._id}>
+                  {c.name}
+                </option>
+              ))}
+            </select>
+          </div>
+
+          <div>
+            <label className="text-[11px] font-semibold text-ink/50 mb-1 block">Ministerio (opcional)</label>
+            <select
+              value={selectedMinistryId}
+              onChange={(e) => {
+                setSelectedMinistryId(e.target.value);
+                setSelectedGroupId("");
+              }}
+              disabled={!selectedCampusId}
+              className="w-full bg-card border border-ink/10 rounded-xl px-3 py-1.5 text-xs disabled:opacity-50"
+            >
+              <option value="">-- Todo el campus --</option>
+              {selectedCampusId &&
+                (ministries || []).map((m) => (
+                  <option key={m._id} value={m._id}>
+                    {m.name}
+                  </option>
+                ))}
+            </select>
+          </div>
+
+          <div>
+            <label className="text-[11px] font-semibold text-ink/50 mb-1 block">Grupo (opcional)</label>
+            <select
+              value={selectedGroupId}
+              onChange={(e) => setSelectedGroupId(e.target.value)}
+              disabled={!selectedMinistryId}
+              className="w-full bg-card border border-ink/10 rounded-xl px-3 py-1.5 text-xs disabled:opacity-50"
+            >
+              <option value="">-- Todo el ministerio --</option>
+              {selectedMinistryId &&
+                (groups || []).map((g) => (
+                  <option key={g._id} value={g._id}>
+                    {g.name}
+                  </option>
+                ))}
+            </select>
+          </div>
+
+          <button
+            onClick={handleAddScope}
+            className="w-full bg-teal-600 hover:bg-teal-700 text-white rounded-xl py-2 text-xs font-semibold mt-2 transition"
+          >
+            Agregar acceso
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function ScopeRow({ scope, onDelete }: { scope: any; onDelete: () => void }) {
+  const { token } = useAuth();
+  const campus = useQuery(api.campus.get, token && scope.campusId ? { token, id: scope.campusId } : "skip");
+  const ministry = useQuery(api.ministry.get, token && scope.ministryId ? { token, id: scope.ministryId } : "skip");
+  const group = useQuery(api.group.get, token && scope.groupId ? { token, id: scope.groupId } : "skip");
+
+  const getLabel = () => {
+    const roleMap: Record<string, string> = {
+      pastor: "Pastor",
+      director: "Director",
+      coordinador: "Coordinador",
+      leader: "Líder",
+      helper: "Ayudante",
+    };
+    const roleLabel = roleMap[scope.role] || scope.role;
+
+    if (scope.groupId) {
+      return `${roleLabel} en Grupo: ${group ? group.name : "..."} (${ministry ? ministry.name : "..."})`;
+    }
+    if (scope.ministryId) {
+      return `${roleLabel} en Ministerio: ${ministry ? ministry.name : "..."} (${campus ? campus.name : "..."})`;
+    }
+    if (scope.campusId) {
+      return `${roleLabel} en Sede: ${campus ? campus.name : "..."}`;
+    }
+    return `${roleLabel} Global`;
+  };
+
+  return (
+    <div className="flex items-center justify-between text-xs py-1.5 px-2.5 rounded-lg bg-ink/[0.02] border border-ink/5">
+      <span className="font-medium text-ink/70 truncate flex-1 mr-2">{getLabel()}</span>
+      <button
+        onClick={onDelete}
+        className="w-5 h-5 rounded-full bg-ink/5 flex items-center justify-center text-ink/30 hover:text-coral-600 hover:bg-coral-50 transition shrink-0"
+        title="Eliminar ámbito"
+      >
+        <svg className="w-2.5 h-2.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+          <path d="M18 6L6 18M6 6l12 12" />
+        </svg>
+      </button>
     </div>
   );
 }
