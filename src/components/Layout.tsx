@@ -30,9 +30,7 @@ export default function Layout({
     <div className="max-w-7xl mx-auto lg:flex lg:gap-6 lg:px-6 lg:pt-6">
       <aside className="hidden lg:flex lg:flex-col w-64 shrink-0 sticky top-6 self-start">
         <div className="flex items-center gap-2 px-2 mb-8">
-          <div className="w-9 h-9 rounded-full bg-ink flex items-center justify-center">
-            <LogoIcon />
-          </div>
+          <LogoIcon />
           <div>
             <p className="font-display font-bold text-lg leading-none">Congregación Cristo Vive</p>
             <p className="text-[11px] text-ink/50 leading-none mt-0.5">
@@ -77,9 +75,7 @@ export default function Layout({
       <main className="flex-1 px-4 sm:px-6 lg:px-0 pt-5 lg:pt-0">
         <header className="flex items-center justify-between mb-5 lg:hidden">
           <div className="flex items-center gap-2">
-            <div className="w-8 h-8 rounded-full bg-ink flex items-center justify-center">
-              <LogoIcon />
-            </div>
+            <LogoIcon />
             <p className="font-display font-bold text-lg">Congregación Cristo Vive</p>
           </div>
           <div className="flex items-center gap-1">
@@ -149,20 +145,11 @@ function Icon({ name, cls = "w-5 h-5" }: { name: string; cls?: string }) {
 
 function LogoIcon() {
   return (
-    <svg
-      width="18"
-      height="18"
-      viewBox="0 0 24 24"
-      fill="none"
-    >
-      <path
-        d="M12 2L4 6V12C4 17 7.5 20.5 12 22C16.5 20.5 20 17 20 12V6L12 2Z"
-        stroke="#F0A33C"
-        strokeWidth="1.8"
-        strokeLinejoin="round"
-      />
-      <circle cx="12" cy="11" r="2.4" fill="#F0A33C" />
-    </svg>
+    <img
+      src="/logo.svg"
+      alt="Cristo Vive"
+      className="w-9 h-9 shrink-0"
+    />
   );
 }
 
