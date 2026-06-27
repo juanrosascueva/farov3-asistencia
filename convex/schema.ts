@@ -25,4 +25,19 @@ export default defineSchema({
     .index("by_date", ["date"])
     .index("by_teenId", ["teenId"])
     .index("by_date_and_teen", ["date", "teenId"]),
+
+  journal: defineTable({
+    teenId: v.id("teens"),
+    entryDate: v.string(),
+    content: v.string(),
+    category: v.union(
+      v.literal("call"),
+      v.literal("visit"),
+      v.literal("counseling"),
+      v.literal("prayer"),
+      v.literal("other")
+    ),
+  })
+    .index("by_teenId", ["teenId"])
+    .index("by_teenId_and_date", ["teenId", "entryDate"]),
 });

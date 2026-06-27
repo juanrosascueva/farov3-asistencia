@@ -12,6 +12,7 @@ import {
 } from "../lib/utils";
 import { getTemplates } from "../lib/templates";
 import WhatsAppModal from "./WhatsAppModal";
+import JournalTimeline from "./JournalTimeline";
 import { Avatar } from "./Layout";
 import TeenForm from "./TeenForm";
 import Modal from "./Modal";
@@ -192,15 +193,9 @@ export default function Profile({
             <p className="text-sm">{esc(teen.gustos)}</p>
           </div>
         )}
-        {teen.notas && (
-          <div>
-            <p className="text-xs font-semibold text-ink/40 uppercase tracking-wide mb-1">
-              Notas pastorales
-            </p>
-            <p className="text-sm whitespace-pre-line">{esc(teen.notas)}</p>
-          </div>
-        )}
       </div>
+
+      <JournalTimeline teenId={teen._id} />
 
       <div className="bg-white rounded-card shadow-soft p-5">
         <h2 className="font-display font-semibold text-base mb-3">

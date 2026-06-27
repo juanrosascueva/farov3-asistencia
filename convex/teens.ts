@@ -54,19 +54,45 @@ export const update = mutation({
 export const remove = mutation({
   args: { id: v.id("teens") },
   handler: async (ctx, args) => {
-    const records = await ctx.db
-      .query("attendance")
-      .withIndex("by_teenId", (q) => q.eq("teenId", args.id))
-      .collect();
-    for (const record of records) {
-      await ctx.db.delete(record._id);
+    for (const table of ["attendance", "journal"] as const) {
+      const records = await ctx.db
+        .query(table)
+        .withIndex("by_teenId", (q) => q.eq("teenId", args.id))
+        .collect();
+      for (const r of records) {
+        await ctx.db.delete(r._id);
+      }
     }
     await ctx.db.delete(args.id);
   },
 });
 
+export const migrateNotasToJournal = mutation({
+  handler: async (ctx) => {
+    const teens = await ctx.db.query("teens").collect();
+    let migrated = 0;
+    for (const teen of teens) {
+      if (teen.notas && teen.notas.trim()) {
+        await ctx.db.insert("journal", {
+          teenId: teen._id,
+          entryDate: new Date().toISOString().slice(0, 10),
+          content: teen.notas.trim(),
+          category: "other",
+        });
+        await ctx.db.patch(teen._id, { notas: "" });
+        migrated++;
+      }
+    }
+    return { migrated };
+  },
+});
+
 export const removeAll = mutation({
   handler: async (ctx) => {
+    const allJournal = await ctx.db.query("journal").collect();
+    for (const r of allJournal) {
+      await ctx.db.delete(r._id);
+    }
     const allAttendance = await ctx.db.query("attendance").collect();
     for (const r of allAttendance) {
       await ctx.db.delete(r._id);
