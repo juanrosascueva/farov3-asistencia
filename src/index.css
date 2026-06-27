@@ -119,3 +119,40 @@ input::placeholder, textarea::placeholder {
   animation: overlayFadeIn 0.2s ease-out both;
 }
 
+/* ─── Efecto de Confeti Animado CSS ─── */
+
+.confetti-container {
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  z-index: 9999;
+  overflow: hidden;
+}
+
+.confetti-particle {
+  position: absolute;
+  width: 9px;
+  height: 9px;
+  background-color: var(--color);
+  opacity: 0;
+  top: 50%;
+  left: 50%;
+  border-radius: var(--br, 2px);
+  transform-origin: center;
+  animation: confettiExplode var(--dur, 2s) cubic-bezier(0.1, 0.8, 0.2, 1) both;
+}
+
+@keyframes confettiExplode {
+  0% {
+    opacity: 1;
+    transform: translate(0, 0) rotate(0deg) scale(1);
+  }
+  30% {
+    opacity: 1;
+  }
+  100% {
+    opacity: 0;
+    transform: translate(var(--tx), var(--ty)) rotate(var(--rot)) scale(0.3);
+  }
+}
+

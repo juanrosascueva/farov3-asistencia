@@ -24,6 +24,7 @@ interface TeenFormProps {
 
 export default function TeenForm({ teen, onClose, onSuccess }: TeenFormProps) {
   const { token } = useAuth();
+  const [submitting, setSubmitting] = useState(false);
   const [form, setForm] = useState(
     teen
       ? {
@@ -58,17 +59,24 @@ export default function TeenForm({ teen, onClose, onSuccess }: TeenFormProps) {
 
   const handleSubmit = async (e: FormEvent) => {
     e.preventDefault();
-    const scopeFields = campusId ? {
-      campusId: campusId as any,
-      ministryId: ministryId ? (ministryId as any) : undefined,
-      groupId: groupId ? (groupId as any) : undefined,
-    } : {};
-    if (teen) {
-      await updateTeen({ id: teen._id, ...form, ...scopeFields });
-    } else {
-      await createTeen({ ...form, ...scopeFields });
+    setSubmitting(true);
+    try {
+      const scopeFields = campusId ? {
+        campusId: campusId as any,
+        ministryId: ministryId ? (ministryId as any) : undefined,
+        groupId: groupId ? (groupId as any) : undefined,
+      } : {};
+      if (teen) {
+        await updateTeen({ id: teen._id, ...form, ...scopeFields });
+      } else {
+        await createTeen({ ...form, ...scopeFields });
+      }
+      onSuccess();
+    } catch (err) {
+      console.error(err);
+    } finally {
+      setSubmitting(false);
     }
-    onSuccess();
   };
 
   const set = (key: string) => (val: string) =>
@@ -180,9 +188,16 @@ export default function TeenForm({ teen, onClose, onSuccess }: TeenFormProps) {
 
         <button
           type="submit"
-          className="w-full bg-ink text-white rounded-xl py-3 text-sm font-semibold mt-2"
+          disabled={submitting}
+          className="w-full bg-ink text-white rounded-xl py-3 text-sm font-semibold mt-2 disabled:opacity-50 pressable flex items-center justify-center gap-2"
         >
-          {teen ? "Guardar cambios" : "Agregar adolescente"}
+          {submitting && (
+            <svg className="animate-spin h-4 w-4 text-white" viewBox="0 0 24 24" fill="none">
+              <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+              <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
+            </svg>
+          )}
+          {submitting ? "Guardando..." : teen ? "Guardar cambios" : "Agregar adolescente"}
         </button>
       </form>
     </Modal>

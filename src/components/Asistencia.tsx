@@ -35,6 +35,8 @@ export default function Asistencia({
   );
   const [showNewDate, setShowNewDate] = useState(false);
   const [newDate, setNewDate] = useState(todayISO());
+  const [searchQuery, setSearchQuery] = useState("");
+  const [pendingCount, setPendingCount] = useState(0);
   const [celebration, setCelebration] = useState<{
     name: string;
     streakTier: ReturnType<typeof streakTier>;
@@ -51,13 +53,20 @@ export default function Asistencia({
   }
   const dayMap = attendanceMap[selectedDate] || {};
 
-  const handleMark = (teenId: string, status: AttendanceStatus) => {
+  const handleMark = async (teenId: string, status: AttendanceStatus) => {
     const teen = teens.find((t) => t._id === teenId);
     if (status === "present" && teen) {
       const old = statsFor(teenId, attendanceMap);
       pendingCheck.current = { teenId, name: teen.nombre, status, oldPresentStreak: old.presentStreak };
     }
-    markAtt({ date: selectedDate, teenId: teenId as any, status });
+    setPendingCount((c) => c + 1);
+    try {
+      await markAtt({ date: selectedDate, teenId: teenId as any, status });
+    } catch (err) {
+      console.error(err);
+    } finally {
+      setPendingCount((c) => Math.max(0, c - 1));
+    }
   };
 
   useEffect(() => {
@@ -83,6 +92,10 @@ export default function Asistencia({
     }
   };
 
+  const filteredTeens = teens.filter((t) =>
+    `${t.nombre} ${t.apellido}`.toLowerCase().includes(searchQuery.toLowerCase())
+  );
+
   return (
     <div className="space-y-5">
       <div className="flex items-center justify-between gap-3">
@@ -90,13 +103,34 @@ export default function Asistencia({
           <p className="text-xs font-semibold text-teal-700 tracking-wide uppercase">
             Tomar asistencia
           </p>
-          <h1 className="font-display text-2xl font-bold mt-0.5">
-            {fmtDate(selectedDate)}
-          </h1>
+          <div className="flex items-center gap-2 mt-0.5">
+            <h1 className="font-display text-2xl font-bold">
+              {fmtDate(selectedDate)}
+            </h1>
+            {/* Indicador de sincronización */}
+            <div className="flex items-center gap-1 text-[11px] font-semibold transition-opacity duration-300">
+              {pendingCount > 0 ? (
+                <span className="flex items-center gap-1 text-amber-600 bg-amber-50 dark:bg-amber-950/20 dark:text-amber-400 px-2 py-0.5 rounded-full border border-amber-100 dark:border-amber-900/30 animate-pulse">
+                  <svg className="animate-spin h-3 w-3 text-amber-600 dark:text-amber-400" viewBox="0 0 24 24" fill="none">
+                    <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+                    <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
+                  </svg>
+                  Sincronizando...
+                </span>
+              ) : (
+                <span className="flex items-center gap-1 text-sage-600 bg-sage-50 dark:bg-green-950/20 dark:text-green-400 px-2 py-0.5 rounded-full border border-sage-100 dark:border-green-900/30">
+                  <svg className="w-3 h-3 text-sage-600 dark:text-green-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round">
+                    <path d="M20 6 9 17l-5-5" />
+                  </svg>
+                  Guardado
+                </span>
+              )}
+            </div>
+          </div>
         </div>
         <button
           onClick={() => setShowNewDate(true)}
-          className="text-xs font-semibold bg-ink text-white rounded-full px-3.5 py-2 flex items-center gap-1.5 shrink-0"
+          className="text-xs font-semibold bg-ink text-white rounded-full px-3.5 py-2 flex items-center gap-1.5 shrink-0 pressable"
         >
           <svg
             className="w-3.5 h-3.5"
@@ -156,53 +190,82 @@ export default function Asistencia({
         </div>
       ) : (
         <>
-          <div className="bg-card rounded-card shadow-soft divide-y divide-ink/5 overflow-hidden">
-            {teens.map((t) => {
-              const st = dayMap[t._id] || "sin marcar";
-              return (
-                <div
-                  key={t._id}
-                  className="flex items-center gap-3 p-3.5"
-                >
-                  <Avatar teen={t} />
-                  <div
-                    className="flex-1 min-w-0 cursor-pointer"
-                    onClick={() => onOpenProfile(t._id)}
-                  >
-                    <p className="text-sm font-semibold truncate">
-                      {t.nombre} {t.apellido}
-                    </p>
-                    <p className="text-xs text-ink/40">
-                      {statsFor(t._id, attendanceMap).pct}% asistencia general
-                    </p>
-                  </div>
-                  <div className="flex gap-1.5 shrink-0">
-                    <AttBtn
-                      status="present"
-                      label="✓"
-                      current={st}
-                      onClick={() => handleMark(t._id, "present")}
-                      activeClass="bg-sage-600 text-white border-sage-600"
-                    />
-                    <AttBtn
-                      status="excused"
-                      label="J"
-                      current={st}
-                      onClick={() => handleMark(t._id, "excused")}
-                      activeClass="bg-amber-600 text-white border-amber-600"
-                    />
-                    <AttBtn
-                      status="absent"
-                      label="✕"
-                      current={st}
-                      onClick={() => handleMark(t._id, "absent")}
-                      activeClass="bg-coral-600 text-white border-coral-600"
-                    />
-                  </div>
-                </div>
-              );
-            })}
+          {/* Buscador de asistencia */}
+          <div className="relative">
+            <input
+              type="text"
+              placeholder="Buscar adolescente..."
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              className="w-full bg-card border border-ink/10 rounded-xl pl-10 pr-10 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-teal-600/20 focus:border-teal-600/30 transition-all"
+            />
+            <svg className="w-4 h-4 text-ink/30 absolute left-3.5 top-1/2 -translate-y-1/2" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              <circle cx="11" cy="11" r="8" /><path d="m21 21-4.3-4.3" />
+            </svg>
+            {searchQuery && (
+              <button
+                onClick={() => setSearchQuery("")}
+                className="text-xs text-ink/40 hover:text-ink/60 underline absolute right-3.5 top-1/2 -translate-y-1/2"
+              >
+                Limpiar
+              </button>
+            )}
           </div>
+
+          {filteredTeens.length === 0 ? (
+            <div className="text-center py-8 bg-card rounded-card shadow-soft border border-ink/5">
+              <p className="text-sm font-semibold text-ink/60">No se encontraron resultados</p>
+              <p className="text-xs text-ink/40 mt-0.5">Ningún adolescente coincide con "{searchQuery}"</p>
+            </div>
+          ) : (
+            <div className="bg-card rounded-card shadow-soft divide-y divide-ink/5 overflow-hidden">
+              {filteredTeens.map((t) => {
+                const st = dayMap[t._id] || "sin marcar";
+                return (
+                  <div
+                    key={t._id}
+                    className="flex items-center gap-3 p-3.5"
+                  >
+                    <Avatar teen={t} />
+                    <div
+                      className="flex-1 min-w-0 cursor-pointer"
+                      onClick={() => onOpenProfile(t._id)}
+                    >
+                      <p className="text-sm font-semibold truncate">
+                        {t.nombre} {t.apellido}
+                      </p>
+                      <p className="text-xs text-ink/40">
+                        {statsFor(t._id, attendanceMap).pct}% asistencia general
+                      </p>
+                    </div>
+                    <div className="flex gap-1.5 shrink-0">
+                      <AttBtn
+                        status="present"
+                        label="✓"
+                        current={st}
+                        onClick={() => handleMark(t._id, "present")}
+                        activeClass="bg-sage-600 text-white border-sage-600"
+                      />
+                      <AttBtn
+                        status="excused"
+                        label="J"
+                        current={st}
+                        onClick={() => handleMark(t._id, "excused")}
+                        activeClass="bg-amber-600 text-white border-amber-600"
+                      />
+                      <AttBtn
+                        status="absent"
+                        label="✕"
+                        current={st}
+                        onClick={() => handleMark(t._id, "absent")}
+                        activeClass="bg-coral-600 text-white border-coral-600"
+                      />
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          )}
           <p className="text-[11px] text-ink/40 px-1">
             ✓ Presente &nbsp;·&nbsp; J Justificado &nbsp;·&nbsp; ✕ Ausente
           </p>

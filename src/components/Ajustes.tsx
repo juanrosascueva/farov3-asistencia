@@ -20,6 +20,7 @@ interface AjustesProps {
 export default function Ajustes({ teens, attendanceMap, dark, setDark }: AjustesProps) {
   const importRef = useRef<HTMLInputElement>(null);
   const [showReset, setShowReset] = useState(false);
+  const [importing, setImporting] = useState(false);
 
   const { user } = useAuth();
 
@@ -60,6 +61,7 @@ export default function Ajustes({ teens, attendanceMap, dark, setDark }: Ajustes
   const handleImport = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
+    setImporting(true);
     const reader = new FileReader();
     reader.onload = async () => {
       try {
@@ -77,9 +79,12 @@ export default function Ajustes({ teens, attendanceMap, dark, setDark }: Ajustes
               foto: t.foto || "",
             });
           }
+          alert("Importación completada con éxito");
         }
       } catch {
         alert("Archivo inválido");
+      } finally {
+        setImporting(false);
       }
     };
     reader.readAsText(file);
@@ -115,13 +120,20 @@ export default function Ajustes({ teens, attendanceMap, dark, setDark }: Ajustes
           </div>
         </button>
 
-        <label className="w-full flex items-center gap-3 p-4 text-left cursor-pointer">
-          <svg className="w-5 h-5 text-teal-600" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><path d="M12 5v14M5 12h14" /></svg>
+        <label className={`w-full flex items-center gap-3 p-4 text-left ${importing ? "opacity-50 cursor-not-allowed" : "cursor-pointer"}`}>
+          {importing ? (
+            <svg className="animate-spin h-5 w-5 text-teal-600 shrink-0" viewBox="0 0 24 24" fill="none">
+              <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+              <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
+            </svg>
+          ) : (
+            <svg className="w-5 h-5 text-teal-600 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><path d="M12 3v12" /><path d="M7 10l5 5 5-5" /><path d="M5 21h14" /></svg>
+          )}
           <div className="flex-1">
-            <p className="text-sm font-semibold">Importar respaldo (JSON)</p>
-            <p className="text-xs text-ink/40">Restaurar desde un archivo exportado previamente</p>
+            <p className="text-sm font-semibold">{importing ? "Importando respaldo..." : "Importar respaldo (JSON)"}</p>
+            <p className="text-xs text-ink/40">{importing ? "Espere, por favor. Sincronizando registros con la nube." : "Restaurar desde un archivo exportado previamente"}</p>
           </div>
-          <input ref={importRef} type="file" accept=".json" className="hidden" onChange={handleImport} />
+          <input ref={importRef} type="file" accept=".json" className="hidden" disabled={importing} onChange={handleImport} />
         </label>
       </div>
 
@@ -385,14 +397,46 @@ export default function Ajustes({ teens, attendanceMap, dark, setDark }: Ajustes
 
 function ResetForm({ onCancel }: { onCancel: () => void }) {
   const resetAll = useMutation(api.teens.removeAll);
+  const [resetting, setResetting] = useState(false);
+
+  const handleReset = async () => {
+    setResetting(true);
+    try {
+      await resetAll();
+      onCancel();
+    } catch (err: any) {
+      alert(err.message);
+    } finally {
+      setResetting(false);
+    }
+  };
+
   return (
     <div className="p-5">
       <p className="text-sm text-ink/70">
         Esto eliminará permanentemente a todos los adolescentes y todo el historial de asistencia. No se puede deshacer.
       </p>
       <div className="flex gap-3 mt-5">
-        <button onClick={onCancel} className="flex-1 bg-ink/5 rounded-xl py-2.5 text-sm font-semibold">Cancelar</button>
-        <button onClick={() => { resetAll(); onCancel(); }} className="flex-1 bg-coral-600 text-white rounded-xl py-2.5 text-sm font-semibold">Borrar todo</button>
+        <button
+          onClick={onCancel}
+          disabled={resetting}
+          className="flex-1 bg-ink/5 text-ink/60 rounded-xl py-2.5 text-sm font-semibold disabled:opacity-50 pressable"
+        >
+          Cancelar
+        </button>
+        <button
+          onClick={handleReset}
+          disabled={resetting}
+          className="flex-1 bg-coral-600 text-white rounded-xl py-2.5 text-sm font-semibold disabled:opacity-50 pressable flex items-center justify-center gap-1.5"
+        >
+          {resetting && (
+            <svg className="animate-spin h-3.5 w-3.5 text-white" viewBox="0 0 24 24" fill="none">
+              <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+              <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
+            </svg>
+          )}
+          {resetting ? "Borrando..." : "Borrar todo"}
+        </button>
       </div>
     </div>
   );

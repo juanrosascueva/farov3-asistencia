@@ -28,6 +28,7 @@ export default function OrgManager() {
 function UserManager() {
   const { token } = useAuth();
   const [showForm, setShowForm] = useState(false);
+  const [submitting, setSubmitting] = useState(false);
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [name, setName] = useState("");
@@ -39,6 +40,7 @@ function UserManager() {
 
   const handleCreate = async () => {
     if (!email.trim() || !password.trim() || !name.trim()) return;
+    setSubmitting(true);
     try {
       await register({ email: email.trim(), password, name: name.trim(), role: role as any, token: token ?? undefined });
       setEmail("");
@@ -48,6 +50,8 @@ function UserManager() {
       setShowForm(false);
     } catch (err: any) {
       alert(err.message);
+    } finally {
+      setSubmitting(false);
     }
   };
 
@@ -97,9 +101,18 @@ function UserManager() {
               <option value="pastor">Pastor</option>
             </select>
           </div>
-          <button onClick={handleCreate}
-            className="w-full bg-ink text-white rounded-xl py-2 text-sm font-semibold">
-            Crear usuario
+           <button
+            onClick={handleCreate}
+            disabled={submitting}
+            className="w-full bg-ink text-white rounded-xl py-2 text-sm font-semibold disabled:opacity-50 pressable flex items-center justify-center gap-1.5"
+          >
+            {submitting && (
+              <svg className="animate-spin h-3.5 w-3.5 text-white" viewBox="0 0 24 24" fill="none">
+                <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+                <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
+              </svg>
+            )}
+            {submitting ? "Creando..." : "Crear usuario"}
           </button>
         </div>
       )}
@@ -141,6 +154,7 @@ function UserManager() {
 function CampusManager() {
   const { token } = useAuth();
   const [showForm, setShowForm] = useState(false);
+  const [submitting, setSubmitting] = useState(false);
   const [name, setName] = useState("");
   const [address, setAddress] = useState("");
   const [editingId, setEditingId] = useState<string | null>(null);
@@ -154,18 +168,22 @@ function CampusManager() {
 
   const handleCreate = async () => {
     if (!name.trim()) return;
+    setSubmitting(true);
     try {
       await createCampus({ token: token!, name: name.trim(), address: address.trim() || undefined });
       setName(""); setAddress(""); setShowForm(false);
     } catch (err: any) { alert(err.message); }
+    finally { setSubmitting(false); }
   };
 
   const handleUpdate = async (id: string) => {
     if (!name.trim()) return;
+    setSubmitting(true);
     try {
       await updateCampus({ token: token!, id: id as any, name: name.trim(), address: address.trim() || undefined });
-      setName(""); setAddress(""); setEditingId(null);
+      setName(""); setAddress(""); setEditingId(null); setShowForm(false);
     } catch (err: any) { alert(err.message); }
+    finally { setSubmitting(false); }
   };
 
   return (
@@ -195,9 +213,18 @@ function CampusManager() {
               placeholder="Ej: Av. Principal #123"
               className="w-full bg-card border border-ink/10 rounded-xl px-3.5 py-2 text-sm" />
           </div>
-          <button onClick={editingId ? () => handleUpdate(editingId) : handleCreate}
-            className="w-full bg-ink text-white rounded-xl py-2 text-sm font-semibold">
-            {editingId ? "Guardar cambios" : "Crear sede"}
+          <button
+            onClick={editingId ? () => handleUpdate(editingId) : handleCreate}
+            disabled={submitting}
+            className="w-full bg-ink text-white rounded-xl py-2 text-sm font-semibold disabled:opacity-50 pressable flex items-center justify-center gap-1.5"
+          >
+            {submitting && (
+              <svg className="animate-spin h-3.5 w-3.5 text-white" viewBox="0 0 24 24" fill="none">
+                <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+                <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
+              </svg>
+            )}
+            {submitting ? "Guardando..." : editingId ? "Guardar cambios" : "Crear sede"}
           </button>
         </div>
       )}
@@ -241,6 +268,7 @@ function CampusManager() {
 function MinistryManager({ campusId, campusName }: { campusId: string; campusName: string }) {
   const { token } = useAuth();
   const [showForm, setShowForm] = useState(false);
+  const [submitting, setSubmitting] = useState(false);
   const [name, setName] = useState("");
 
   const ministries = useQuery(api.ministry.list, token ? { token, campusId: campusId as any } : "skip");
@@ -251,10 +279,12 @@ function MinistryManager({ campusId, campusName }: { campusId: string; campusNam
 
   const handleCreate = async () => {
     if (!name.trim()) return;
+    setSubmitting(true);
     try {
       await createMinistry({ token: token!, campusId: campusId as any, name: name.trim() });
       setName(""); setShowForm(false);
     } catch (err: any) { alert(err.message); }
+    finally { setSubmitting(false); }
   };
 
   return (
@@ -274,9 +304,18 @@ function MinistryManager({ campusId, campusName }: { campusId: string; campusNam
           <input type="text" value={name} onChange={e => setName(e.target.value)}
             placeholder="Ej: Jóvenes, Niños, Damas..."
             className="w-full bg-card border border-ink/10 rounded-xl px-3 py-2 text-sm" />
-          <button onClick={handleCreate}
-            className="w-full bg-ink text-white rounded-xl py-1.5 text-xs font-semibold">
-            Crear ministerio
+          <button
+            onClick={handleCreate}
+            disabled={submitting}
+            className="w-full bg-ink text-white rounded-xl py-1.5 text-xs font-semibold disabled:opacity-50 pressable flex items-center justify-center gap-1.5"
+          >
+            {submitting && (
+              <svg className="animate-spin h-3 w-3 text-white" viewBox="0 0 24 24" fill="none">
+                <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+                <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
+              </svg>
+            )}
+            {submitting ? "Creando..." : "Crear ministerio"}
           </button>
         </div>
       )}
@@ -311,6 +350,7 @@ function MinistryManager({ campusId, campusName }: { campusId: string; campusNam
 function GroupManager({ ministryId, ministryName }: { ministryId: string; ministryName: string }) {
   const { token } = useAuth();
   const [showForm, setShowForm] = useState(false);
+  const [submitting, setSubmitting] = useState(false);
   const [name, setName] = useState("");
 
   const groups = useQuery(api.group.list, token ? { token, ministryId: ministryId as any } : "skip");
@@ -319,10 +359,12 @@ function GroupManager({ ministryId, ministryName }: { ministryId: string; minist
 
   const handleCreate = async () => {
     if (!name.trim()) return;
+    setSubmitting(true);
     try {
       await createGroup({ token: token!, ministryId: ministryId as any, name: name.trim() });
       setName(""); setShowForm(false);
     } catch (err: any) { alert(err.message); }
+    finally { setSubmitting(false); }
   };
 
   return (
@@ -342,9 +384,18 @@ function GroupManager({ ministryId, ministryName }: { ministryId: string; minist
           <input type="text" value={name} onChange={e => setName(e.target.value)}
             placeholder="Ej: Célula Berea"
             className="w-full bg-card border border-ink/10 rounded-lg px-3 py-1.5 text-xs" />
-          <button onClick={handleCreate}
-            className="w-full bg-ink text-white rounded-lg py-1 text-[11px] font-semibold">
-            Crear grupo
+          <button
+            onClick={handleCreate}
+            disabled={submitting}
+            className="w-full bg-ink text-white rounded-lg py-1 text-[11px] font-semibold disabled:opacity-50 pressable flex items-center justify-center gap-1.5"
+          >
+            {submitting && (
+              <svg className="animate-spin h-2.5 w-2.5 text-white" viewBox="0 0 24 24" fill="none">
+                <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+                <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
+              </svg>
+            )}
+            {submitting ? "Creando..." : "Crear grupo"}
           </button>
         </div>
       )}
@@ -382,6 +433,7 @@ function UserScopesManager({ userId }: UserScopesManagerProps) {
   const [selectedCampusId, setSelectedCampusId] = useState<string>("");
   const [selectedMinistryId, setSelectedMinistryId] = useState<string>("");
   const [selectedGroupId, setSelectedGroupId] = useState<string>("");
+  const [submitting, setSubmitting] = useState(false);
 
   const scopes = useQuery(api.userScopes.list, token ? { token, userId: userId as any } : "skip");
   const campuses = useQuery(api.campus.list, token ? { token } : "skip");
@@ -399,6 +451,7 @@ function UserScopesManager({ userId }: UserScopesManagerProps) {
 
   const handleAddScope = async () => {
     if (!token) return;
+    setSubmitting(true);
     try {
       await createScope({
         token,
@@ -413,6 +466,8 @@ function UserScopesManager({ userId }: UserScopesManagerProps) {
       setSelectedGroupId("");
     } catch (err: any) {
       alert(err.message);
+    } finally {
+      setSubmitting(false);
     }
   };
 
@@ -524,9 +579,16 @@ function UserScopesManager({ userId }: UserScopesManagerProps) {
 
           <button
             onClick={handleAddScope}
-            className="w-full bg-teal-600 hover:bg-teal-700 text-white rounded-xl py-2 text-xs font-semibold mt-2 transition"
+            disabled={submitting}
+            className="w-full bg-teal-600 hover:bg-teal-700 text-white rounded-xl py-2 text-xs font-semibold mt-2 transition disabled:opacity-50 pressable flex items-center justify-center gap-1.5"
           >
-            Agregar acceso
+            {submitting && (
+              <svg className="animate-spin h-3.5 w-3.5 text-white" viewBox="0 0 24 24" fill="none">
+                <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+                <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
+              </svg>
+            )}
+            {submitting ? "Guardando..." : "Agregar acceso"}
           </button>
         </div>
       </div>
