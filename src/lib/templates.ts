@@ -96,7 +96,7 @@ export function getTemplates(
         emoji: "🟡",
         label: "Alternativo (familia)",
         message: fill(
-          `Hola, somos del ministerio de adolescentes Faro. Queríamos saber cómo está {nombre}, lo extrañamos el domingo. ¿Hay algo en que podamos ayudar? 🙏`,
+          `Hola, somos de la Congregación Cristo Vive. Queríamos saber cómo está {nombre}, lo extrañamos el domingo. ¿Hay algo en que podamos ayudar? 🙏`,
           v
         ),
       },
@@ -111,7 +111,7 @@ export function getTemplates(
         emoji: "🟠",
         label: "Alternativo (familia)",
         message: fill(
-          `Hola, somos del ministerio Faro. {nombre} ha faltado dos semanas seguidas y queremos saber cómo está. ¿Podemos comunicarnos con él/ella o hay algo que debamos saber? Gracias 🙏`,
+          `Hola, somos de la Congregación Cristo Vive. {nombre} ha faltado dos semanas seguidas y queremos saber cómo está. ¿Podemos comunicarnos con él/ella o hay algo que debamos saber? Gracias 🙏`,
           v
         ),
       },
@@ -126,7 +126,7 @@ export function getTemplates(
       emoji: "🔴",
       label: "Alternativo (familia)",
       message: fill(
-        `Hola, somos del ministerio de adolescentes Faro. Estamos preocupados porque {nombre} lleva {faltas} semanas sin asistir. Nos encantaría hacer una visita o conversar con ustedes para saber cómo está y en qué podemos apoyar. ¿Podemos coordinar? 🙏`,
+        `Hola, somos de la Congregación Cristo Vive. Estamos preocupados porque {nombre} lleva {faltas} semanas sin asistir. Nos encantaría hacer una visita o conversar con ustedes para saber cómo está y en qué podemos apoyar. ¿Podemos coordinar? 🙏`,
         v
       ),
     },

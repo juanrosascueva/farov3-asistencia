@@ -1,8 +1,8 @@
 import { useState, useCallback, createContext, useContext, useEffect } from "react";
 import type { Leader } from "../lib/types";
 
-const LEADERS_KEY = "faro_leaders_v1";
-const CURRENT_LEADER_KEY = "faro_current_leader_v1";
+const LEADERS_KEY = "cristovive_leaders_v1";
+const CURRENT_LEADER_KEY = "cristovive_current_leader_v1";
 
 function loadLeaders(): Leader[] {
   try {

@@ -470,7 +470,7 @@ export default function Ajustes({ teens, attendanceMap }: AjustesProps) {
         <button onClick={() => setShowReset(true)} className="text-xs font-semibold bg-coral-600 text-white rounded-full px-3.5 py-2">Borrar todo</button>
       </div>
 
-      <p className="text-center text-[11px] text-ink/30 pt-2">Faro · Control de asistencia para ministerio de adolescentes</p>
+      <p className="text-center text-[11px] text-ink/30 pt-2">Congregación Cristo Vive · Control de asistencia</p>
 
       {showReset && (
         <Modal title="Borrar todos los datos" onClose={() => setShowReset(false)}>

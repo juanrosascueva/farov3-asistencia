@@ -30,9 +30,9 @@ export default function Layout({
             <LogoIcon />
           </div>
           <div>
-            <p className="font-display font-bold text-lg leading-none">Faro</p>
+            <p className="font-display font-bold text-lg leading-none">Congregación Cristo Vive</p>
             <p className="text-[11px] text-ink/50 leading-none mt-0.5">
-              Ministerio de Adolescentes
+                Ministerio de Adolescentes
             </p>
           </div>
           <div className="mt-3">
@@ -63,7 +63,7 @@ export default function Layout({
             <div className="w-8 h-8 rounded-full bg-ink flex items-center justify-center">
               <LogoIcon />
             </div>
-            <p className="font-display font-bold text-lg">Faro</p>
+            <p className="font-display font-bold text-lg">Congregación Cristo Vive</p>
           </div>
           <LeaderBadge />
         </header>

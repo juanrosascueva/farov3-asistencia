@@ -1,7 +1,7 @@
 import { useState, useCallback } from "react";
 import type { MessageTemplate } from "../lib/types";
 
-const TEMPLATES_KEY = "faro_templates_v1";
+const TEMPLATES_KEY = "cristovive_templates_v1";
 
 function seedTemplates(): MessageTemplate[] {
   return [
