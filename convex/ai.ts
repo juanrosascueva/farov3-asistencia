@@ -3,10 +3,10 @@ import { action, internalMutation, internalQuery, mutation, query } from "./_gen
 import { internal } from "./_generated/api";
 
 const FREE_MODELS = [
-  "mistralai/mistral-7b-instruct:free",
-  "google/gemma-2-9b-it:free",
-  "meta-llama/llama-3.2-3b-instruct:free",
-  "microsoft/phi-3-mini-4k-instruct:free",
+  "google/gemma-4-31b-it:free",
+  "google/gemma-4-26b-a4b-it:free",
+  "nvidia/nemotron-3-ultra-550b-a55b:free",
+  "cohere/north-mini-code:free",
 ];
 
 const SYSTEM_PROMPT = `Eres un asistente de análisis pastoral. Analiza bitácoras de acompañamiento juvenil.
@@ -307,6 +307,81 @@ interface TeenData {
   analysesCount: number; journalCount: number; contactCount: number;
   lastJournalDate: string | null; lastContactDate: string | null;
   crisisCount: number;
+}
+
+interface MinistryOverviewData {
+  teens: Array<{
+    nombre: string;
+    apellido: string;
+    _id: string;
+    attendancePct: number;
+    consecAbsences: number;
+    riskLevel: string;
+    crisisCount: number;
+    tags: string[];
+    hasFollowUp: boolean;
+    lastContactedDate: string | null;
+    journalCount: number;
+    totalAnalyses: number;
+  }>;
+  totalTeens: number;
+  totalAnalyses: number;
+  totalCrisisAlerts: number;
+  totalFollowUps: number;
+  overallAttendanceAvg: number;
+  tagFrequency: Record<string, number>;
+  highRiskCount: number;
+  pendingContactCount: number;
+}
+
+function buildFallbackPastoralResponse(data: MinistryOverviewData, question: string): string {
+  const q = question.toLowerCase();
+  const highRiskTeens = data.teens.filter((t) => t.riskLevel === "high");
+  const absentTeens = [...data.teens]
+    .filter((t) => t.consecAbsences > 0)
+    .sort((a, b) => b.consecAbsences - a.consecAbsences)
+    .slice(0, 5);
+  const noContactTeens = data.teens
+    .filter((t) => !t.lastContactedDate || t.lastContactedDate === "nunca")
+    .slice(0, 5);
+  const topTags = (Object.entries(data.tagFrequency) as Array<[string, number]>)
+    .sort((a, b) => b[1] - a[1])
+    .slice(0, 5);
+
+  if (q.includes("hola") || q.includes("buenas") || q.includes("saludos")) {
+    return `Hola. En este momento tengo ${data.totalTeens} adolescentes registrados, una asistencia promedio de ${data.overallAttendanceAvg}% y ${data.highRiskCount} adolescentes en riesgo alto. Si quieres, puedo ayudarte a revisar riesgo, ausencias, seguimientos o vulnerabilidades principales del ministerio.`;
+  }
+
+  if (q.includes("riesgo alto") || q.includes("alto riesgo") || q.includes("riesgo")) {
+    if (highRiskTeens.length === 0) {
+      return "En este momento no veo adolescentes clasificados en riesgo alto. Aun asi, conviene revisar los seguimientos pendientes y las faltas consecutivas para detectar casos emergentes.";
+    }
+    return `Detecto ${highRiskTeens.length} adolescentes en riesgo alto: ${highRiskTeens.map((t) => `${t.nombre} ${t.apellido}`).join(", ")}. Mi recomendacion pastoral es priorizar contacto esta semana con ellos y revisar si hay alertas de crisis, faltas consecutivas o vulnerabilidades repetidas.`;
+  }
+
+  if (q.includes("falt") || q.includes("ausen") || q.includes("inasistencia")) {
+    if (absentTeens.length === 0) {
+      return `No veo adolescentes con faltas consecutivas registradas en este momento. La asistencia promedio general es de ${data.overallAttendanceAvg}%.`;
+    }
+    return `Los casos con mas ausencias consecutivas son: ${absentTeens.map((t) => `${t.nombre} ${t.apellido} (${t.consecAbsences})`).join(", ")}. Esto sugiere priorizar seguimiento relacional y confirmar si hay barreras familiares, emocionales o de transporte.`;
+  }
+
+  if (q.includes("contact") || q.includes("seguimiento")) {
+    const intro = `Actualmente hay ${data.totalFollowUps} seguimientos pendientes y ${data.pendingContactCount} contactos pendientes.`;
+    if (noContactTeens.length === 0) {
+      return `${intro} No identifico adolescentes sin contacto registrado reciente dentro de los datos disponibles.`;
+    }
+    return `${intro} Entre los adolescentes sin contacto registrado reciente aparecen: ${noContactTeens.map((t) => `${t.nombre} ${t.apellido}`).join(", ")}. Sugeriria empezar por quienes ademas tengan riesgo alto o faltas consecutivas.`;
+  }
+
+  if (q.includes("vulnerab") || q.includes("comunes") || q.includes("tags")) {
+    if (topTags.length === 0) {
+      return "Todavia no hay suficientes analisis de vulnerabilidad para detectar patrones comunes en el ministerio.";
+    }
+    return `Las vulnerabilidades mas frecuentes en los analisis son: ${topTags.map(([tag, count]) => `${tag} (${count})`).join(", ")}. Esto puede ayudarte a planificar acompanamiento, talleres y conversaciones pastorales mas focalizadas.`;
+  }
+
+  return `Puedo darte un panorama general: hay ${data.totalTeens} adolescentes, asistencia promedio de ${data.overallAttendanceAvg}%, ${data.highRiskCount} en riesgo alto, ${data.totalCrisisAlerts} alertas de crisis y ${data.totalFollowUps} seguimientos pendientes. Si quieres una respuesta mas puntual, preguntame por riesgo alto, ausencias, seguimientos o vulnerabilidades.`;
 }
 
 function buildSummaryPrompt(data: TeenData): string {
@@ -617,11 +692,17 @@ export const chatWithAI = action({
     question: v.string(),
     conversationHistory: v.optional(v.array(v.object({ role: v.string(), content: v.string() }))),
   },
-  handler: async (ctx, args) => {
+  handler: async (ctx, args): Promise<{ success: boolean; answer?: string; modelUsed?: string; error?: string }> => {
     const apiKey = process.env.OPENROUTER_API_KEY;
-    if (!apiKey) return { success: false, error: "No API key configured" };
+    const data: MinistryOverviewData = await ctx.runQuery(internal.ai.getMinistryOverviewData) as any;
 
-    const data = await ctx.runQuery(internal.ai.getMinistryOverviewData);
+    if (!apiKey) {
+      return {
+        success: true,
+        answer: buildFallbackPastoralResponse(data, args.question),
+        modelUsed: "fallback-rules",
+      };
+    }
 
     const contextData = JSON.stringify({
       ministerio: "Adolescentes Cristo Vive",
@@ -667,7 +748,11 @@ ${contextData}`;
       const raw = await callModelRaw(apiKey, model, messages, 1000);
       if (raw) return { success: true, answer: raw, modelUsed: model };
     }
-    return { success: false, error: "All models failed" };
+    return {
+      success: true,
+      answer: buildFallbackPastoralResponse(data, args.question),
+      modelUsed: "fallback-rules",
+    };
   },
 });
 

@@ -25,7 +25,7 @@ export default function ChatPanel({ onClose }: { onClose: () => void }) {
 
   useEffect(() => {
     if (initialized) return;
-    if (!getLatestSession) return;
+    if (getLatestSession === undefined) return;
     const init = async () => {
       if (getLatestSession) {
         setSessionId(getLatestSession._id);
