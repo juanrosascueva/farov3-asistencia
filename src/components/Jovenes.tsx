@@ -14,6 +14,8 @@ interface JovenesProps {
   onOpenProfile: (id: string) => void;
 }
 
+type SortMode = "nombre" | "riesgo" | "prioridad";
+
 export default function Jovenes({
   teens,
   attendanceMap,
@@ -23,6 +25,7 @@ export default function Jovenes({
   const [showForm, setShowForm] = useState(false);
   const [editingTeen, setEditingTeen] = useState<Doc<"teens"> | null>(null);
   const [deletingTeen, setDeletingTeen] = useState<Doc<"teens"> | null>(null);
+  const [sortMode, setSortMode] = useState<SortMode>("prioridad");
 
   type FilterFidelidad = "all" | 1 | 2 | 3 | 4;
   type FilterPastoral = "all" | 0 | 1 | 2 | 3 | 4 | 5;
@@ -41,6 +44,18 @@ export default function Jovenes({
     return new Set(followUps.map((e) => e.teenId));
   }, [followUps]);
 
+  const allAnalyses = useQuery(api.ai.getAllAnalyses) ?? [];
+  const teenHighRiskMap = useMemo(() => {
+    const map = new Map<string, { hasHigh: boolean; hasMedium: boolean }>();
+    for (const a of allAnalyses as any[]) {
+      const existing = map.get(a.teenId) || { hasHigh: false, hasMedium: false };
+      if (a.riskLevel === "high") existing.hasHigh = true;
+      if (a.riskLevel === "medium") existing.hasMedium = true;
+      map.set(a.teenId, existing);
+    }
+    return map;
+  }, [allAnalyses]);
+
   const activeFilterCount = [filtroFidelidad, filtroPastoral, filtroEdad].filter((f) => f !== "all").length;
 
   const ringColor = (risk: RiskInfo) => {
@@ -54,11 +69,29 @@ export default function Jovenes({
     return colors[risk.color];
   };
 
+  const computePPP = (risk: RiskInfo, s: ReturnType<typeof statsFor>, hasFollowUp: boolean, teenId: string): number => {
+    const riskFactor = risk.score / 5;
+    const v = teenHighRiskMap.get(teenId);
+    const vulnFactor = v?.hasHigh ? 1 : v?.hasMedium ? 0.5 : 0;
+    const absFactor = Math.min(s.consecutiveAbsences / 10, 1);
+    const pctInverted = 1 - s.pct / 100;
+    const followUpFactor = hasFollowUp ? 1 : 0;
+    return riskFactor * 0.30 + vulnFactor * 0.25 + absFactor * 0.20 + pctInverted * 0.10 + followUpFactor * 0.15;
+  };
+
+  const pppLabel = (score: number): string => {
+    if (score >= 0.7) return "Crítica";
+    if (score >= 0.5) return "Alta";
+    if (score >= 0.3) return "Media";
+    return "Baja";
+  };
+
   const teenData = teens
     .map((t) => {
       const s = statsFor(t._id, attendanceMap);
       const risk = riskScore(s);
-      return { t, s, risk, age: ageFromDOB(t.nacimiento), game: getGamification(s), rc: ringColor(risk), hasFollowUp: followUpTeenIds.has(t._id) };
+      const ppp = computePPP(risk, s, followUpTeenIds.has(t._id), t._id);
+      return { t, s, risk, age: ageFromDOB(t.nacimiento), game: getGamification(s), rc: ringColor(risk), hasFollowUp: followUpTeenIds.has(t._id), ppp };
     })
     .filter(({ t }) => {
       const q = query.toLowerCase();
@@ -74,6 +107,11 @@ export default function Jovenes({
         if (age < min || age > max) return false;
       }
       return true;
+    })
+    .sort((a, b) => {
+      if (sortMode === "nombre") return (a.t.nombre + a.t.apellido).localeCompare(b.t.nombre + b.t.apellido);
+      if (sortMode === "riesgo") return b.risk.score - a.risk.score;
+      return b.ppp - a.ppp;
     });
 
   const upcoming = teens
@@ -137,6 +175,20 @@ export default function Jovenes({
             placeholder="Buscar por nombre..."
             className="w-full bg-card border border-ink/10 rounded-xl pl-10 pr-4 py-2.5 text-sm"
           />
+        </div>
+        <div className="relative shrink-0">
+          <select
+            value={sortMode}
+            onChange={(e) => setSortMode(e.target.value as SortMode)}
+            className="appearance-none h-10 pl-3 pr-8 text-xs font-semibold bg-card border border-ink/10 rounded-xl text-ink/60 hover:text-ink/80 cursor-pointer"
+          >
+            <option value="prioridad">PPP</option>
+            <option value="riesgo">Riesgo</option>
+            <option value="nombre">A-Z</option>
+          </select>
+          <svg className="w-3 h-3 absolute right-2.5 top-1/2 -translate-y-1/2 text-ink/30 pointer-events-none" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+            <path d="M6 9l6 6 6-6" />
+          </svg>
         </div>
         <button
           onClick={() => setShowFilters((v) => !v)}
@@ -300,7 +352,7 @@ export default function Jovenes({
         </div>
       ) : (
         <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-3">
-          {teenData.map(({ t, s, risk, age, game, rc, hasFollowUp }) => (
+          {teenData.map(({ t, s, risk, age, game, rc, hasFollowUp, ppp }) => (
               <div
                 key={t._id}
                 onClick={() => onOpenProfile(t._id)}
@@ -393,6 +445,11 @@ export default function Jovenes({
                           Niv.{game.level.level}
                         </span>
                       )}
+                      <span className={`text-[10px] font-semibold px-1.5 py-0.5 rounded-full ${
+                        ppp >= 0.7 ? "bg-red-50 text-red-700" : ppp >= 0.5 ? "bg-amber-50 text-amber-700" : ppp >= 0.3 ? "bg-yellow-50 text-yellow-700" : "bg-green-50 text-green-700"
+                      }`}>
+                        PPP {pppLabel(ppp)}
+                      </span>
                     </p>
                     <div className="flex items-center gap-2 mt-2">
                       <div className="flex-1 h-1.5 bg-ink/5 rounded-full overflow-hidden">

@@ -69,6 +69,16 @@ export default function Dashboard({
     return { d, pct: tot ? Math.round((pres / tot) * 100) : 0 };
   });
 
+  const crisisAlerts = useQuery(api.ai.getCrisisAnalyses) ?? [];
+
+  const crisisTeens = teens
+    .map((t) => {
+      const entry = crisisAlerts.find((a: any) => a.teenId === t._id);
+      if (!entry) return null;
+      return { teen: t, analysis: entry };
+    })
+    .filter((x): x is NonNullable<typeof x> => x !== null);
+
   const colorMap: Record<string, string> = {
     ink: "text-ink bg-ink/5",
     teal: "text-teal-700 bg-teal-50",
@@ -86,6 +96,37 @@ export default function Dashboard({
           Resumen del ministerio
         </h1>
       </div>
+
+      {crisisTeens.length > 0 && (
+        <div className="bg-red-50 border border-red-200 rounded-card p-4">
+          <div className="flex items-center gap-2 mb-3">
+            <span className="text-lg">🚨</span>
+            <h2 className="font-display font-bold text-sm text-red-800">
+              Alertas de crisis ({crisisTeens.length})
+            </h2>
+          </div>
+          <div className="space-y-2">
+            {crisisTeens.map((c) => (
+              <div
+                key={c.teen._id}
+                className="flex items-center gap-3 p-2.5 rounded-xl bg-white/60 border border-red-100 cursor-pointer hover:bg-white transition"
+                onClick={() => onOpenProfile(c.teen._id)}
+              >
+                <Avatar teen={c.teen} />
+                <div className="flex-1 min-w-0">
+                  <p className="text-sm font-semibold">
+                    {esc(c.teen.nombre)} {esc(c.teen.apellido)}
+                  </p>
+                  <p className="text-xs text-red-600/80 truncate">{c.analysis.summary}</p>
+                </div>
+                <span className="text-[11px] font-bold text-red-700 bg-red-100 px-2 py-1 rounded-full shrink-0">
+                  Atención inmediata
+                </span>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
 
       <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
         <StatCard

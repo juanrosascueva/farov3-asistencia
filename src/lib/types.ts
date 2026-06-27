@@ -19,8 +19,33 @@ export interface JournalAnalysis {
   suggestedActions: string[];
   suggestedVerses: string[];
   summary: string;
+  isCrisis?: boolean;
   analyzedAt: string;
   modelUsed: string;
+}
+
+export interface TeenSummary {
+  teenId: string;
+  summary: string;
+  pastoralMomentum: string;
+  mainChallenge: string;
+  recommendedFocus: string;
+  generatedAt: string;
+  modelUsed: string;
+}
+
+export interface PriorityScore {
+  teenId: string;
+  score: number;
+  label: string;
+  factors: {
+    riskScore: number;
+    vulnerabilityLevel: number;
+    contactRecency: number;
+    consecutiveAbsences: number;
+    journalRecency: number;
+    hasFollowUp: boolean;
+  };
 }
 
 export const VULNERABILITY_TAGS: { id: string; label: string; icon: string }[] = [

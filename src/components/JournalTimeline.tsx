@@ -275,6 +275,11 @@ export default function JournalTimeline({ teenId }: JournalProps) {
                             {analysis.riskLevel === "high" ? "🔴" : analysis.riskLevel === "medium" ? "🟡" : "🟢"} {analysis.riskLevel === "high" ? "Alto" : analysis.riskLevel === "medium" ? "Medio" : "Bajo"}
                           </span>
                         )}
+                        {analysis?.isCrisis && (
+                          <span className="text-[10px] font-bold text-red-700 bg-red-100 px-1.5 py-0.5 rounded-full">
+                            🚨 Crisis
+                          </span>
+                        )}
                       </div>
                       <p className="text-xs text-ink/40 font-medium">
                         por {esc(entry.leaderName || "Anónimo")}

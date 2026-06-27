@@ -1,8 +1,8 @@
 import { useState } from "react";
-import { useQuery, useMutation } from "convex/react";
+import { useQuery, useMutation, useAction } from "convex/react";
 import { api } from "../../convex/_generated/api";
 import type { Doc } from "../../convex/_generated/dataModel";
-import type { AttendanceMap, RiskInfo } from "../lib/types";
+import type { AttendanceMap, RiskInfo, TeenSummary } from "../lib/types";
 import { VULNERABILITY_TAGS } from "../lib/types";
 import {
   statsFor,
@@ -40,6 +40,14 @@ export default function Profile({
   const [showWhatsApp, setShowWhatsApp] = useState(false);
   const [showQuickWA, setShowQuickWA] = useState(false);
   const deleteTeen = useMutation(api.teens.remove);
+
+  const teenSummary = useQuery(api.ai.getTeenSummary, { teenId: teen._id as any });
+  const generateSummary = useAction(api.ai.generateTeenSummary as any);
+  const analyses = useQuery(api.ai.getAnalysisByTeen, { teenId: teen._id as any }) ?? [];
+  const [generatingSummary, setGeneratingSummary] = useState(false);
+
+  const crisisAnalyses = (analyses as any[]).filter((a: any) => a.isCrisis);
+  const hasCrisis = crisisAnalyses.length > 0;
 
   const s = statsFor(teen._id, attendanceMap);
   const risk = riskScore(s);
@@ -182,6 +190,18 @@ export default function Profile({
         </div>
       </div>
 
+      {hasCrisis && (
+        <div className="bg-red-50 border border-red-200 rounded-card p-4 flex items-start gap-3">
+          <div className="w-9 h-9 rounded-full bg-red-100 flex items-center justify-center text-red-600 shrink-0 text-lg">🚨</div>
+          <div className="flex-1 min-w-0">
+            <p className="text-sm font-bold text-red-700">Alerta de crisis detectada</p>
+            <p className="text-xs text-red-600/80 mt-0.5">
+              {crisisAnalyses.length} bitácora{crisisAnalyses.length > 1 ? "s" : ""} con indicios de crisis. Revisa las sugerencias de IA y toma acción inmediata.
+            </p>
+          </div>
+        </div>
+      )}
+
       <div className="grid grid-cols-3 gap-3">
         <StatCardInline label="Asistencia" value={s.pct + "%"} icon="check" color="teal" />
         <StatCardInline
@@ -224,6 +244,18 @@ export default function Profile({
 
       <XpBar level={game.level} />
       <BadgeGrid badges={game.badges} />
+
+      <TeenSummaryCard
+        summary={teenSummary as TeenSummary | undefined}
+        generating={generatingSummary}
+        onGenerate={async () => {
+          setGeneratingSummary(true);
+          await generateSummary({ teenId: teen._id as any });
+          setGeneratingSummary(false);
+        }}
+        hasData={(analyses as any[]).length > 0 || s.total > 0}
+      />
+
       <JournalTimeline teenId={teen._id} />
 
       <AiSuggestions teenId={teen._id} />
@@ -410,6 +442,83 @@ function InfoRow({
         {label}
       </p>
       <p className="text-ink/80">{value ? esc(value) : "—"}</p>
+    </div>
+  );
+}
+
+function TeenSummaryCard({
+  summary,
+  generating,
+  onGenerate,
+  hasData,
+}: {
+  summary: TeenSummary | undefined;
+  generating: boolean;
+  onGenerate: () => void;
+  hasData: boolean;
+}) {
+  if (!summary && !hasData) return null;
+  return (
+    <div className="bg-card rounded-card shadow-soft p-5">
+      <div className="flex items-center justify-between mb-3">
+        <h2 className="font-display font-semibold text-base flex items-center gap-2">
+          <svg className="w-4 h-4 text-teal-600" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+            <path d="M12 20h9" />
+            <path d="M16.5 3.5a2.1 2.1 0 013 3L7 19l-4 1 1-4z" />
+            <path d="M15 5l3 3" />
+          </svg>
+          Resumen Pastoral
+        </h2>
+        {!summary ? (
+          <button
+            onClick={onGenerate}
+            disabled={generating}
+            className="text-xs font-semibold bg-teal-600 text-white rounded-full px-3 py-1.5 hover:bg-teal-700 disabled:opacity-50 transition"
+          >
+            {generating ? "Generando..." : "Generar resumen"}
+          </button>
+        ) : (
+          <button
+            onClick={onGenerate}
+            disabled={generating}
+            className="text-xs font-semibold bg-ink/5 text-ink/50 hover:text-ink rounded-full px-3 py-1.5 disabled:opacity-50 transition"
+          >
+            {generating ? "Generando..." : "Regenerar"}
+          </button>
+        )}
+      </div>
+      {!summary ? (
+        <p className="text-xs text-ink/40 text-center py-6">
+          Genera un resumen inteligente con el historial de asistencia, análisis de IA y bitácoras de este adolescente.
+        </p>
+      ) : (
+        <div className="space-y-3">
+          <div className="flex flex-wrap gap-2">
+            <span className={`text-[11px] font-semibold px-2 py-1 rounded-full ${
+              summary.pastoralMomentum === "Mejorando" || summary.pastoralMomentum === "Estable"
+                ? "bg-green-50 text-green-700"
+                : summary.pastoralMomentum === "Requiere atención"
+                ? "bg-amber-50 text-amber-700"
+                : "bg-red-50 text-red-700"
+            }`}>
+              {summary.pastoralMomentum}
+            </span>
+          </div>
+          <p className="text-sm text-ink/80 leading-relaxed whitespace-pre-line">
+            {summary.summary}
+          </p>
+          <div className="grid sm:grid-cols-2 gap-3 pt-1">
+            <div className="p-3 rounded-xl bg-ink/[0.03] border border-ink/5">
+              <p className="text-[11px] font-semibold text-ink/40 uppercase tracking-wide mb-1">Desafío principal</p>
+              <p className="text-sm text-ink/80">{summary.mainChallenge}</p>
+            </div>
+            <div className="p-3 rounded-xl bg-teal-50 border border-teal-100">
+              <p className="text-[11px] font-semibold text-teal-700 uppercase tracking-wide mb-1">Enfoque recomendado</p>
+              <p className="text-sm text-teal-800">{summary.recommendedFocus}</p>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

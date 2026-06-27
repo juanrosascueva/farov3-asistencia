@@ -69,10 +69,23 @@ export default defineSchema({
     suggestedActions: v.array(v.string()),
     suggestedVerses: v.array(v.string()),
     summary: v.string(),
+    isCrisis: v.optional(v.boolean()),
     analyzedAt: v.string(),
     modelUsed: v.string(),
   })
     .index("by_entryId", ["entryId"])
     .index("by_teenId", ["teenId"])
-    .index("by_riskLevel", ["riskLevel"]),
+    .index("by_riskLevel", ["riskLevel"])
+    .index("by_isCrisis", ["isCrisis"]),
+
+  teenSummaries: defineTable({
+    teenId: v.id("teens"),
+    summary: v.string(),
+    pastoralMomentum: v.string(),
+    mainChallenge: v.string(),
+    recommendedFocus: v.string(),
+    generatedAt: v.string(),
+    modelUsed: v.string(),
+  })
+    .index("by_teenId", ["teenId"]),
 });
