@@ -73,7 +73,7 @@ export default function AttendanceCharts({ teens, filteredDates, attendanceMap }
                 <YAxis domain={[0, 100]} tick={{ fontSize: 11 }} axisLine={false} tickLine={false} />
                 <Tooltip
                   contentStyle={{ fontSize: 13, borderRadius: 12, border: "1px solid #e2e8f0" }}
-                  formatter={(v: number | string | undefined) => [`${v ?? 0}%`, "Asistencia"]}
+                  formatter={(value: any) => [`${value ?? 0}%`, "Asistencia"]}
                 />
                 <Line
                   type="monotone"
