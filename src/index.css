@@ -1,0 +1,26 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+html, body { background: #FAF8F4; }
+
+.beam {
+  background: conic-gradient(from -90deg, var(--c1) calc(var(--p)*1%), #ECE7DC 0);
+}
+
+.tab-active { color: #0B7285; }
+.tab-active .tab-dot { opacity: 1; transform: scale(1); }
+
+.fade-in { animation: fadeIn .25s ease both; }
+@keyframes fadeIn { from { opacity: 0; transform: translateY(4px); } to { opacity: 1; transform: translateY(0); } }
+@media (prefers-reduced-motion: reduce) { .fade-in { animation: none; } }
+
+input:focus, textarea:focus, select:focus, button:focus-visible {
+  outline: 2px solid #0B7285;
+  outline-offset: 2px;
+}
+
+.chip { display: inline-flex; align-items: center; gap: 4px; }
+
+::-webkit-scrollbar { width: 6px; height: 6px; }
+::-webkit-scrollbar-thumb { background: #D9D2C5; border-radius: 8px; }
