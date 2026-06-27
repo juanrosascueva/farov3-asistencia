@@ -1,9 +1,19 @@
 import { v } from "convex/values";
-import { action, internalMutation, internalQuery, mutation, query } from "./_generated/server";
+import { action, internalMutation, internalQuery, query } from "./_generated/server";
 import { internal } from "./_generated/api";
 
+interface PppItem {
+  teenId: string;
+  ppp: number;
+  dropoutRisk: number;
+  vulnerabilityLevel: number;
+  daysWithoutContact: number;
+  consecutiveAbsences: number;
+  daysSinceLastJournal: number;
+}
+
 export const getPppData = internalQuery({
-  handler: async (ctx) => {
+  handler: async (ctx): Promise<PppItem[]> => {
     const teens = await ctx.db.query("teens").collect();
     const analyses = await ctx.db.query("journalAnalysis").collect();
     const attendance = await ctx.db.query("attendance").collect();
@@ -88,7 +98,7 @@ export const storePpp = internalMutation({
 });
 
 export const calculateAllPpp = action({
-  handler: async (ctx) => {
+  handler: async (ctx): Promise<{ success: boolean; count: number }> => {
     const list = await ctx.runQuery(internal.ppp.getPppData);
     for (const item of list) {
       await ctx.runMutation(internal.ppp.storePpp, item);

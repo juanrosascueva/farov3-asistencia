@@ -632,7 +632,7 @@ export const chatWithAI = action({
       analisisIA: data.totalAnalyses,
       altoRiesgo: data.highRiskCount,
       contactosPendientes: data.pendingContactCount,
-      adolescentes: data.teens.map((t) => ({
+      adolescentes: data.teens.map((t: any) => ({
         nombre: t.nombre,
         apellido: t.apellido,
         asistencia: `${t.attendancePct}%`,
@@ -731,7 +731,7 @@ Datos del ministerio:
 
 Frecuencia de tags de vulnerabilidad:
 ${Object.entries(data.tagFrequency)
-  .sort((a, b) => b[1] - a[1])
+  .sort((a: [string, number], b: [string, number]) => b[1] - a[1])
   .map(([tag, count]) => `- ${tag}: ${count}`)
   .join("\n")}`;
 
