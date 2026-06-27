@@ -43,6 +43,17 @@ export default function Jovenes({
 
   const activeFilterCount = [filtroFidelidad, filtroPastoral, filtroEdad].filter((f) => f !== "all").length;
 
+  const ringColor = (risk: RiskInfo) => {
+    const colors: Record<RiskInfo["color"], string> = {
+      gray: "#6B7280",
+      teal: "#0B7285",
+      amber: "#F0A33C",
+      coral: "#E8590C",
+      red: "#DC2626",
+    };
+    return colors[risk.color];
+  };
+
   const teenData = teens
     .map((t) => {
       const s = statsFor(t._id, attendanceMap);
@@ -75,17 +86,6 @@ export default function Jovenes({
     await deleteTeen({ id: deletingTeen._id });
     setDeletingTeen(null);
   }, [deletingTeen, deleteTeen]);
-
-  const ringColor = (risk: RiskInfo) => {
-    const colors: Record<RiskInfo["color"], string> = {
-      gray: "#6B7280",
-      teal: "#0B7285",
-      amber: "#F0A33C",
-      coral: "#E8590C",
-      red: "#DC2626",
-    };
-    return colors[risk.color];
-  };
 
   return (
     <div className="space-y-5">

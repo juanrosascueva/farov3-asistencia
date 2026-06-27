@@ -1,7 +1,9 @@
 import { useState, FormEvent } from "react";
-import { useQuery, useMutation } from "convex/react";
+import { useQuery, useMutation, useAction } from "convex/react";
 import { api } from "../../convex/_generated/api";
 import type { Doc } from "../../convex/_generated/dataModel";
+import type { JournalAnalysis } from "../lib/types";
+import { VULNERABILITY_TAGS } from "../lib/types";
 import { fmtDate, esc } from "../lib/utils";
 import { useLeaderContext } from "../hooks/useLeaders";
 
@@ -21,10 +23,18 @@ const categoryMeta: Record<
   other: { label: "Nota", icon: "📝", color: "bg-ink/5 border-ink/10" },
 };
 
+const riskColors: Record<string, string> = {
+  low: "bg-green-50 text-green-700 border-green-200",
+  medium: "bg-amber-50 text-amber-700 border-amber-200",
+  high: "bg-red-50 text-red-700 border-red-200",
+};
+
 export default function JournalTimeline({ teenId }: JournalProps) {
   const entries = useQuery(api.journal.list, { teenId: teenId as any });
   const createEntry = useMutation(api.journal.create);
   const deleteEntry = useMutation(api.journal.remove);
+  const analyzeEntry = useAction(api.ai.analyzeJournalEntry as any);
+  const allAnalyses = useQuery(api.ai.getAllAnalyses);
   const { leaders, currentLeader } = useLeaderContext();
 
   const [showForm, setShowForm] = useState(false);
@@ -38,7 +48,7 @@ export default function JournalTimeline({ teenId }: JournalProps) {
   const handleSubmit = async (e: FormEvent) => {
     e.preventDefault();
     if (!content.trim() || !leaderName.trim()) return;
-    await createEntry({
+    const entryId = await createEntry({
       teenId: teenId as any,
       entryDate,
       content: content.trim(),
@@ -46,6 +56,14 @@ export default function JournalTimeline({ teenId }: JournalProps) {
       leaderName: leaderName.trim(),
       followUp,
     });
+    if (entryId) {
+      analyzeEntry({
+        entryId,
+        teenId: teenId as any,
+        content: content.trim(),
+        category,
+      });
+    }
     setContent("");
     setLeaderName("");
     setFollowUp(false);
@@ -230,6 +248,7 @@ export default function JournalTimeline({ teenId }: JournalProps) {
           <div className="space-y-4">
             {entries.map((entry) => {
               const meta = categoryMeta[entry.category] || categoryMeta.other;
+              const analysis: JournalAnalysis | undefined = allAnalyses?.find((a: any) => a.entryId === entry._id) as any;
               return (
                 <div key={entry._id} className="relative pl-10">
                   <div
@@ -239,7 +258,7 @@ export default function JournalTimeline({ teenId }: JournalProps) {
                   </div>
                   <div className="flex items-start gap-2">
                     <div className="flex-1 min-w-0">
-                      <div className="flex items-center gap-2 mb-0.5">
+                      <div className="flex items-center gap-2 mb-0.5 flex-wrap">
                         <span className="text-[11px] font-semibold text-ink/50">
                           {fmtDate(entry.entryDate)}
                         </span>
@@ -251,6 +270,11 @@ export default function JournalTimeline({ teenId }: JournalProps) {
                             📌 Seguimiento
                           </span>
                         )}
+                        {analysis && (
+                          <span className={`text-[10px] font-semibold px-1.5 py-0.5 rounded-full border ${riskColors[analysis.riskLevel] || ""}`}>
+                            {analysis.riskLevel === "high" ? "🔴" : analysis.riskLevel === "medium" ? "🟡" : "🟢"} {analysis.riskLevel === "high" ? "Alto" : analysis.riskLevel === "medium" ? "Medio" : "Bajo"}
+                          </span>
+                        )}
                       </div>
                       <p className="text-xs text-ink/40 font-medium">
                         por {esc(entry.leaderName || "Anónimo")}
@@ -258,6 +282,18 @@ export default function JournalTimeline({ teenId }: JournalProps) {
                       <p className="text-sm text-ink/80 whitespace-pre-line leading-relaxed">
                         {esc(entry.content)}
                       </p>
+                      {analysis && analysis.vulnerabilityTags.length > 0 && (
+                        <div className="flex flex-wrap gap-1 mt-2">
+                          {analysis.vulnerabilityTags.map((tag) => {
+                            const tagMeta = VULNERABILITY_TAGS.find((t) => t.id === tag);
+                            return (
+                              <span key={tag} className="text-[10px] font-medium bg-ink/5 text-ink/50 px-1.5 py-0.5 rounded-full">
+                                {tagMeta ? `${tagMeta.icon} ${tagMeta.label}` : tag}
+                              </span>
+                            );
+                          })}
+                        </div>
+                      )}
                     </div>
                     <button
                       onClick={() => deleteEntry({ id: entry._id })}

@@ -60,4 +60,19 @@ export default defineSchema({
     .index("by_weekStart", ["weekStart"])
     .index("by_teenId", ["teenId"])
     .index("by_weekStart_and_teenId", ["weekStart", "teenId"]),
+
+  journalAnalysis: defineTable({
+    entryId: v.id("journal"),
+    teenId: v.id("teens"),
+    vulnerabilityTags: v.array(v.string()),
+    riskLevel: v.union(v.literal("low"), v.literal("medium"), v.literal("high")),
+    suggestedActions: v.array(v.string()),
+    suggestedVerses: v.array(v.string()),
+    summary: v.string(),
+    analyzedAt: v.string(),
+    modelUsed: v.string(),
+  })
+    .index("by_entryId", ["entryId"])
+    .index("by_teenId", ["teenId"])
+    .index("by_riskLevel", ["riskLevel"]),
 });

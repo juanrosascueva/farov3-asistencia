@@ -1,8 +1,9 @@
 import { useState } from "react";
-import { useMutation } from "convex/react";
+import { useQuery, useMutation } from "convex/react";
 import { api } from "../../convex/_generated/api";
 import type { Doc } from "../../convex/_generated/dataModel";
 import type { AttendanceMap, RiskInfo } from "../lib/types";
+import { VULNERABILITY_TAGS } from "../lib/types";
 import {
   statsFor,
   riskScore,
@@ -225,6 +226,8 @@ export default function Profile({
       <BadgeGrid badges={game.badges} />
       <JournalTimeline teenId={teen._id} />
 
+      <AiSuggestions teenId={teen._id} />
+
       <div className="bg-card rounded-card shadow-soft p-5">
         <h2 className="font-display font-semibold text-base mb-3">
           Historial de asistencia
@@ -407,6 +410,82 @@ function InfoRow({
         {label}
       </p>
       <p className="text-ink/80">{value ? esc(value) : "—"}</p>
+    </div>
+  );
+}
+
+function AiSuggestions({ teenId }: { teenId: string }) {
+  const analyses = useQuery(api.ai.getAnalysisByTeen, { teenId: teenId as any }) ?? [];
+  const [expanded, setExpanded] = useState<string | null>(null);
+  if ((analyses as any[]).length === 0) return null;
+  const highRisk = (analyses as any[]).filter((a: any) => a.riskLevel === "high");
+  return (
+    <div className="bg-card rounded-card shadow-soft p-5">
+      <div className="flex items-center justify-between mb-3">
+        <h2 className="font-display font-semibold text-base">
+          Sugerencias de IA
+        </h2>
+        {highRisk.length > 0 && (
+          <span className="text-[10px] font-bold text-red-600 bg-red-50 px-2 py-1 rounded-full">
+            {highRisk.length} alerta{highRisk.length > 1 ? "s" : ""}
+          </span>
+        )}
+      </div>
+      <div className="space-y-2.5">
+        {(analyses as any[]).map((a: any) => (
+          <div key={a._id}>
+            <button
+              onClick={() => setExpanded(expanded === a._id ? null : a._id)}
+              className="w-full flex items-center gap-2 text-left"
+            >
+              <span className={`text-xs font-semibold px-2 py-0.5 rounded-full ${
+                a.riskLevel === "high" ? "bg-red-50 text-red-700" : a.riskLevel === "medium" ? "bg-amber-50 text-amber-700" : "bg-green-50 text-green-700"
+              }`}>
+                {a.riskLevel === "high" ? "🔴" : a.riskLevel === "medium" ? "🟡" : "🟢"} {a.riskLevel === "high" ? "Alto" : a.riskLevel === "medium" ? "Medio" : "Bajo"}
+              </span>
+              <span className="text-xs text-ink/40 flex-1 truncate">{a.summary}</span>
+              <svg className={`w-3 h-3 text-ink/30 transition ${expanded === a._id ? "rotate-180" : ""}`} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <path d="M6 9l6 6 6-6" />
+              </svg>
+            </button>
+            {expanded === a._id && (
+              <div className="mt-2 ml-6 p-3 rounded-lg bg-ink/[0.03] border border-ink/5 space-y-2">
+                {a.vulnerabilityTags?.length > 0 && (
+                  <div className="flex flex-wrap gap-1">
+                    {(a.vulnerabilityTags as string[]).map((tag: string) => {
+                      const meta = VULNERABILITY_TAGS.find((t) => t.id === tag);
+                      return <span key={tag} className="text-[10px] font-medium bg-ink/5 text-ink/50 px-1.5 py-0.5 rounded-full">{meta ? `${meta.icon} ${meta.label}` : tag}</span>;
+                    })}
+                  </div>
+                )}
+                {a.suggestedActions?.length > 0 && (
+                  <div>
+                    <p className="text-[11px] font-semibold text-ink/40 uppercase tracking-wide mb-1">Acciones sugeridas</p>
+                    <ul className="space-y-1">
+                      {(a.suggestedActions as string[]).map((action: string, i: number) => (
+                        <li key={i} className="text-xs text-ink/70 flex items-start gap-1.5">
+                          <span className="text-teal-600 mt-0.5">▶</span>
+                          {action}
+                        </li>
+                      ))}
+                    </ul>
+                  </div>
+                )}
+                {a.suggestedVerses?.length > 0 && (
+                  <div>
+                    <p className="text-[11px] font-semibold text-ink/40 uppercase tracking-wide mb-1">Versículos sugeridos</p>
+                    <div className="flex flex-wrap gap-1">
+                      {(a.suggestedVerses as string[]).map((verse: string, i: number) => (
+                        <span key={i} className="text-xs font-medium bg-teal-50 text-teal-700 px-2 py-1 rounded-full">📖 {verse}</span>
+                      ))}
+                    </div>
+                  </div>
+                )}
+              </div>
+            )}
+          </div>
+        ))}
+      </div>
     </div>
   );
 }

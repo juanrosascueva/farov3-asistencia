@@ -1,0 +1,267 @@
+import { useState } from "react";
+import { useQuery, useAction } from "convex/react";
+import { api } from "../../convex/_generated/api";
+import type { Doc } from "../../convex/_generated/dataModel";
+import type { AttendanceMap } from "../lib/types";
+import { VULNERABILITY_TAGS } from "../lib/types";
+import { statsFor, riskScore, fmtDate, esc } from "../lib/utils";
+import { Avatar } from "./Layout";
+
+interface AiPanelProps {
+  teens: Doc<"teens">[];
+  attendanceMap: AttendanceMap;
+  onOpenProfile: (id: string) => void;
+}
+
+const riskColors: Record<string, string> = {
+  low: "text-green-700 bg-green-50 border-green-200",
+  medium: "text-amber-700 bg-amber-50 border-amber-200",
+  high: "text-red-700 bg-red-50 border-red-200",
+};
+
+const barColors: Record<string, string> = {
+  low: "bg-green-500",
+  medium: "bg-amber-500",
+  high: "bg-red-600",
+};
+
+export default function AiPanel({ teens, attendanceMap, onOpenProfile }: AiPanelProps) {
+  const allAnalyses = useQuery(api.ai.getAllAnalyses) ?? [];
+  const allJournal = useQuery(api.journal.listAll) ?? [];
+  const generateSummary = useAction(api.ai.generateWeeklySummary as any);
+  const [weeklySummary, setWeeklySummary] = useState<any>(null);
+  const [generating, setGenerating] = useState(false);
+
+  const tagCounts: Record<string, number> = {};
+  let riskDist = { low: 0, medium: 0, high: 0 };
+  for (const a of allAnalyses as any[]) {
+    for (const tag of a.vulnerabilityTags || []) {
+      tagCounts[tag] = (tagCounts[tag] || 0) + 1;
+    }
+    if (a.riskLevel in riskDist) riskDist[a.riskLevel as keyof typeof riskDist]++;
+  }
+  const total = (allAnalyses as any[]).length;
+  const sortedTags = Object.entries(tagCounts).sort((a, b) => b[1] - a[1]);
+
+  const highRiskTeensMap = new Map<string, number>();
+  for (const a of allAnalyses as any[]) {
+    if (a.riskLevel === "high") {
+      highRiskTeensMap.set(a.teenId, (highRiskTeensMap.get(a.teenId) || 0) + 1);
+    }
+  }
+  const highRiskTeens = teens
+    .map((t) => ({
+      teen: t,
+      riskScore: riskScore(statsFor(t._id, attendanceMap)),
+      alerts: highRiskTeensMap.get(t._id) || 0,
+    }))
+    .filter((x) => x.alerts > 0)
+    .sort((a, b) => b.alerts - a.alerts);
+
+  const handleGenerateSummary = async () => {
+    setGenerating(true);
+    const now = new Date();
+    const sevenDaysAgo = new Date(now.getTime() - 7 * 86400000).toISOString().slice(0, 10);
+    const recentEntries = (allJournal as any[])
+      .filter((e: any) => e.entryDate >= sevenDaysAgo)
+      .slice(0, 50)
+      .map((e: any) => ({ content: e.content, category: e.category, entryDate: e.entryDate }));
+    if (recentEntries.length === 0) {
+      setWeeklySummary({ error: "No hay entradas esta semana" });
+      setGenerating(false);
+      return;
+    }
+    const result = await generateSummary({ entries: recentEntries });
+    setWeeklySummary(result);
+    setGenerating(false);
+  };
+
+  return (
+    <div className="space-y-5">
+      <div>
+        <p className="text-xs font-semibold text-teal-700 tracking-wide uppercase">
+          Inteligencia Pastoral
+        </p>
+        <h1 className="font-display text-2xl font-bold mt-0.5">
+          Asistente IA
+        </h1>
+      </div>
+
+      <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+        <StatCard label="Entradas analizadas" value={total} icon="analytics" />
+        <StatCard label="Alto riesgo" value={riskDist.high} icon="critical" />
+        <StatCard label="Medio riesgo" value={riskDist.medium} icon="warning" />
+        <StatCard label="Bajo riesgo" value={riskDist.low} icon="safe" />
+      </div>
+
+      <div className="grid lg:grid-cols-2 gap-5">
+        <div className="bg-card rounded-card shadow-soft p-5">
+          <h2 className="font-display font-semibold text-base mb-4">
+            Distribución de riesgo
+          </h2>
+          {total === 0 ? (
+            <p className="text-sm text-ink/40 text-center py-6">
+              Aún no hay análisis. Escribe bitácoras para activar la IA.
+            </p>
+          ) : (
+            <div className="space-y-3">
+              {(["high", "medium", "low"] as const).map((level) => {
+                const count = riskDist[level];
+                const pct = total ? Math.round((count / total) * 100) : 0;
+                return (
+                  <div key={level} className="flex items-center gap-3">
+                    <span className="w-16 text-xs font-semibold text-ink/60 capitalize">{level === "high" ? "Alto" : level === "medium" ? "Medio" : "Bajo"}</span>
+                    <div className="flex-1 h-5 bg-ink/5 rounded-full overflow-hidden">
+                      <div className={`h-full ${barColors[level]} rounded-full transition-all`} style={{ width: `${pct}%` }} />
+                    </div>
+                    <span className="w-8 text-right text-xs font-semibold text-ink/70">{count}</span>
+                  </div>
+                );
+              })}
+            </div>
+          )}
+        </div>
+
+        <div className="bg-card rounded-card shadow-soft p-5">
+          <h2 className="font-display font-semibold text-base mb-4">
+            Temas detectados
+          </h2>
+          {sortedTags.length === 0 ? (
+            <p className="text-sm text-ink/40 text-center py-6">Sin datos todavía</p>
+          ) : (
+            <div className="flex flex-wrap gap-2">
+              {sortedTags.map(([tag, count]) => {
+                const meta = VULNERABILITY_TAGS.find((t) => t.id === tag);
+                return (
+                  <span key={tag} className="inline-flex items-center gap-1 text-xs font-semibold bg-ink/5 text-ink/60 rounded-full px-2.5 py-1.5">
+                    {meta ? `${meta.icon} ${meta.label}` : tag}
+                    <span className="ml-1 w-5 h-5 rounded-full bg-ink/10 flex items-center justify-center text-[10px]">{count}</span>
+                  </span>
+                );
+              })}
+            </div>
+          )}
+        </div>
+      </div>
+
+      <div className="bg-card rounded-card shadow-soft p-5">
+        <div className="flex items-center justify-between mb-4">
+          <h2 className="font-display font-semibold text-base">
+            Adolescentes en alto riesgo
+          </h2>
+          <span className="text-xs text-ink/40">{highRiskTeens.length} adolescentes</span>
+        </div>
+        {highRiskTeens.length === 0 ? (
+          <p className="text-sm text-ink/40 text-center py-4">No hay adolescentes en alto riesgo</p>
+        ) : (
+          <div className="space-y-2.5">
+            {highRiskTeens.slice(0, 10).map(({ teen, riskScore: rs, alerts }) => (
+              <div
+                key={teen._id}
+                onClick={() => onOpenProfile(teen._id)}
+                className="flex items-center gap-3 p-3 rounded-xl border border-red-100 bg-red-50/50 cursor-pointer hover:bg-red-50 transition"
+              >
+                <Avatar teen={teen} />
+                <div className="flex-1 min-w-0">
+                  <p className="text-sm font-semibold truncate">
+                    {esc(teen.nombre)} {esc(teen.apellido)}
+                  </p>
+                  <p className="text-xs text-ink/50">
+                    {alerts} alerta{alerts > 1 ? "s" : ""} de IA · Score pastoral: {rs.score}
+                  </p>
+                </div>
+                <span className="text-[10px] font-bold text-red-600 bg-red-100 px-2 py-1 rounded-full">🔴</span>
+              </div>
+            ))}
+          </div>
+        )}
+      </div>
+
+      <div className="bg-card rounded-card shadow-soft p-5">
+        <div className="flex items-center justify-between mb-4">
+          <h2 className="font-display font-semibold text-base">
+            Resumen ejecutivo semanal
+          </h2>
+          <button
+            onClick={handleGenerateSummary}
+            disabled={generating}
+            className="text-xs font-semibold bg-ink text-white rounded-full px-3.5 py-2 flex items-center gap-1.5 disabled:opacity-50"
+          >
+            {generating ? (
+              <>Generando...</>
+            ) : (
+              <>
+                <svg className="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+                  <path d="M12 20h9" /><path d="M16.5 3.5a2.1 2.1 0 013 3L7 19l-4 1 1-4z" />
+                </svg>
+                Generar resumen
+              </>
+            )}
+          </button>
+        </div>
+        {!weeklySummary ? (
+          <p className="text-sm text-ink/40 text-center py-6">
+            Presiona "Generar resumen" para obtener un análisis semanal de las bitácoras.
+          </p>
+        ) : weeklySummary.error ? (
+          <p className="text-sm text-ink/40 text-center py-4">{weeklySummary.error}</p>
+        ) : weeklySummary.success && weeklySummary.summary ? (
+          <div className="space-y-3">
+            <div className="flex gap-4 text-sm">
+              <span className="text-ink/60">Total entradas: <strong className="text-ink">{weeklySummary.summary.totalEntries}</strong></span>
+            </div>
+            <div>
+              <p className="text-xs font-semibold text-ink/40 uppercase tracking-wide mb-1">Principales preocupaciones</p>
+              <p className="text-sm text-ink/80">{weeklySummary.summary.mainConcerns}</p>
+            </div>
+            <div>
+              <p className="text-xs font-semibold text-ink/40 uppercase tracking-wide mb-1">Clima emocional</p>
+              <p className="text-sm text-ink/80">{weeklySummary.summary.emotionalClimate}</p>
+            </div>
+            {weeklySummary.summary.topTags && weeklySummary.summary.topTags.length > 0 && (
+              <div>
+                <p className="text-xs font-semibold text-ink/40 uppercase tracking-wide mb-1">Temas principales</p>
+                <div className="flex flex-wrap gap-1.5">
+                  {weeklySummary.summary.topTags.map((tag: string) => (
+                    <span key={tag} className="text-xs font-medium bg-ink/5 text-ink/60 px-2 py-1 rounded-full">{tag}</span>
+                  ))}
+                </div>
+              </div>
+            )}
+            <div>
+              <p className="text-xs font-semibold text-ink/40 uppercase tracking-wide mb-1">Recomendación</p>
+              <p className="text-sm text-ink/80 font-medium">{weeklySummary.summary.recommendation}</p>
+            </div>
+            <p className="text-[10px] text-ink/30">Modelo: {weeklySummary.modelUsed}</p>
+          </div>
+        ) : (
+          <p className="text-sm text-ink/40 text-center py-4">Error al generar resumen. Intenta de nuevo.</p>
+        )}
+      </div>
+    </div>
+  );
+}
+
+function StatCard({ label, value, icon }: { label: string; value: number; icon: string }) {
+  const icons: Record<string, string> = {
+    analytics: `<path d="M3 17l5-5 4 4 6-6" /><path d="M3 21h18" /><path d="M19 3v6" /><path d="M16 6h6" />`,
+    critical: `<path d="M12 9v4" /><path d="M12 17h.01" /><path d="M10.3 3.9L2.7 17a2 2 0 001.7 3h15.2a2 2 0 001.7-3L13.7 3.9a2 2 0 00-3.4 0z" />`,
+    warning: `<path d="M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z" /><line x1="12" y1="9" x2="12" y2="13" /><line x1="12" y1="17" x2="12.01" y2="17" />`,
+    safe: `<path d="M22 11.08V12a10 10 0 11-5.93-9.14" /><path d="M22 4L12 14.01l-3-3" />`,
+  };
+  const colorMap: Record<string, string> = {
+    analytics: "text-ink bg-ink/5",
+    critical: "text-red-600 bg-red-50",
+    warning: "text-amber-600 bg-amber-50",
+    safe: "text-green-600 bg-green-50",
+  };
+  return (
+    <div className="bg-card rounded-card shadow-soft p-4">
+      <div className={`w-8 h-8 rounded-lg flex items-center justify-center mb-3 ${colorMap[icon] || ""}`}>
+        <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" dangerouslySetInnerHTML={{ __html: icons[icon] || "" }} />
+      </div>
+      <p className="font-display text-xl font-bold leading-none">{value}</p>
+      <p className="text-xs text-ink/45 mt-1">{label}</p>
+    </div>
+  );
+}

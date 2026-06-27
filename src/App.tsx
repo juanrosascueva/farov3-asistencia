@@ -11,6 +11,7 @@ import Profile from "./components/Profile";
 import Ajustes from "./components/Ajustes";
 import ReportsPanel from "./components/ReportsPanel";
 import Campana from "./components/Campana";
+import AiPanel from "./components/AiPanel";
 
 const DARK_KEY = "cristovive_dark_mode";
 
@@ -94,6 +95,14 @@ export default function App() {
       case "campana":
         return (
           <Campana
+            teens={teens}
+            attendanceMap={attendanceMap}
+            onOpenProfile={(id) => navigate(currentRoute, id)}
+          />
+        );
+      case "ia":
+        return (
+          <AiPanel
             teens={teens}
             attendanceMap={attendanceMap}
             onOpenProfile={(id) => navigate(currentRoute, id)}

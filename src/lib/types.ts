@@ -11,6 +11,31 @@ export interface StatsResult {
   history: { date: string; status: string }[];
 }
 
+export interface JournalAnalysis {
+  entryId: string;
+  teenId: string;
+  vulnerabilityTags: string[];
+  riskLevel: "low" | "medium" | "high";
+  suggestedActions: string[];
+  suggestedVerses: string[];
+  summary: string;
+  analyzedAt: string;
+  modelUsed: string;
+}
+
+export const VULNERABILITY_TAGS: { id: string; label: string; icon: string }[] = [
+  { id: "salud_mental", label: "Salud Mental", icon: "🧠" },
+  { id: "familiar", label: "Familiar", icon: "👪" },
+  { id: "adiccion", label: "Adicción", icon: "⚠️" },
+  { id: "duelo", label: "Duelo", icon: "🕊️" },
+  { id: "espiritual", label: "Espiritual", icon: "🙏" },
+  { id: "academico", label: "Académico", icon: "📚" },
+  { id: "violencia", label: "Violencia", icon: "🚫" },
+  { id: "relaciones", label: "Relaciones", icon: "💔" },
+  { id: "fisico", label: "Salud Física", icon: "🏥" },
+  { id: "economico", label: "Económico", icon: "💰" },
+];
+
 export interface RiskInfo {
   score: 0 | 1 | 2 | 3 | 4 | 5;
   label: string;
