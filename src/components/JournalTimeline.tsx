@@ -1,4 +1,4 @@
-import { useState, FormEvent } from "react";
+import { useState, FormEvent, useEffect, useRef } from "react";
 import { useQuery, useMutation, useAction } from "convex/react";
 import { api } from "../../convex/_generated/api";
 import type { Doc } from "../../convex/_generated/dataModel";
@@ -46,6 +46,32 @@ export default function JournalTimeline({ teenId }: JournalProps) {
   const [listening, setListening] = useState(false);
   const [structuring, setStructuring] = useState(false);
   const structureAction = useAction(api.ai.structureTranscription as any);
+  const recognitionRef = useRef<any>(null);
+  const listeningTimeoutRef = useRef<number | null>(null);
+
+  const clearListeningState = () => {
+    setListening(false);
+    if (listeningTimeoutRef.current) {
+      window.clearTimeout(listeningTimeoutRef.current);
+      listeningTimeoutRef.current = null;
+    }
+    recognitionRef.current = null;
+  };
+
+  useEffect(() => {
+    return () => {
+      if (recognitionRef.current) {
+        try {
+          recognitionRef.current.stop();
+        } catch {
+          // ignore cleanup failures
+        }
+      }
+      if (listeningTimeoutRef.current) {
+        window.clearTimeout(listeningTimeoutRef.current);
+      }
+    };
+  }, []);
 
   const handleSubmit = async (e: FormEvent) => {
     e.preventDefault();
@@ -162,29 +188,49 @@ export default function JournalTimeline({ teenId }: JournalProps) {
               <button
                 type="button"
                 onClick={() => {
-                  if (listening) return;
+                  if (listening && recognitionRef.current) {
+                    try {
+                      recognitionRef.current.stop();
+                    } catch {
+                      clearListeningState();
+                    }
+                    return;
+                  }
                   const SpeechRecognition = (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition;
                   if (!SpeechRecognition) {
                     alert("La transcripción por voz no está disponible en este navegador. Usa Chrome o Edge.");
                     return;
                   }
                   const recognition = new SpeechRecognition();
+                  recognitionRef.current = recognition;
                   recognition.lang = "es-MX";
                   recognition.interimResults = false;
+                  recognition.continuous = false;
+                  recognition.maxAlternatives = 1;
                   recognition.onresult = (event: any) => {
                     const transcript = event.results[0][0].transcript;
                     setContent((prev) => prev + (prev ? " " : "") + transcript);
-                    setListening(false);
+                    clearListeningState();
                   };
-                  recognition.onerror = () => setListening(false);
-                  recognition.onend = () => setListening(false);
+                  recognition.onerror = () => clearListeningState();
+                  recognition.onnomatch = () => clearListeningState();
+                  recognition.onend = () => clearListeningState();
                   setListening(true);
+                  listeningTimeoutRef.current = window.setTimeout(() => {
+                    if (recognitionRef.current) {
+                      try {
+                        recognitionRef.current.stop();
+                      } catch {
+                        clearListeningState();
+                      }
+                    }
+                  }, 12000);
                   recognition.start();
                 }}
                 className={`absolute right-2 bottom-2.5 w-7 h-7 rounded-lg flex items-center justify-center transition ${
                   listening ? "bg-red-100 text-red-600 animate-pulse" : "bg-ink/5 text-ink/40 hover:text-ink hover:bg-ink/10"
                 }`}
-                title={listening ? "Escuchando..." : "Transcribir por voz"}
+                title={listening ? "Detener grabación" : "Transcribir por voz"}
               >
                 <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
                   <path d="M12 2a3 3 0 00-3 3v7a3 3 0 006 0V5a3 3 0 00-3-3z" />

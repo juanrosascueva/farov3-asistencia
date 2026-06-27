@@ -415,6 +415,44 @@ function buildFallbackPastoralResponse(data: MinistryOverviewData, question: str
   return `Puedo darte un panorama general: hay ${data.totalTeens} adolescentes, asistencia promedio de ${data.overallAttendanceAvg}%, ${data.highRiskCount} en riesgo alto, ${data.totalCrisisAlerts} alertas de crisis y ${data.totalFollowUps} seguimientos pendientes. Si quieres una respuesta mas puntual, preguntame por riesgo alto, ausencias, seguimientos o vulnerabilidades.`;
 }
 
+function inferCategoryFromText(rawText: string): "call" | "visit" | "chat" | "counseling" | "prayer" | "other" {
+  const text = rawText.toLowerCase();
+  if (/(llam|telefone|celular|telefono)/.test(text)) return "call";
+  if (/(visita|fu[ií]|casa|domicilio)/.test(text)) return "visit";
+  if (/(whatsapp|mensaje|chat|escrib[ií])/.test(text)) return "chat";
+  if (/(consejer|aconsej|orientac|escuch)/.test(text)) return "counseling";
+  if (/(or[ée]|oracion|oramos|orar)/.test(text)) return "prayer";
+  return "other";
+}
+
+function structureTranscriptionFallback(rawText: string) {
+  const normalized = rawText
+    .replace(/\s+/g, " ")
+    .replace(/\s*,\s*/g, ", ")
+    .replace(/\s*\.\s*/g, ". ")
+    .trim();
+
+  const sentenceParts = normalized
+    .split(/(?<=[.!?])\s+|,\s+|\s+y luego\s+|\s+despues\s+de\s+eso\s+/i)
+    .map((part) => part.trim())
+    .filter(Boolean);
+
+  const structuredContent = sentenceParts.length > 1
+    ? sentenceParts.map((part) => `- ${part.charAt(0).toUpperCase()}${part.slice(1)}`).join("\n")
+    : normalized.charAt(0).toUpperCase() + normalized.slice(1);
+
+  const followUpNeeded = /(seguir|acompañar|acompanar|volver|pendiente|orar|visitar|llamar|contactar)/i.test(normalized);
+
+  return {
+    success: true,
+    structuredContent,
+    suggestedCategory: inferCategoryFromText(rawText),
+    summary: (sentenceParts[0] || normalized).replace(/^./, (c) => c.toUpperCase()),
+    followUpNeeded,
+    modelUsed: "fallback-structure",
+  };
+}
+
 function buildSummaryPrompt(data: TeenData): string {
   return `Genera un resumen pastoral inteligente para el adolescente ${data.nombre} ${data.apellido}.
 Responde ÚNICAMENTE con JSON válido en este formato:
@@ -972,9 +1010,13 @@ export const structureTranscription = action({
   },
   handler: async (ctx, args) => {
     const apiKey = process.env.OPENROUTER_API_KEY;
-    if (!apiKey) return { success: false, error: "No API key configured" };
+    if (!apiKey) return structureTranscriptionFallback(args.rawText);
 
     const prompt = `Eres un asistente pastoral. Estructura la siguiente transcripción de voz de una bitácora de acompañamiento juvenil.
+Corrige muletillas, repeticiones y errores leves de dictado, pero sin inventar hechos.
+Ordena el contenido de forma breve, clara y pastoral.
+Si hay varios hechos, usa viñetas simples con guion.
+No agregues encabezados largos ni lenguaje rebuscado.
 Responde ÚNICAMENTE con JSON válido en este formato:
 {
   "structuredContent": "texto corregido y estructurado con viñetas si aplica, en español",
@@ -994,8 +1036,8 @@ ${args.rawText}`;
         const parsed = JSON.parse(cleaned);
         return {
           success: true,
-          structuredContent: typeof parsed.structuredContent === "string" ? parsed.structuredContent : args.rawText,
-          suggestedCategory: ["call", "visit", "chat", "counseling", "prayer", "other"].includes(parsed.suggestedCategory) ? parsed.suggestedCategory : "other",
+          structuredContent: typeof parsed.structuredContent === "string" ? sanitizeModelText(parsed.structuredContent) || args.rawText : args.rawText,
+          suggestedCategory: ["call", "visit", "chat", "counseling", "prayer", "other"].includes(parsed.suggestedCategory) ? parsed.suggestedCategory : inferCategoryFromText(args.rawText),
           summary: typeof parsed.summary === "string" ? parsed.summary : "",
           followUpNeeded: parsed.followUpNeeded === true,
           modelUsed: model,
@@ -1004,6 +1046,6 @@ ${args.rawText}`;
         continue;
       }
     }
-    return { success: false, error: "All models failed" };
+    return structureTranscriptionFallback(args.rawText);
   },
 });
