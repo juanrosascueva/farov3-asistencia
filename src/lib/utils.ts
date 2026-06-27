@@ -125,7 +125,7 @@ export function daysToNextBirthday(
   let next = new Date(now.getFullYear(), dob.getMonth(), dob.getDate());
   if (next < now)
     next = new Date(now.getFullYear() + 1, dob.getMonth(), dob.getDate());
-  return Math.round((next - now) / 86400000);
+  return Math.round((+next - +now) / 86400000);
 }
 
 export function greeting(): string {

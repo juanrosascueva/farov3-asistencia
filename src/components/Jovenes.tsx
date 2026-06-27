@@ -36,7 +36,7 @@ export default function Jovenes({
 
   const upcoming = teens
     .map((t) => ({ t, days: daysToNextBirthday(t.nacimiento) }))
-    .filter((x) => x.days !== null && x.days <= 21)
+    .filter((x): x is { t: Doc<"teens">; days: number } => x.days !== null && x.days <= 21)
     .sort((a, b) => a.days - b.days);
 
   const handleDelete = useCallback(async () => {
