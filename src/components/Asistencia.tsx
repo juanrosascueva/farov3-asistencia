@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useCallback, useRef, useEffect } from "react";
 import { useMutation } from "convex/react";
 import { api } from "../../convex/_generated/api";
 import type { Doc } from "../../convex/_generated/dataModel";
@@ -9,9 +9,12 @@ import {
   todayISO,
   lastNSundays,
   statsFor,
+  getGamification,
+  streakTier,
 } from "../lib/utils";
 import { Avatar } from "./Layout";
 import Modal from "./Modal";
+import CelebrationToast from "./CelebrationToast";
 
 interface AsistenciaProps {
   teens: Doc<"teens">[];
@@ -32,6 +35,12 @@ export default function Asistencia({
   );
   const [showNewDate, setShowNewDate] = useState(false);
   const [newDate, setNewDate] = useState(todayISO());
+  const [celebration, setCelebration] = useState<{
+    name: string;
+    streakTier: ReturnType<typeof streakTier>;
+    newBadges: any[];
+  } | null>(null);
+  const pendingCheck = useRef<{ teenId: string; name: string; status: AttendanceStatus; oldPresentStreak: number } | null>(null);
 
   const recent = [
     ...new Set([...lastNSundays(6), ...allDates]),
@@ -43,8 +52,29 @@ export default function Asistencia({
   const dayMap = attendanceMap[selectedDate] || {};
 
   const handleMark = (teenId: string, status: AttendanceStatus) => {
+    const teen = teens.find((t) => t._id === teenId);
+    if (status === "present" && teen) {
+      const old = statsFor(teenId, attendanceMap);
+      pendingCheck.current = { teenId, name: teen.nombre, status, oldPresentStreak: old.presentStreak };
+    }
     markAtt({ date: selectedDate, teenId: teenId as any, status });
   };
+
+  useEffect(() => {
+    if (!pendingCheck.current) return;
+    const { teenId, name, oldPresentStreak } = pendingCheck.current;
+    pendingCheck.current = null;
+    const newStats = statsFor(teenId, attendanceMap);
+    const newGame = getGamification(newStats);
+    const newBadges = newGame.badges.filter((b) => {
+      return b.unlocked && (b.meta.id === "first_attendance" && oldPresentStreak === 0) || (b.meta.id === "bronze" && newStats.total >= 4) || (b.meta.id === "silver" && newStats.total >= 12) || (b.meta.id === "gold" && newStats.total >= 24) || (b.meta.id === "perfect_month" && newStats.presentStreak >= 4 && oldPresentStreak < 4);
+    });
+    const newTier = streakTier(newStats.presentStreak);
+    const oldTier = streakTier(oldPresentStreak);
+    if (newBadges.length > 0 || (newTier && newTier.label !== oldTier?.label)) {
+      setCelebration({ name, streakTier: newTier, newBadges });
+    }
+  }, [attendanceMap]);
 
   const handleNewDate = () => {
     setShowNewDate(false);
@@ -208,6 +238,15 @@ export default function Asistencia({
             </button>
           </form>
         </Modal>
+      )}
+
+      {celebration && (
+        <CelebrationToast
+          name={celebration.name}
+          streakTier={celebration.streakTier}
+          newBadges={celebration.newBadges}
+          onDone={() => setCelebration(null)}
+        />
       )}
     </div>
   );

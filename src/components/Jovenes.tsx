@@ -3,7 +3,7 @@ import { useMutation } from "convex/react";
 import { api } from "../../convex/_generated/api";
 import type { Doc } from "../../convex/_generated/dataModel";
 import type { AttendanceMap } from "../lib/types";
-import { statsFor, alertLevel, ageFromDOB, daysToNextBirthday, esc } from "../lib/utils";
+import { statsFor, alertLevel, ageFromDOB, daysToNextBirthday, esc, getGamification } from "../lib/utils";
 import { Avatar } from "./Layout";
 import TeenForm from "./TeenForm";
 import Modal from "./Modal";
@@ -171,6 +171,7 @@ export default function Jovenes({
             const alert = alertLevel(s.consecutiveAbsences);
             const age = ageFromDOB(t.nacimiento);
             const rc = ringColor(alert);
+            const game = getGamification(s);
             return (
               <div
                 key={t._id}
@@ -195,11 +196,21 @@ export default function Jovenes({
                     )}
                   </div>
                   <div className="flex-1 min-w-0">
-                    <p className="text-sm font-semibold truncate">
+                    <p className="text-sm font-semibold truncate flex items-center gap-1.5">
                       {esc(t.nombre)} {esc(t.apellido)}
+                      {game.streakTier && (
+                        <span className="text-sm shrink-0" title={`Racha ${game.streakTier.label}: ${s.presentStreak} semanas`}>
+                          {game.streakTier.icon}
+                        </span>
+                      )}
                     </p>
-                    <p className="text-xs text-ink/40">
+                    <p className="text-xs text-ink/40 flex items-center gap-2">
                       {age !== null ? age + " años" : "—"}
+                      {s.total > 0 && (
+                        <span className="text-[10px] font-semibold text-ink/30 bg-ink/5 rounded-full px-1.5 py-0.5">
+                          Niv.{game.level.level}
+                        </span>
+                      )}
                     </p>
                     <div className="flex items-center gap-2 mt-2">
                       <div className="flex-1 h-1.5 bg-ink/5 rounded-full overflow-hidden">

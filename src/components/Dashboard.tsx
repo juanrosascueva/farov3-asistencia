@@ -7,6 +7,7 @@ import {
   statsFor,
   alertLevel,
   esc,
+  streakTier,
 } from "../lib/utils";
 import { Avatar } from "./Layout";
 import { getTemplates } from "../lib/templates";
@@ -158,8 +159,8 @@ export default function Dashboard({
                     </p>
                     <p className="text-xs text-ink/45">{s.s.pct}% de asistencia</p>
                   </div>
-                  <span className="chip text-xs font-semibold text-amber-600">
-                    <FlameIcon />
+                  <span className="chip text-xs font-semibold text-amber-600 flex items-center gap-1">
+                    {streakTier(s.s.presentStreak)?.icon ?? <FlameIcon />}
                     {s.s.presentStreak}
                   </span>
                 </div>

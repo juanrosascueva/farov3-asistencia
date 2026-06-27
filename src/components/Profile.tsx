@@ -9,10 +9,13 @@ import {
   ageFromDOB,
   fmtDate,
   esc,
+  getGamification,
 } from "../lib/utils";
 import { getTemplates } from "../lib/templates";
 import WhatsAppModal from "./WhatsAppModal";
 import JournalTimeline from "./JournalTimeline";
+import BadgeGrid from "./BadgeGrid";
+import XpBar from "./XpBar";
 import { Avatar } from "./Layout";
 import TeenForm from "./TeenForm";
 import Modal from "./Modal";
@@ -39,6 +42,7 @@ export default function Profile({
   const alert = alertLevel(s.consecutiveAbsences);
   const age = ageFromDOB(teen.nacimiento);
   const history = [...s.history].reverse().slice(0, 12);
+  const game = getGamification(s);
 
   const handleDelete = async () => {
     await deleteTeen({ id: teen._id });
@@ -173,7 +177,12 @@ export default function Profile({
 
       <div className="grid grid-cols-3 gap-3">
         <StatCardInline label="Asistencia" value={s.pct + "%"} icon="check" color="teal" />
-        <StatCardInline label="Racha actual" value={s.presentStreak} icon="flame" color="amber" />
+        <StatCardInline
+          label="Racha actual"
+          value={s.presentStreak ? `${game.streakTier?.icon ?? ""}${s.presentStreak}` : "0"}
+          icon="flame"
+          color="amber"
+        />
         <StatCardInline label="Total registrado" value={s.total} icon="users" color="ink" />
       </div>
 
@@ -195,6 +204,8 @@ export default function Profile({
         )}
       </div>
 
+      <XpBar level={game.level} />
+      <BadgeGrid badges={game.badges} />
       <JournalTimeline teenId={teen._id} />
 
       <div className="bg-white rounded-card shadow-soft p-5">
