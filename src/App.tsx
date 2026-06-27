@@ -8,6 +8,7 @@ import Asistencia from "./components/Asistencia";
 import Jovenes from "./components/Jovenes";
 import Profile from "./components/Profile";
 import Ajustes from "./components/Ajustes";
+import ReportsPanel from "./components/ReportsPanel";
 
 export default function App() {
   const [currentRoute, setCurrentRoute] = useState("dashboard");
@@ -77,6 +78,8 @@ export default function App() {
             onOpenProfile={(id) => navigate(currentRoute, id)}
           />
         );
+      case "reportes":
+        return <ReportsPanel teens={teens} attendanceMap={attendanceMap} />;
       case "ajustes":
         return <Ajustes teens={teens} attendanceMap={attendanceMap} />;
       default:
