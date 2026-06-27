@@ -33,7 +33,7 @@ export default function Layout({
   const [chatOpen, setChatOpen] = useState(false);
   return (
     <div className="max-w-7xl mx-auto lg:flex lg:gap-8 lg:px-6 lg:pt-6">
-      <aside className="hidden lg:flex lg:flex-col w-72 shrink-0 sticky top-6 self-start">
+      <aside className="hidden lg:flex lg:flex-col w-72 shrink-0 sticky top-6 self-start z-20">
         <div className="rounded-[28px] border border-amber-100/70 bg-card/90 shadow-soft backdrop-blur-sm p-4 mb-5 dark:border-amber-900/30 dark:bg-card/95">
           <div className="flex items-start gap-3">
             <LogoIcon />
