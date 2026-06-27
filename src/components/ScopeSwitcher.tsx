@@ -1,8 +1,13 @@
 import { useState, useRef, useEffect } from "react";
 import { useQuery } from "convex/react";
 import { api } from "../../convex/_generated/api";
+import type { Doc } from "../../convex/_generated/dataModel";
 import { useAuth } from "../hooks/useAuth";
 import { useScope } from "../hooks/useScope";
+
+type CampusDoc = Doc<"campus">;
+type MinistryDoc = Doc<"ministry">;
+type GroupDoc = Doc<"group">;
 
 export default function ScopeSwitcher() {
   const { token } = useAuth();
@@ -30,7 +35,7 @@ export default function ScopeSwitcher() {
     return () => document.removeEventListener("mousedown", handler);
   }, [open]);
 
-  const handleSelectCampus = (c: typeof campuses extends (infer U)[] ? U : never) => {
+  const handleSelectCampus = (c: CampusDoc) => {
     setScope({
       campusId: c._id,
       campusName: c.name,
@@ -42,7 +47,7 @@ export default function ScopeSwitcher() {
     setStep("ministry");
   };
 
-  const handleSelectMinistry = (m: typeof ministries extends (infer U)[] ? U : never) => {
+  const handleSelectMinistry = (m: MinistryDoc) => {
     setScope({
       campusId: scope.campusId,
       campusName: scope.campusName,
@@ -54,7 +59,7 @@ export default function ScopeSwitcher() {
     setStep("group");
   };
 
-  const handleSelectGroup = (g: typeof groups extends (infer U)[] ? U : never) => {
+  const handleSelectGroup = (g: GroupDoc) => {
     setScope({
       campusId: scope.campusId,
       campusName: scope.campusName,
@@ -132,7 +137,7 @@ export default function ScopeSwitcher() {
                   )}
                 </button>
               )}
-              {(campuses || []).map((c: any) => (
+              {(campuses || []).map((c) => (
                 <button
                   key={c._id}
                   onClick={() => handleSelectCampus(c)}
@@ -154,7 +159,7 @@ export default function ScopeSwitcher() {
 
           {step === "ministry" && (
             <div>
-              {(ministries || []).map((m: any) => (
+              {(ministries || []).map((m) => (
                 <button
                   key={m._id}
                   onClick={() => handleSelectMinistry(m)}
@@ -179,7 +184,7 @@ export default function ScopeSwitcher() {
 
           {step === "group" && (
             <div>
-              {(groups || []).map((g: any) => (
+              {(groups || []).map((g) => (
                 <button
                   key={g._id}
                   onClick={() => handleSelectGroup(g)}
