@@ -53,7 +53,7 @@ export default function JournalTimeline({ teenId }: JournalProps) {
   };
 
   return (
-    <div className="bg-white rounded-card shadow-soft p-5">
+    <div className="bg-card rounded-card shadow-soft p-5">
       <div className="flex items-center justify-between mb-4">
         <h2 className="font-display font-semibold text-base">
           Bitácora de acompañamiento
@@ -92,7 +92,7 @@ export default function JournalTimeline({ teenId }: JournalProps) {
                 value={entryDate}
                 onChange={(e) => setEntryDate(e.target.value)}
                 required
-                className="w-full bg-white border border-ink/10 rounded-xl px-3.5 py-2 text-sm"
+                className="w-full bg-card border border-ink/10 rounded-xl px-3.5 py-2 text-sm"
               />
             </div>
             <div>
@@ -102,7 +102,7 @@ export default function JournalTimeline({ teenId }: JournalProps) {
               <select
                 value={category}
                 onChange={(e) => setCategory(e.target.value)}
-                className="w-full bg-white border border-ink/10 rounded-xl px-3.5 py-2 text-sm"
+                className="w-full bg-card border border-ink/10 rounded-xl px-3.5 py-2 text-sm"
               >
                 <option value="call">📞 Llamada</option>
                 <option value="visit">🏠 Visita</option>
@@ -125,7 +125,7 @@ export default function JournalTimeline({ teenId }: JournalProps) {
                   onChange={(e) => setLeaderName(e.target.value)}
                   placeholder="Nombre del líder"
                   required
-                  className="flex-1 bg-white border border-ink/10 rounded-xl px-3.5 py-2 text-sm"
+                  className="flex-1 bg-card border border-ink/10 rounded-xl px-3.5 py-2 text-sm"
                 />
                 <button
                   type="button"
@@ -146,7 +146,7 @@ export default function JournalTimeline({ teenId }: JournalProps) {
                     setLeaderName(e.target.value);
                   }
                 }}
-                className="w-full bg-white border border-ink/10 rounded-xl px-3.5 py-2 text-sm"
+                className="w-full bg-card border border-ink/10 rounded-xl px-3.5 py-2 text-sm"
               >
                 <option value="">Seleccionar líder...</option>
                 {leaders.map((l) => (
@@ -168,7 +168,7 @@ export default function JournalTimeline({ teenId }: JournalProps) {
               rows={3}
               placeholder="Describe la llamada, visita o conversación..."
               required
-              className="w-full bg-white border border-ink/10 rounded-xl px-3.5 py-2.5 text-sm resize-none"
+              className="w-full bg-card border border-ink/10 rounded-xl px-3.5 py-2.5 text-sm resize-none"
             />
           </div>
           <label className="flex items-center gap-2.5 cursor-pointer">

@@ -63,7 +63,7 @@ export default function GamificationStats({ teens, attendanceMap }: Props) {
       </div>
 
       <div className="grid md:grid-cols-2 gap-5">
-        <div className="bg-white rounded-card shadow-soft p-5">
+        <div className="bg-card rounded-card shadow-soft p-5">
           <h2 className="font-display font-semibold text-base mb-4">
             Distribución de niveles
           </h2>
@@ -83,7 +83,7 @@ export default function GamificationStats({ teens, attendanceMap }: Props) {
           )}
         </div>
 
-        <div className="bg-white rounded-card shadow-soft p-5">
+        <div className="bg-card rounded-card shadow-soft p-5">
           <h2 className="font-display font-semibold text-base mb-4">
             Insignias más desbloqueadas
           </h2>
@@ -124,7 +124,7 @@ function KpiCard({ label, value, sub, color }: { label: string; value: string | 
     coral: "text-coral-600 bg-coral-50",
   };
   return (
-    <div className="bg-white rounded-card shadow-soft p-4">
+    <div className="bg-card rounded-card shadow-soft p-4">
       <p className={`text-2xl font-bold font-display ${colors[color]?.split(" ")[0] || ""}`}>
         {value}
       </p>

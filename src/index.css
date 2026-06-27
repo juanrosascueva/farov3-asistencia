@@ -2,7 +2,19 @@
 @tailwind components;
 @tailwind utilities;
 
+:root {
+  --clr-ink: 28 37 65;
+  --clr-paper: 250 248 244;
+  --clr-card: 255 255 255;
+}
+.dark {
+  --clr-ink: 216 216 230;
+  --clr-paper: 15 15 26;
+  --clr-card: 26 26 46;
+}
+
 html, body { background: #FAF8F4; }
+.dark, .dark body { background: #0f0f1a; }
 
 .beam {
   background: conic-gradient(from -90deg, var(--c1) calc(var(--p)*1%), #ECE7DC 0);
@@ -24,3 +36,4 @@ input:focus, textarea:focus, select:focus, button:focus-visible {
 
 ::-webkit-scrollbar { width: 6px; height: 6px; }
 ::-webkit-scrollbar-thumb { background: #D9D2C5; border-radius: 8px; }
+.dark ::-webkit-scrollbar-thumb { background: #3a3a52; }

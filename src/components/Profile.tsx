@@ -95,7 +95,7 @@ export default function Profile({
         Volver
       </button>
 
-      <div className="bg-white rounded-card shadow-soft p-5">
+      <div className="bg-card rounded-card shadow-soft p-5">
         <div className="flex items-start gap-4">
           <Avatar teen={teen} size="lg" />
           <div className="flex-1 min-w-0">
@@ -180,7 +180,7 @@ export default function Profile({
             {(teen.telefonoPadre || teen.telefono) && (
               <button
                 onClick={() => setShowWhatsApp(true)}
-                className="shrink-0 w-9 h-9 rounded-full bg-white/70 flex items-center justify-center hover:bg-white transition"
+                className="shrink-0 w-9 h-9 rounded-full bg-white/70 flex items-center justify-center hover:bg-white/90 transition"
               >
                 <WhatsAppIcon />
               </button>
@@ -200,7 +200,7 @@ export default function Profile({
         <StatCardInline label="Total registrado" value={s.total} icon="users" color="ink" />
       </div>
 
-      <div className="bg-white rounded-card shadow-soft p-5 space-y-4">
+      <div className="bg-card rounded-card shadow-soft p-5 space-y-4">
         <h2 className="font-display font-semibold text-base">
           Información de contacto
         </h2>
@@ -233,7 +233,7 @@ export default function Profile({
       <BadgeGrid badges={game.badges} />
       <JournalTimeline teenId={teen._id} />
 
-      <div className="bg-white rounded-card shadow-soft p-5">
+      <div className="bg-card rounded-card shadow-soft p-5">
         <h2 className="font-display font-semibold text-base mb-3">
           Historial de asistencia
         </h2>
@@ -381,7 +381,7 @@ function StatCardInline({
     users: `<circle cx="9" cy="8" r="3.2"/><path d="M3 20c0-3.3 2.7-6 6-6s6 2.7 6 6"/><circle cx="17.5" cy="9.5" r="2.4"/><path d="M15.5 14.2c2.6.3 4.6 2.6 4.6 5.3"/>`,
   };
   return (
-    <div className="bg-white rounded-card shadow-soft p-4">
+    <div className="bg-card rounded-card shadow-soft p-4">
       <div
         className={`w-8 h-8 rounded-lg flex items-center justify-center mb-3 ${colorMap[color] || ""}`}
       >

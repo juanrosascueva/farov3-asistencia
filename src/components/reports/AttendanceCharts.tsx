@@ -61,7 +61,7 @@ export default function AttendanceCharts({ teens, filteredDates, attendanceMap }
         <KpiCard label="Justificaciones" value={`${excusedPct}%`} sub={`${totalExcused} de ${totalMarks} faltas`} color="amber" />
       </div>
 
-      <div className="bg-white rounded-card shadow-soft p-5">
+      <div className="bg-card rounded-card shadow-soft p-5">
         <h2 className="font-display font-semibold text-base mb-4">Tendencia de asistencia</h2>
         {trendData.length === 0 ? (
           <p className="text-sm text-ink/40 text-center py-8">Sin datos en este período</p>
@@ -99,7 +99,7 @@ function KpiCard({ label, value, sub, color }: { label: string; value: string | 
     amber: "text-amber-600 bg-amber-50",
   };
   return (
-    <div className="bg-white rounded-card shadow-soft p-4">
+    <div className="bg-card rounded-card shadow-soft p-4">
       <p className={`text-2xl font-bold font-display ${colors[color]?.split(" ")[0] || ""}`}>
         {value}
       </p>

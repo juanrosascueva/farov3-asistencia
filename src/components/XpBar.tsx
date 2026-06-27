@@ -6,7 +6,7 @@ interface XpBarProps {
 
 export default function XpBar({ level }: XpBarProps) {
   return (
-    <div className="bg-white rounded-card shadow-soft p-5">
+    <div className="bg-card rounded-card shadow-soft p-5">
       <div className="flex items-center justify-between mb-2">
         <div className="flex items-center gap-2">
           <span className="w-7 h-7 rounded-lg bg-ink flex items-center justify-center text-white text-xs font-bold">

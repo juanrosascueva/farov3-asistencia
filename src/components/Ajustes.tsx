@@ -11,9 +11,11 @@ import Modal from "./Modal";
 interface AjustesProps {
   teens: Doc<"teens">[];
   attendanceMap: AttendanceMap;
+  dark?: boolean;
+  setDark?: (v: boolean) => void;
 }
 
-export default function Ajustes({ teens, attendanceMap }: AjustesProps) {
+export default function Ajustes({ teens, attendanceMap, dark, setDark }: AjustesProps) {
   const importRef = useRef<HTMLInputElement>(null);
   const [showReset, setShowReset] = useState(false);
 
@@ -93,7 +95,7 @@ export default function Ajustes({ teens, attendanceMap }: AjustesProps) {
         <h1 className="font-display text-2xl font-bold mt-0.5">Ajustes</h1>
       </div>
 
-      <div className="bg-white rounded-card shadow-soft divide-y divide-ink/5">
+      <div className="bg-card rounded-card shadow-soft divide-y divide-ink/5">
         <button
           onClick={handleExportJson}
           className="w-full flex items-center gap-3 p-4 text-left"
@@ -123,17 +125,20 @@ export default function Ajustes({ teens, attendanceMap }: AjustesProps) {
         </label>
       </div>
 
-      <div className="bg-white rounded-card shadow-soft p-4 flex items-center justify-between">
+      <div className="bg-card rounded-card shadow-soft p-4 flex items-center justify-between">
         <div>
           <p className="text-sm font-semibold">Modo oscuro</p>
-          <p className="text-xs text-ink/40">Próximamente</p>
+          <p className="text-xs text-ink/40">Activa el tema oscuro para toda la aplicación</p>
         </div>
-        <div className="w-11 h-6 rounded-full bg-ink/10 relative opacity-50">
-          <div className="w-5 h-5 bg-white rounded-full absolute top-0.5 left-0.5 shadow" />
-        </div>
+        <button
+          onClick={() => setDark?.(!dark)}
+          className={`w-11 h-6 rounded-full relative transition-colors ${dark ? "bg-teal-600" : "bg-ink/20"}`}
+        >
+          <div className={`w-5 h-5 bg-card rounded-full absolute top-0.5 shadow transition-transform ${dark ? "left-[22px]" : "left-0.5"}`} />
+        </button>
       </div>
 
-      <div className="bg-white rounded-card shadow-soft p-5 space-y-4">
+      <div className="bg-card rounded-card shadow-soft p-5 space-y-4">
         <div>
           <p className="text-xs font-semibold text-ink/40 uppercase tracking-wide">
             Equipo de Líderes
@@ -150,7 +155,7 @@ export default function Ajustes({ teens, attendanceMap }: AjustesProps) {
           <select
             value={currentLeaderId || ""}
             onChange={(e) => setCurrentLeader(e.target.value || null)}
-            className="w-full bg-white border border-ink/10 rounded-xl px-3.5 py-2.5 text-sm"
+            className="w-full bg-card border border-ink/10 rounded-xl px-3.5 py-2.5 text-sm"
           >
             <option value="">— Sin sesión activa —</option>
             {leaders.map((l) => (
@@ -220,7 +225,7 @@ export default function Ajustes({ teens, attendanceMap }: AjustesProps) {
                 value={newName}
                 onChange={(e) => setNewName(e.target.value)}
                 placeholder="Ej: Carlos Mendoza"
-                className="w-full bg-white border border-ink/10 rounded-xl px-3.5 py-2.5 text-sm"
+                className="w-full bg-card border border-ink/10 rounded-xl px-3.5 py-2.5 text-sm"
               />
             </div>
             <div>
@@ -230,7 +235,7 @@ export default function Ajustes({ teens, attendanceMap }: AjustesProps) {
               <select
                 value={newRole}
                 onChange={(e) => setNewRole(e.target.value as Leader["role"])}
-                className="w-full bg-white border border-ink/10 rounded-xl px-3.5 py-2.5 text-sm"
+                className="w-full bg-card border border-ink/10 rounded-xl px-3.5 py-2.5 text-sm"
               >
                 <option value="pastor">Pastor</option>
                 <option value="teacher">Maestro</option>
@@ -272,7 +277,7 @@ export default function Ajustes({ teens, attendanceMap }: AjustesProps) {
       </div>
 
       {/* ─── WhatsApp Templates ─── */}
-      <div className="bg-white rounded-card shadow-soft p-5 space-y-4">
+      <div className="bg-card rounded-card shadow-soft p-5 space-y-4">
         <div>
           <p className="text-xs font-semibold text-ink/40 uppercase tracking-wide">
             Plantillas de WhatsApp
@@ -293,7 +298,7 @@ export default function Ajustes({ teens, attendanceMap }: AjustesProps) {
                   value={tplName}
                   onChange={(e) => setTplName(e.target.value)}
                   placeholder="Ej: Una falta (cálido)"
-                  className="w-full bg-white border border-ink/10 rounded-xl px-3.5 py-2 text-sm"
+                  className="w-full bg-card border border-ink/10 rounded-xl px-3.5 py-2 text-sm"
                 />
               </div>
               <div>
@@ -304,7 +309,7 @@ export default function Ajustes({ teens, attendanceMap }: AjustesProps) {
                   onChange={(e) => setTplEmoji(e.target.value)}
                   placeholder="🟡"
                   maxLength={3}
-                  className="w-full bg-white border border-ink/10 rounded-xl px-3.5 py-2 text-sm"
+                  className="w-full bg-card border border-ink/10 rounded-xl px-3.5 py-2 text-sm"
                 />
               </div>
             </div>
@@ -314,7 +319,7 @@ export default function Ajustes({ teens, attendanceMap }: AjustesProps) {
                 <select
                   value={tplCategory}
                   onChange={(e) => setTplCategory(e.target.value as MessageTemplate["category"])}
-                  className="w-full bg-white border border-ink/10 rounded-xl px-3.5 py-2 text-sm"
+                  className="w-full bg-card border border-ink/10 rounded-xl px-3.5 py-2 text-sm"
                 >
                   <option value="absence">Ausencias</option>
                   <option value="streak">Racha / Incentivo</option>
@@ -327,7 +332,7 @@ export default function Ajustes({ teens, attendanceMap }: AjustesProps) {
                 <select
                   value={tplRecipient}
                   onChange={(e) => setTplRecipient(e.target.value as MessageTemplate["recipient"])}
-                  className="w-full bg-white border border-ink/10 rounded-xl px-3.5 py-2 text-sm"
+                  className="w-full bg-card border border-ink/10 rounded-xl px-3.5 py-2 text-sm"
                 >
                   <option value="teen">Adolescente</option>
                   <option value="parent">Tutor / Encargado</option>
@@ -342,7 +347,7 @@ export default function Ajustes({ teens, attendanceMap }: AjustesProps) {
                 value={tplText}
                 onChange={(e) => setTplText(e.target.value)}
                 rows={4}
-                className="w-full bg-white border border-ink/10 rounded-xl px-3.5 py-2.5 text-sm resize-none"
+                className="w-full bg-card border border-ink/10 rounded-xl px-3.5 py-2.5 text-sm resize-none"
               />
               <div className="flex flex-wrap gap-1.5 mt-1.5">
                 {["{nombre}", "{apellido}", "{racha}", "{faltas}", "{telefono_padre}"].map((v) => (

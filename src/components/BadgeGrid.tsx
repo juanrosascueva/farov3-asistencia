@@ -9,7 +9,7 @@ export default function BadgeGrid({ badges }: BadgeGridProps) {
   const locked = badges.filter((b) => !b.unlocked);
 
   return (
-    <div className="bg-white rounded-card shadow-soft p-5">
+    <div className="bg-card rounded-card shadow-soft p-5">
       <h2 className="font-display font-semibold text-base mb-4">
         Insignias {unlocked.length > 0 && <span className="text-ink/40 font-normal">· {unlocked.length}/{badges.length}</span>}
       </h2>

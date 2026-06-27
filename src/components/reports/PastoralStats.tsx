@@ -61,7 +61,7 @@ export default function PastoralStats({ teens, allJournal, followUps }: Props) {
         />
       </div>
 
-      <div className="bg-white rounded-card shadow-soft p-5">
+      <div className="bg-card rounded-card shadow-soft p-5">
         <h2 className="font-display font-semibold text-base mb-4">
           Distribución por canal de contacto
         </h2>
@@ -113,7 +113,7 @@ function KpiCard({ label, value, sub, color }: { label: string; value: string | 
     coral: "text-coral-600 bg-coral-50",
   };
   return (
-    <div className="bg-white rounded-card shadow-soft p-4">
+    <div className="bg-card rounded-card shadow-soft p-4">
       <p className={`text-2xl font-bold font-display ${colors[color]?.split(" ")[0] || ""}`}>
         {value}
       </p>

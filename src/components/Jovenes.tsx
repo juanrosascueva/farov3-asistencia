@@ -101,7 +101,7 @@ export default function Jovenes({
           value={query}
           onChange={(e) => setQuery(e.target.value)}
           placeholder="Buscar por nombre..."
-          className="w-full bg-white border border-ink/10 rounded-xl pl-10 pr-4 py-2.5 text-sm"
+          className="w-full bg-card border border-ink/10 rounded-xl pl-10 pr-4 py-2.5 text-sm"
         />
       </div>
 
@@ -176,7 +176,7 @@ export default function Jovenes({
               <div
                 key={t._id}
                 onClick={() => onOpenProfile(t._id)}
-                className="bg-white rounded-card shadow-soft p-4 cursor-pointer hover:shadow-md transition"
+                className="bg-card rounded-card shadow-soft p-4 cursor-pointer hover:shadow-md transition"
               >
                 <div className="flex items-start gap-3">
                   <div className="relative shrink-0">
@@ -184,7 +184,7 @@ export default function Jovenes({
                       className="rounded-full p-[2px]"
                       style={{ background: rc }}
                     >
-                      <div className="bg-white rounded-full p-[2px]">
+                      <div className="bg-card rounded-full p-[2px]">
                         <Avatar teen={t} />
                       </div>
                     </div>

@@ -36,7 +36,7 @@ export default function WhatsAppModal({
               className={`flex-1 text-xs font-semibold rounded-xl py-2 border transition ${
                 target === "teen"
                   ? "bg-teal-600 text-white border-teal-600"
-                  : "bg-white text-ink/60 border-ink/10"
+                  : "bg-card text-ink/60 border-ink/10"
               }`}
             >
               {telefono}
@@ -49,7 +49,7 @@ export default function WhatsAppModal({
               className={`flex-1 text-xs font-semibold rounded-xl py-2 border transition ${
                 target === "parent"
                   ? "bg-teal-600 text-white border-teal-600"
-                  : "bg-white text-ink/60 border-ink/10"
+                  : "bg-card text-ink/60 border-ink/10"
               }`}
             >
               {telefonoPadre}
@@ -68,7 +68,7 @@ export default function WhatsAppModal({
               className={`w-full text-left p-3 rounded-xl border text-sm transition ${
                 selected.id === t.id
                   ? "bg-teal-50 border-teal-200 text-teal-800"
-                  : "bg-white border-ink/10 text-ink/70 hover:border-ink/20"
+                  : "bg-card border-ink/10 text-ink/70 hover:border-ink/20"
               }`}
             >
               <span className="font-semibold">

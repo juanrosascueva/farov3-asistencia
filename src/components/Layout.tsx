@@ -15,12 +15,16 @@ interface LayoutProps {
   currentRoute: string;
   onNavigate: (route: string) => void;
   children: React.ReactNode;
+  dark?: boolean;
+  setDark?: (v: boolean) => void;
 }
 
 export default function Layout({
   currentRoute,
   onNavigate,
   children,
+  dark,
+  setDark,
 }: LayoutProps) {
   return (
     <div className="max-w-7xl mx-auto lg:flex lg:gap-6 lg:px-6 lg:pt-6">
@@ -55,6 +59,19 @@ export default function Layout({
             </button>
           ))}
         </nav>
+        {setDark && (
+          <button
+            onClick={() => setDark(!dark)}
+            className="flex items-center gap-2 px-3 py-2.5 text-sm text-ink/40 hover:text-ink transition mt-8"
+          >
+            {dark ? (
+              <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="5"/><path d="M12 1v2M12 21v2M4.2 4.2l1.4 1.4M18.4 18.4l1.4 1.4M1 12h2M21 12h2M4.2 19.8l1.4-1.4M18.4 5.6l1.4-1.4"/></svg>
+            ) : (
+              <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><path d="M21 12.8A9 9 0 1111.2 3a7 7 0 109.8 9.8z"/></svg>
+            )}
+            <span className="text-xs">{dark ? "Modo claro" : "Modo oscuro"}</span>
+          </button>
+        )}
       </aside>
 
       <main className="flex-1 px-4 sm:px-6 lg:px-0 pt-5 lg:pt-0">
@@ -65,12 +82,26 @@ export default function Layout({
             </div>
             <p className="font-display font-bold text-lg">Congregación Cristo Vive</p>
           </div>
-          <LeaderBadge />
+          <div className="flex items-center gap-1">
+            {setDark && (
+              <button
+                onClick={() => setDark(!dark)}
+                className="w-8 h-8 rounded-lg flex items-center justify-center text-ink/40 hover:text-ink transition"
+              >
+                {dark ? (
+                  <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="5"/><path d="M12 1v2M12 21v2M4.2 4.2l1.4 1.4M18.4 18.4l1.4 1.4M1 12h2M21 12h2M4.2 19.8l1.4-1.4M18.4 5.6l1.4-1.4"/></svg>
+                ) : (
+                  <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><path d="M21 12.8A9 9 0 1111.2 3a7 7 0 109.8 9.8z"/></svg>
+                )}
+              </button>
+            )}
+            <LeaderBadge />
+          </div>
         </header>
         <div className="fade-in">{children}</div>
       </main>
 
-      <nav className="fixed bottom-0 left-0 right-0 bg-white border-t border-ink/10 flex lg:hidden z-40">
+      <nav className="fixed bottom-0 left-0 right-0 bg-card border-t border-ink/10 flex lg:hidden z-40">
         {ROUTES.map((r) => (
           <button
             key={r.id}

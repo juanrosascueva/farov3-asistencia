@@ -121,7 +121,7 @@ export default function Asistencia({
             className={`shrink-0 px-3.5 py-2 rounded-full text-xs font-semibold border whitespace-nowrap ${
               d === selectedDate
                 ? "bg-teal-600 text-white border-teal-600"
-                : "bg-white text-ink/60 border-ink/10"
+                : "bg-card text-ink/60 border-ink/10"
             }`}
           >
             {fmtDateShort(d)}
@@ -156,7 +156,7 @@ export default function Asistencia({
         </div>
       ) : (
         <>
-          <div className="bg-white rounded-card shadow-soft divide-y divide-ink/5 overflow-hidden">
+          <div className="bg-card rounded-card shadow-soft divide-y divide-ink/5 overflow-hidden">
             {teens.map((t) => {
               const st = dayMap[t._id] || "sin marcar";
               return (
@@ -227,7 +227,7 @@ export default function Asistencia({
                 value={newDate}
                 onChange={(e) => setNewDate(e.target.value)}
                 required
-                className="w-full bg-white border border-ink/10 rounded-xl px-3.5 py-2.5 text-sm"
+                className="w-full bg-card border border-ink/10 rounded-xl px-3.5 py-2.5 text-sm"
               />
             </div>
             <button
@@ -272,7 +272,7 @@ function AttBtn({
       className={`w-8 h-8 rounded-lg border text-sm font-bold flex items-center justify-center transition ${
         isActive
           ? activeClass
-          : "bg-white border-ink/10 text-ink/30"
+          : "bg-card border-ink/10 text-ink/30"
       }`}
     >
       {label}

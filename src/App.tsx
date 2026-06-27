@@ -1,4 +1,4 @@
-import { useState, useCallback } from "react";
+import { useState, useCallback, useEffect } from "react";
 import { useQuery } from "convex/react";
 import { api } from "../convex/_generated/api";
 import { useAttendanceMap } from "./hooks/useAttendanceMap";
@@ -11,9 +11,17 @@ import Profile from "./components/Profile";
 import Ajustes from "./components/Ajustes";
 import ReportsPanel from "./components/ReportsPanel";
 
+const DARK_KEY = "cristovive_dark_mode";
+
 export default function App() {
   const [currentRoute, setCurrentRoute] = useState("dashboard");
   const [currentProfileId, setCurrentProfileId] = useState<string | null>(null);
+  const [dark, setDark] = useState(() => localStorage.getItem(DARK_KEY) === "true");
+
+  useEffect(() => {
+    document.documentElement.classList.toggle("dark", dark);
+    localStorage.setItem(DARK_KEY, String(dark));
+  }, [dark]);
 
   const teens = useQuery(api.teens.list);
   const attendanceMap = useAttendanceMap();
@@ -83,7 +91,7 @@ export default function App() {
       case "reportes":
         return <ReportsPanel teens={teens} attendanceMap={attendanceMap} />;
       case "ajustes":
-        return <Ajustes teens={teens} attendanceMap={attendanceMap} />;
+        return <Ajustes teens={teens} attendanceMap={attendanceMap} dark={dark} setDark={setDark} />;
       default:
         return null;
     }
@@ -91,7 +99,7 @@ export default function App() {
 
   return (
     <LeaderContext.Provider value={leaderState}>
-      <Layout currentRoute={currentRoute} onNavigate={navigate}>
+      <Layout currentRoute={currentRoute} onNavigate={navigate} dark={dark} setDark={setDark}>
         {renderView()}
       </Layout>
     </LeaderContext.Provider>

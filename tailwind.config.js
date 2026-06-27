@@ -1,5 +1,6 @@
 /** @type {import('tailwindcss').Config} */
 export default {
+  darkMode: 'class',
   content: ['./index.html', './src/**/*.{js,ts,jsx,tsx}'],
   theme: {
     extend: {
@@ -8,8 +9,9 @@ export default {
         body: ['Inter', 'sans-serif'],
       },
       colors: {
-        ink: '#1C2541',
-        paper: '#FAF8F4',
+        ink: 'rgb(var(--clr-ink) / <alpha-value>)',
+        paper: 'rgb(var(--clr-paper) / <alpha-value>)',
+        card: 'rgb(var(--clr-card) / <alpha-value>)',
         teal: {
           50: '#E6F3F5',
           100: '#CCE7EA',

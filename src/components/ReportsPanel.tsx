@@ -60,7 +60,7 @@ export default function ReportsPanel({ teens, attendanceMap }: ReportsPanelProps
               key={t.id}
               onClick={() => setTab(t.id)}
               className={`text-xs font-semibold px-3.5 py-2 rounded-xl transition ${
-                tab === t.id ? "bg-white shadow-sm text-ink" : "text-ink/50 hover:text-ink"
+                tab === t.id ? "bg-card shadow-sm text-ink" : "text-ink/50 hover:text-ink"
               }`}
             >
               {t.icon} {t.label}
@@ -77,7 +77,7 @@ export default function ReportsPanel({ teens, attendanceMap }: ReportsPanelProps
               key={r.id}
               onClick={() => setRange(r.id)}
               className={`text-xs font-semibold px-3 py-1.5 rounded-xl transition ${
-                range === r.id ? "bg-white shadow-sm text-ink" : "text-ink/50 hover:text-ink"
+                range === r.id ? "bg-card shadow-sm text-ink" : "text-ink/50 hover:text-ink"
               }`}
             >
               {r.label}
