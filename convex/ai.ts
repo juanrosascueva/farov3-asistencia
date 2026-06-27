@@ -103,7 +103,7 @@ export const storeAnalysis = internalMutation({
     modelUsed: v.string(),
   },
   handler: async (ctx, args) => {
-    await ctx.db.insert("journalAnalysis", {
+    return await ctx.db.insert("journalAnalysis", {
       ...args,
       analyzedAt: new Date().toISOString(),
     });
@@ -139,12 +139,20 @@ export const analyzeJournalEntry = action({
       return { success: false, error: "All models failed" };
     }
 
-    await ctx.runMutation(internal.ai.storeAnalysis, {
+    const analysisId = await ctx.runMutation(internal.ai.storeAnalysis, {
       entryId: args.entryId,
       teenId: args.teenId,
       ...result,
       modelUsed,
     });
+
+    if (result.isCrisis) {
+      await ctx.runMutation(internal.crisis.createAlert, {
+        analysisId,
+        teenId: args.teenId,
+        summary: result.summary,
+      });
+    }
 
     return { success: true, ...result, modelUsed };
   },
@@ -541,6 +549,209 @@ export const getAllDropoutPredictions = query({
   },
 });
 
+export const getMinistryOverviewData = internalQuery({
+  handler: async (ctx) => {
+    const teens = await ctx.db.query("teens").collect();
+    const analyses = await ctx.db.query("journalAnalysis").order("desc").collect();
+    const attendance = await ctx.db.query("attendance").collect();
+    const journal = await ctx.db.query("journal").order("desc").collect();
+    const contacts = await ctx.db.query("contacts").collect();
+    const followUps = journal.filter((j) => j.followUp);
+
+    const teenSummaries = teens.map((t) => {
+      const teenAttendance = attendance.filter((a) => a.teenId === t._id);
+      const total = teenAttendance.length;
+      const present = teenAttendance.filter((a) => a.status === "present").length;
+      const pct = total ? Math.round((present / total) * 100) : 0;
+      const sorted = [...teenAttendance].sort((a, b) => b.date.localeCompare(a.date));
+      let consecAbsences = 0;
+      for (const r of sorted) { if (r.status === "absent") consecAbsences++; else break; }
+      const teenAnalyses = analyses.filter((a) => a.teenId === t._id);
+      const crisisCount = teenAnalyses.filter((a) => a.isCrisis).length;
+      const highRiskCount = teenAnalyses.filter((a) => a.riskLevel === "high").length;
+      const tags = [...new Set(teenAnalyses.flatMap((a) => a.vulnerabilityTags))];
+      const teenContacts = contacts.filter((c) => c.teenId === t._id);
+      const lastContacted = teenContacts.find((c) => c.status === "contacted");
+      const journalCount = journal.filter((j) => j.teenId === t._id).length;
+      return {
+        nombre: t.nombre,
+        apellido: t.apellido,
+        _id: t._id,
+        attendancePct: pct,
+        consecAbsences,
+        riskLevel: highRiskCount > 0 ? "high" : teenAnalyses.some((a) => a.riskLevel === "medium") ? "medium" : "low",
+        crisisCount,
+        tags,
+        hasFollowUp: followUps.some((f) => f.teenId === t._id),
+        lastContactedDate: lastContacted?.contactedAt || null,
+        journalCount,
+        totalAnalyses: teenAnalyses.length,
+      };
+    });
+
+    const tagFrequency: Record<string, number> = {};
+    for (const a of analyses) {
+      for (const tag of a.vulnerabilityTags || []) {
+        tagFrequency[tag] = (tagFrequency[tag] || 0) + 1;
+      }
+    }
+
+    return {
+      teens: teenSummaries,
+      totalTeens: teens.length,
+      totalAnalyses: analyses.length,
+      totalCrisisAlerts: analyses.filter((a) => a.isCrisis).length,
+      totalFollowUps: followUps.length,
+      overallAttendanceAvg: teenSummaries.length
+        ? Math.round(teenSummaries.reduce((s, t) => s + t.attendancePct, 0) / teenSummaries.length)
+        : 0,
+      tagFrequency,
+      highRiskCount: teenSummaries.filter((t) => t.riskLevel === "high").length,
+      pendingContactCount: contacts.filter((c) => c.status === "pending").length,
+    };
+  },
+});
+
+export const chatWithAI = action({
+  args: {
+    question: v.string(),
+    conversationHistory: v.optional(v.array(v.object({ role: v.string(), content: v.string() }))),
+  },
+  handler: async (ctx, args) => {
+    const apiKey = process.env.OPENROUTER_API_KEY;
+    if (!apiKey) return { success: false, error: "No API key configured" };
+
+    const data = await ctx.runQuery(internal.ai.getMinistryOverviewData);
+
+    const contextData = JSON.stringify({
+      ministerio: "Adolescentes Cristo Vive",
+      totalAdolescentes: data.totalTeens,
+      asistenciaPromedio: `${data.overallAttendanceAvg}%`,
+      alertasCrisis: data.totalCrisisAlerts,
+      seguimientosPendientes: data.totalFollowUps,
+      analisisIA: data.totalAnalyses,
+      altoRiesgo: data.highRiskCount,
+      contactosPendientes: data.pendingContactCount,
+      adolescentes: data.teens.map((t) => ({
+        nombre: t.nombre,
+        apellido: t.apellido,
+        asistencia: `${t.attendancePct}%`,
+        faltasConsecutivas: t.consecAbsences,
+        nivelRiesgo: t.riskLevel,
+        alertasCrisis: t.crisisCount,
+        vulnerabilidades: t.tags,
+        requiereSeguimiento: t.hasFollowUp,
+        ultimoContacto: t.lastContactedDate || "nunca",
+        bitacoras: t.journalCount,
+        analisisIA: t.totalAnalyses,
+      })),
+      frecuenciaTags: data.tagFrequency,
+    });
+
+    const systemPrompt = `Eres un asistente pastoral virtual para el ministerio de adolescentes "Cristo Vive". 
+Tienes acceso a datos reales del ministerio en formato JSON. Responde las preguntas del líder pastoral basándote ÚNICAMENTE en los datos proporcionados.
+SIEMPRE responde en español, con un tono pastoral y profesional.
+NO inventes datos que no estén en el JSON. Si no sabes algo, dilo honestamente.
+NO uses JSON en tu respuesta — responde en lenguaje natural.
+Puedes hacer cálculos simples con los datos (contar, sumar, promediar).
+Datos del ministerio:
+${contextData}`;
+
+    const messages = [
+      { role: "system", content: systemPrompt },
+      ...(args.conversationHistory || []).slice(-10),
+      { role: "user", content: args.question },
+    ];
+
+    for (const model of FREE_MODELS) {
+      const raw = await callModelRaw(apiKey, model, messages, 1000);
+      if (raw) return { success: true, answer: raw, modelUsed: model };
+    }
+    return { success: false, error: "All models failed" };
+  },
+});
+
+async function callModelRaw(apiKey: string, model: string, messages: { role: string; content: string }[], maxTokens: number): Promise<string | null> {
+  try {
+    const res = await fetch("https://openrouter.ai/api/v1/chat/completions", {
+      method: "POST",
+      headers: {
+        "Authorization": `Bearer ${apiKey}`,
+        "Content-Type": "application/json",
+        "HTTP-Referer": "https://farov3-asistencia.vercel.app",
+        "X-Title": "Cristo Vive - Asistente Pastoral",
+      },
+      body: JSON.stringify({
+        model,
+        messages,
+        temperature: 0.3,
+        max_tokens: maxTokens,
+      }),
+    });
+    if (!res.ok) return null;
+    const data: any = await res.json();
+    return data?.choices?.[0]?.message?.content || null;
+  } catch {
+    return null;
+  }
+}
+
+export const generateActivityRecommendations = action({
+  handler: async (ctx) => {
+    const apiKey = process.env.OPENROUTER_API_KEY;
+    if (!apiKey) return { success: false, error: "No API key configured" };
+
+    const data = await ctx.runQuery(internal.ai.getMinistryOverviewData);
+
+    const prompt = `Eres un asesor de ministerio juvenil. Basado en los datos de vulnerabilidades y riesgo del ministerio, genera recomendaciones de actividades, talleres y estudios bíblicos.
+
+Responde ÚNICAMENTE con JSON válido en este formato:
+{
+  "recommendations": [
+    {
+      "title": "título de la actividad",
+      "type": "taller | estudio | actividad | campaña",
+      "description": "descripción detallada de 2-3 oraciones",
+      "bibleVerse": "Libro Capítulo:Versículo",
+      "targetTags": ["tags relacionadas"],
+      "urgency": "baja | media | alta"
+    }
+  ]
+}
+
+Genera de 3 a 5 recomendaciones.
+
+Datos del ministerio:
+- Total adolescentes: ${data.totalTeens}
+- Asistencia promedio: ${data.overallAttendanceAvg}%
+- Alertas de crisis: ${data.totalCrisisAlerts}
+- Seguimientos pendientes: ${data.totalFollowUps}
+- Adolescentes en alto riesgo: ${data.highRiskCount}
+- Contactos pendientes: ${data.pendingContactCount}
+
+Frecuencia de tags de vulnerabilidad:
+${Object.entries(data.tagFrequency)
+  .sort((a, b) => b[1] - a[1])
+  .map(([tag, count]) => `- ${tag}: ${count}`)
+  .join("\n")}`;
+
+    for (const model of FREE_MODELS) {
+      const raw = await callModel(apiKey, model, prompt);
+      if (!raw) continue;
+      try {
+        const cleaned = raw.replace(/```json\s*/gi, "").replace(/```\s*/g, "").trim();
+        const parsed = JSON.parse(cleaned);
+        if (Array.isArray(parsed.recommendations)) {
+          return { success: true, recommendations: parsed.recommendations, modelUsed: model };
+        }
+      } catch {
+        continue;
+      }
+    }
+    return { success: false, error: "All models failed" };
+  },
+});
+
 export const generatePersonalizedMessage = action({
   args: {
     teenId: v.id("teens"),
@@ -585,5 +796,47 @@ El mensaje debe ser de aproximadamente 3-4 oraciones, en español, firmado como 
 
     if (!message) return { success: false, error: "All models failed" };
     return { success: true, message, modelUsed };
+  },
+});
+
+export const structureTranscription = action({
+  args: {
+    rawText: v.string(),
+  },
+  handler: async (ctx, args) => {
+    const apiKey = process.env.OPENROUTER_API_KEY;
+    if (!apiKey) return { success: false, error: "No API key configured" };
+
+    const prompt = `Eres un asistente pastoral. Estructura la siguiente transcripción de voz de una bitácora de acompañamiento juvenil.
+Responde ÚNICAMENTE con JSON válido en este formato:
+{
+  "structuredContent": "texto corregido y estructurado con viñetas si aplica, en español",
+  "suggestedCategory": "call | visit | chat | counseling | prayer | other",
+  "summary": "resumen de 1 oración",
+  "followUpNeeded": true | false
+}
+
+Transcripción original:
+${args.rawText}`;
+
+    for (const model of FREE_MODELS) {
+      const raw = await callModel(apiKey, model, prompt);
+      if (!raw) continue;
+      try {
+        const cleaned = raw.replace(/```json\s*/gi, "").replace(/```\s*/g, "").trim();
+        const parsed = JSON.parse(cleaned);
+        return {
+          success: true,
+          structuredContent: typeof parsed.structuredContent === "string" ? parsed.structuredContent : args.rawText,
+          suggestedCategory: ["call", "visit", "chat", "counseling", "prayer", "other"].includes(parsed.suggestedCategory) ? parsed.suggestedCategory : "other",
+          summary: typeof parsed.summary === "string" ? parsed.summary : "",
+          followUpNeeded: parsed.followUpNeeded === true,
+          modelUsed: model,
+        };
+      } catch {
+        continue;
+      }
+    }
+    return { success: false, error: "All models failed" };
   },
 });

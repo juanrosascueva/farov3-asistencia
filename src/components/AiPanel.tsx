@@ -29,8 +29,12 @@ export default function AiPanel({ teens, attendanceMap, onOpenProfile }: AiPanel
   const allAnalyses = useQuery(api.ai.getAllAnalyses) ?? [];
   const allJournal = useQuery(api.journal.listAll) ?? [];
   const generateSummary = useAction(api.ai.generateWeeklySummary as any);
+  const generateRecommendations = useAction(api.ai.generateActivityRecommendations as any);
   const [weeklySummary, setWeeklySummary] = useState<any>(null);
   const [generating, setGenerating] = useState(false);
+  const [recommendations, setRecommendations] = useState<any>(null);
+  const [recsLoading, setRecsLoading] = useState(false);
+  const [recStatus, setRecStatus] = useState<Record<number, "pending" | "implemented" | "dismissed">>({});
 
   const tagCounts: Record<string, number> = {};
   let riskDist = { low: 0, medium: 0, high: 0 };
@@ -236,6 +240,102 @@ export default function AiPanel({ teens, attendanceMap, onOpenProfile }: AiPanel
           </div>
         ) : (
           <p className="text-sm text-ink/40 text-center py-4">Error al generar resumen. Intenta de nuevo.</p>
+        )}
+      </div>
+
+      <div className="bg-card rounded-card shadow-soft p-5">
+        <div className="flex items-center justify-between mb-4">
+          <h2 className="font-display font-semibold text-base">
+            Recomendaciones de actividades
+          </h2>
+          <button
+            onClick={async () => {
+              setRecsLoading(true);
+              const result = await generateRecommendations();
+              setRecommendations(result);
+              setRecsLoading(false);
+            }}
+            disabled={recsLoading}
+            className="text-xs font-semibold bg-teal-600 text-white rounded-full px-3.5 py-2 flex items-center gap-1.5 disabled:opacity-50"
+          >
+            {recsLoading ? (
+              <>Generando...</>
+            ) : (
+              <>
+                <svg className="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+                  <path d="M12 2l1.5 4.5L18 8l-4.5 1.5L12 14l-1.5-4.5L6 8l4.5-1.5L12 2z" />
+                  <path d="M18 14l.8 2.2L21 17l-2.2.8L18 20l-.8-2.2L15 17l2.2-.8L18 14z" />
+                  <path d="M6 14l.8 2.2L9 17l-2.2.8L6 20l-.8-2.2L3 17l2.2-.8L6 14z" />
+                </svg>
+                Generar
+              </>
+            )}
+          </button>
+        </div>
+        {!recommendations ? (
+          <p className="text-sm text-ink/40 text-center py-6">
+            Genera recomendaciones de talleres, estudios y actividades basadas en las vulnerabilidades detectadas.
+          </p>
+        ) : recommendations.success ? (
+          <div className="space-y-3">
+            {recommendations.recommendations.map((r: any, i: number) => (
+              <div key={i} className={`p-4 rounded-xl border space-y-2 ${
+                recStatus[i] === "implemented" ? "border-green-200 bg-green-50/50" : recStatus[i] === "dismissed" ? "border-ink/5 bg-ink/[0.01] opacity-50" : "border-ink/10 bg-ink/[0.02]"
+              }`}>
+                <div className="flex items-start justify-between gap-2">
+                  <h3 className="font-semibold text-sm">{r.title}</h3>
+                  <span className={`text-[10px] font-semibold px-2 py-0.5 rounded-full shrink-0 ${
+                    r.urgency === "alta" ? "bg-red-50 text-red-600" : r.urgency === "media" ? "bg-amber-50 text-amber-600" : "bg-green-50 text-green-600"
+                  }`}>
+                    {r.urgency === "alta" ? "🔴" : r.urgency === "media" ? "🟡" : "🟢"} {r.urgency}
+                  </span>
+                </div>
+                <span className="text-[10px] font-semibold text-teal-600 bg-teal-50 px-2 py-0.5 rounded-full">
+                  {r.type}
+                </span>
+                <p className="text-sm text-ink/70">{r.description}</p>
+                {r.bibleVerse && (
+                  <p className="text-xs text-ink/40 font-medium">
+                    📖 {r.bibleVerse}
+                  </p>
+                )}
+                {r.targetTags && r.targetTags.length > 0 && (
+                  <div className="flex flex-wrap gap-1">
+                    {r.targetTags.map((tag: string) => (
+                      <span key={tag} className="text-[10px] font-medium bg-ink/5 text-ink/50 px-1.5 py-0.5 rounded-full">
+                        {tag}
+                      </span>
+                    ))}
+                  </div>
+                )}
+                {(recStatus[i] || "pending") === "pending" && (
+                  <div className="flex gap-2 pt-1">
+                    <button
+                      onClick={() => setRecStatus((s) => ({ ...s, [i]: "implemented" }))}
+                      className="text-[10px] font-semibold text-green-700 bg-green-50 hover:bg-green-100 border border-green-200 px-2.5 py-1 rounded-full transition"
+                    >
+                      ✓ Implementado
+                    </button>
+                    <button
+                      onClick={() => setRecStatus((s) => ({ ...s, [i]: "dismissed" }))}
+                      className="text-[10px] font-semibold text-ink/40 hover:text-coral-600 bg-ink/5 hover:bg-coral-50 px-2.5 py-1 rounded-full transition"
+                    >
+                      Descartar
+                    </button>
+                  </div>
+                )}
+                {recStatus[i] === "implemented" && (
+                  <p className="text-[10px] font-semibold text-green-600">✓ Implementado</p>
+                )}
+                {recStatus[i] === "dismissed" && (
+                  <p className="text-[10px] font-semibold text-ink/30">Descartado</p>
+                )}
+              </div>
+            ))}
+            <p className="text-[10px] text-ink/30">Modelo: {recommendations.modelUsed}</p>
+          </div>
+        ) : (
+          <p className="text-sm text-ink/40 text-center py-4">Error al generar recomendaciones. Intenta de nuevo.</p>
         )}
       </div>
     </div>

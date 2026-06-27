@@ -10,8 +10,11 @@
 
 import type * as ai from "../ai.js";
 import type * as attendance from "../attendance.js";
+import type * as chat from "../chat.js";
 import type * as contacts from "../contacts.js";
+import type * as crisis from "../crisis.js";
 import type * as journal from "../journal.js";
+import type * as ppp from "../ppp.js";
 import type * as seed from "../seed.js";
 import type * as teens from "../teens.js";
 
@@ -24,8 +27,11 @@ import type {
 declare const fullApi: ApiFromModules<{
   ai: typeof ai;
   attendance: typeof attendance;
+  chat: typeof chat;
   contacts: typeof contacts;
+  crisis: typeof crisis;
   journal: typeof journal;
+  ppp: typeof ppp;
   seed: typeof seed;
   teens: typeof teens;
 }>;

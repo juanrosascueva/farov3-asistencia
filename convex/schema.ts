@@ -100,4 +100,42 @@ export default defineSchema({
   })
     .index("by_teenId", ["teenId"])
     .index("by_riskLevel", ["riskLevel"]),
+
+  chatSessions: defineTable({
+    createdAt: v.string(),
+    updatedAt: v.string(),
+  }),
+
+  chatMessages: defineTable({
+    sessionId: v.id("chatSessions"),
+    role: v.string(),
+    content: v.string(),
+    createdAt: v.string(),
+  })
+    .index("by_sessionId", ["sessionId"]),
+
+  crisisAlerts: defineTable({
+    analysisId: v.id("journalAnalysis"),
+    teenId: v.id("teens"),
+    summary: v.string(),
+    status: v.union(v.literal("unattended"), v.literal("attended")),
+    createdAt: v.string(),
+    attendedAt: v.optional(v.string()),
+    attendedBy: v.optional(v.string()),
+  })
+    .index("by_teenId", ["teenId"])
+    .index("by_status", ["status"]),
+
+  teenPpp: defineTable({
+    teenId: v.id("teens"),
+    ppp: v.number(),
+    dropoutRisk: v.number(),
+    vulnerabilityLevel: v.number(),
+    daysWithoutContact: v.number(),
+    consecutiveAbsences: v.number(),
+    daysSinceLastJournal: v.number(),
+    calculatedAt: v.string(),
+  })
+    .index("by_teenId", ["teenId"])
+    .index("by_ppp", ["ppp"]),
 });

@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { useQuery } from "convex/react";
+import { useQuery, useMutation } from "convex/react";
 import { api } from "../../convex/_generated/api";
 import type { Doc } from "../../convex/_generated/dataModel";
 import type { AttendanceMap, RiskInfo } from "../lib/types";
@@ -69,7 +69,8 @@ export default function Dashboard({
     return { d, pct: tot ? Math.round((pres / tot) * 100) : 0 };
   });
 
-  const crisisAlerts = useQuery(api.ai.getCrisisAnalyses) ?? [];
+  const crisisAlertsRaw = useQuery(api.crisis.getUnattendedAlerts) ?? [];
+  const markCrisisAttended = useMutation(api.crisis.markAttended);
   const dropoutPredictions = useQuery(api.ai.getAllDropoutPredictions) ?? [];
 
   const highDropout = (dropoutPredictions as any[])
@@ -81,13 +82,13 @@ export default function Dashboard({
     .filter((x: any): x is NonNullable<typeof x> => x !== null)
     .sort((a: any, b: any) => b.prediction.probability - a.prediction.probability);
 
-  const crisisTeens = teens
-    .map((t) => {
-      const entry = crisisAlerts.find((a: any) => a.teenId === t._id);
-      if (!entry) return null;
-      return { teen: t, analysis: entry };
+  const crisisTeens = crisisAlertsRaw
+    .map((alert: any) => {
+      const teen = teens.find((t) => t._id === alert.teenId);
+      if (!teen) return null;
+      return { teen, alert };
     })
-    .filter((x): x is NonNullable<typeof x> => x !== null);
+    .filter((x: any): x is NonNullable<typeof x> => x !== null);
 
   const colorMap: Record<string, string> = {
     ink: "text-ink bg-ink/5",
@@ -119,19 +120,28 @@ export default function Dashboard({
             {crisisTeens.map((c) => (
               <div
                 key={c.teen._id}
-                className="flex items-center gap-3 p-2.5 rounded-xl bg-white/60 border border-red-100 cursor-pointer hover:bg-white transition"
-                onClick={() => onOpenProfile(c.teen._id)}
+                className="flex items-center gap-3 p-2.5 rounded-xl bg-white/60 border border-red-100"
               >
-                <Avatar teen={c.teen} />
-                <div className="flex-1 min-w-0">
-                  <p className="text-sm font-semibold">
-                    {esc(c.teen.nombre)} {esc(c.teen.apellido)}
-                  </p>
-                  <p className="text-xs text-red-600/80 truncate">{c.analysis.summary}</p>
+                <div className="cursor-pointer flex items-center gap-3 flex-1 min-w-0" onClick={() => onOpenProfile(c.teen._id)}>
+                  <Avatar teen={c.teen} />
+                  <div className="flex-1 min-w-0">
+                    <p className="text-sm font-semibold">
+                      {esc(c.teen.nombre)} {esc(c.teen.apellido)}
+                    </p>
+                    <p className="text-xs text-red-600/80 truncate">{c.alert.summary}</p>
+                  </div>
                 </div>
-                <span className="text-[11px] font-bold text-red-700 bg-red-100 px-2 py-1 rounded-full shrink-0">
-                  Atención inmediata
-                </span>
+                <div className="flex items-center gap-2 shrink-0">
+                  <span className="text-[11px] font-bold text-red-700 bg-red-100 px-2 py-1 rounded-full">
+                    Atención inmediata
+                  </span>
+                  <button
+                    onClick={() => markCrisisAttended({ alertId: c.alert._id })}
+                    className="text-[10px] font-semibold text-green-700 bg-green-50 hover:bg-green-100 border border-green-200 px-2 py-1 rounded-full transition"
+                  >
+                    Atendida
+                  </button>
+                </div>
               </div>
             ))}
           </div>

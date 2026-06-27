@@ -2,6 +2,7 @@ import { useState, useRef, useEffect } from "react";
 import type { Doc } from "../../convex/_generated/dataModel";
 import { stringHue } from "../lib/utils";
 import { useLeaderContext } from "../hooks/useLeaders";
+import ChatPanel from "./ChatPanel";
 
 const ROUTES = [
   { id: "dashboard", label: "Resumen", icon: "home" },
@@ -28,6 +29,7 @@ export default function Layout({
   dark,
   setDark,
 }: LayoutProps) {
+  const [chatOpen, setChatOpen] = useState(false);
   return (
     <div className="max-w-7xl mx-auto lg:flex lg:gap-6 lg:px-6 lg:pt-6">
       <aside className="hidden lg:flex lg:flex-col w-64 shrink-0 sticky top-6 self-start">
@@ -116,6 +118,19 @@ export default function Layout({
           </button>
         ))}
       </nav>
+
+      {chatOpen && <ChatPanel onClose={() => setChatOpen(false)} />}
+
+      <button
+        onClick={() => setChatOpen(!chatOpen)}
+        className={`fixed bottom-4 right-4 z-50 w-14 h-14 rounded-full shadow-xl flex items-center justify-center transition ${
+          chatOpen ? "bg-ink/80 scale-0" : "bg-teal-600 hover:bg-teal-700 scale-100"
+        }`}
+      >
+        <svg className="w-6 h-6 text-white" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+          <path d="M21 15a2 2 0 01-2 2H7l-4 4V5a2 2 0 012-2h14a2 2 0 012 2z" />
+        </svg>
+      </button>
     </div>
   );
 }

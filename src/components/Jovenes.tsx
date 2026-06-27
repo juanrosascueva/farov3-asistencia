@@ -1,5 +1,5 @@
 import { useState, useCallback, useMemo } from "react";
-import { useQuery, useMutation } from "convex/react";
+import { useQuery, useMutation, useAction } from "convex/react";
 import { api } from "../../convex/_generated/api";
 import type { Doc } from "../../convex/_generated/dataModel";
 import type { AttendanceMap, RiskInfo } from "../lib/types";
@@ -37,6 +37,8 @@ export default function Jovenes({
   const [filtroEdad, setFiltroEdad] = useState<FilterEdad>("all");
 
   const deleteTeen = useMutation(api.teens.remove);
+  const recalcPpp = useAction(api.ppp.calculateAllPpp as any);
+  const [pppRecalculating, setPppRecalculating] = useState(false);
 
   const followUps = useQuery(api.journal.listFollowUps);
   const followUpTeenIds = useMemo(() => {
@@ -186,6 +188,18 @@ export default function Jovenes({
             <option value="riesgo">Riesgo</option>
             <option value="nombre">A-Z</option>
           </select>
+          <button
+            onClick={async () => {
+              setPppRecalculating(true);
+              await recalcPpp();
+              setPppRecalculating(false);
+            }}
+            disabled={pppRecalculating}
+            className="shrink-0 h-10 px-2.5 text-[10px] font-semibold bg-teal-50 text-teal-700 border border-teal-200 rounded-xl hover:bg-teal-100 transition disabled:opacity-50"
+            title="Recalcular puntajes de prioridad pastoral"
+          >
+            {pppRecalculating ? "..." : "⟳ PPP"}
+          </button>
           <svg className="w-3 h-3 absolute right-2.5 top-1/2 -translate-y-1/2 text-ink/30 pointer-events-none" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
             <path d="M6 9l6 6 6-6" />
           </svg>

@@ -44,6 +44,9 @@ export default function JournalTimeline({ teenId }: JournalProps) {
   const [leaderName, setLeaderName] = useState(currentLeader?.name || "");
   const [customLeader, setCustomLeader] = useState(false);
   const [followUp, setFollowUp] = useState(false);
+  const [listening, setListening] = useState(false);
+  const [structuring, setStructuring] = useState(false);
+  const structureAction = useAction(api.ai.structureTranscription as any);
 
   const handleSubmit = async (e: FormEvent) => {
     e.preventDefault();
@@ -180,14 +183,69 @@ export default function JournalTimeline({ teenId }: JournalProps) {
             <label className="text-xs font-semibold text-ink/50 mb-1 block">
               Contenido
             </label>
-            <textarea
-              value={content}
-              onChange={(e) => setContent(e.target.value)}
-              rows={3}
-              placeholder="Describe la llamada, visita o conversación..."
-              required
-              className="w-full bg-card border border-ink/10 rounded-xl px-3.5 py-2.5 text-sm resize-none"
-            />
+            <div className="relative">
+              <textarea
+                value={content}
+                onChange={(e) => setContent(e.target.value)}
+                rows={3}
+                placeholder="Describe la llamada, visita o conversación..."
+                required
+                className="w-full bg-card border border-ink/10 rounded-xl px-3.5 py-2.5 text-sm resize-none pr-10"
+              />
+              <button
+                type="button"
+                onClick={() => {
+                  if (listening) return;
+                  const SpeechRecognition = (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition;
+                  if (!SpeechRecognition) {
+                    alert("La transcripción por voz no está disponible en este navegador. Usa Chrome o Edge.");
+                    return;
+                  }
+                  const recognition = new SpeechRecognition();
+                  recognition.lang = "es-MX";
+                  recognition.interimResults = false;
+                  recognition.onresult = (event: any) => {
+                    const transcript = event.results[0][0].transcript;
+                    setContent((prev) => prev + (prev ? " " : "") + transcript);
+                    setListening(false);
+                  };
+                  recognition.onerror = () => setListening(false);
+                  recognition.onend = () => setListening(false);
+                  setListening(true);
+                  recognition.start();
+                }}
+                className={`absolute right-2 bottom-2.5 w-7 h-7 rounded-lg flex items-center justify-center transition ${
+                  listening ? "bg-red-100 text-red-600 animate-pulse" : "bg-ink/5 text-ink/40 hover:text-ink hover:bg-ink/10"
+                }`}
+                title={listening ? "Escuchando..." : "Transcribir por voz"}
+              >
+                <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+                  <path d="M12 2a3 3 0 00-3 3v7a3 3 0 006 0V5a3 3 0 00-3-3z" />
+                  <path d="M19 10v2a7 7 0 01-14 0v-2" />
+                  <path d="M12 19v3" />
+                </svg>
+              </button>
+            </div>
+            {content.trim() && (
+              <button
+                type="button"
+                onClick={async () => {
+                  if (structuring) return;
+                  setStructuring(true);
+                  const result = await structureAction({ rawText: content }) as any;
+                  if (result.success) {
+                    setContent(result.structuredContent);
+                    if (result.suggestedCategory) setCategory(result.suggestedCategory);
+                    if (result.followUpNeeded) setFollowUp(true);
+                  }
+                  setStructuring(false);
+                }}
+                disabled={structuring}
+                className="mt-2 text-[10px] font-semibold text-purple-700 bg-purple-50 hover:bg-purple-100 border border-purple-200 px-2.5 py-1 rounded-full transition disabled:opacity-50"
+              >
+                {structuring ? "Estructurando..." : "✨ Estructurar con IA"}
+              </button>
+            )}
           </div>
           <label className="flex items-center gap-2.5 cursor-pointer">
             <input
