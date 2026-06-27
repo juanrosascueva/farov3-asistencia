@@ -11,7 +11,7 @@ import {
   esc,
   getGamification,
 } from "../lib/utils";
-import { getTemplates } from "../lib/templates";
+import { getTemplates, getAllTemplates } from "../lib/templates";
 import WhatsAppModal from "./WhatsAppModal";
 import JournalTimeline from "./JournalTimeline";
 import BadgeGrid from "./BadgeGrid";
@@ -36,6 +36,7 @@ export default function Profile({
   const [showEdit, setShowEdit] = useState(false);
   const [showDelete, setShowDelete] = useState(false);
   const [showWhatsApp, setShowWhatsApp] = useState(false);
+  const [showQuickWA, setShowQuickWA] = useState(false);
   const deleteTeen = useMutation(api.teens.remove);
 
   const s = statsFor(teen._id, attendanceMap);
@@ -202,6 +203,17 @@ export default function Profile({
             <p className="text-sm">{esc(teen.gustos)}</p>
           </div>
         )}
+        {(teen.telefono || teen.telefonoPadre) && (
+          <div className="pt-2">
+            <button
+              onClick={() => setShowQuickWA(true)}
+              className="w-full flex items-center justify-center gap-2 bg-green-600 text-white rounded-xl py-2.5 text-sm font-semibold hover:bg-green-700 transition"
+            >
+              <WhatsAppIcon />
+              Mensajes Rápidos
+            </button>
+          </div>
+        )}
       </div>
 
       <XpBar level={game.level} />
@@ -306,8 +318,18 @@ export default function Profile({
           nombre={teen.nombre}
           telefono={teen.telefono}
           telefonoPadre={teen.telefonoPadre}
-          templates={getTemplates(alert.color, teen.nombre, s.consecutiveAbsences)}
+          templates={getTemplates(alert.color, teen.nombre, s.consecutiveAbsences, teen.apellido, s.presentStreak, teen.telefonoPadre || "")}
           onClose={() => setShowWhatsApp(false)}
+        />
+      )}
+
+      {showQuickWA && (teen.telefono || teen.telefonoPadre) && (
+        <WhatsAppModal
+          nombre={teen.nombre}
+          telefono={teen.telefono}
+          telefonoPadre={teen.telefonoPadre}
+          templates={getAllTemplates(teen.nombre, teen.apellido, s.presentStreak, s.consecutiveAbsences, teen.telefonoPadre || "")}
+          onClose={() => setShowQuickWA(false)}
         />
       )}
     </div>

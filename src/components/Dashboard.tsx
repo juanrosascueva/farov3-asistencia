@@ -314,7 +314,7 @@ function AlertRow({
           nombre={teen.nombre}
           telefono={teen.telefono}
           telefonoPadre={teen.telefonoPadre}
-          templates={getTemplates(al.color, teen.nombre, s.consecutiveAbsences)}
+          templates={getTemplates(al.color, teen.nombre, s.consecutiveAbsences, teen.apellido, s.presentStreak, teen.telefonoPadre || "")}
           onClose={() => setShowWA(false)}
         />
       )}
