@@ -11,7 +11,8 @@ import {
   esc,
   getGamification,
 } from "../lib/utils";
-import { getTemplates, getAllTemplates } from "../lib/templates";
+import { fill } from "../lib/templates";
+import { useTemplates } from "../hooks/useTemplates";
 import WhatsAppModal from "./WhatsAppModal";
 import JournalTimeline from "./JournalTimeline";
 import BadgeGrid from "./BadgeGrid";
@@ -44,6 +45,18 @@ export default function Profile({
   const age = ageFromDOB(teen.nacimiento);
   const history = [...s.history].reverse().slice(0, 12);
   const game = getGamification(s);
+  const { templates } = useTemplates();
+  const vars = {
+    nombre: teen.nombre,
+    apellido: teen.apellido,
+    racha: s.presentStreak,
+    faltas: s.consecutiveAbsences,
+    telefonoPadre: teen.telefonoPadre || "",
+  };
+  const alertTemplates = templates
+    .filter((t) => t.category === "absence")
+    .map((t) => ({ ...t, text: fill(t.text, vars) }));
+  const allTemplates = templates.map((t) => ({ ...t, text: fill(t.text, vars) }));
 
   const handleDelete = async () => {
     await deleteTeen({ id: teen._id });
@@ -318,7 +331,7 @@ export default function Profile({
           nombre={teen.nombre}
           telefono={teen.telefono}
           telefonoPadre={teen.telefonoPadre}
-          templates={getTemplates(alert.color, teen.nombre, s.consecutiveAbsences, teen.apellido, s.presentStreak, teen.telefonoPadre || "")}
+          templates={alertTemplates}
           onClose={() => setShowWhatsApp(false)}
         />
       )}
@@ -328,7 +341,7 @@ export default function Profile({
           nombre={teen.nombre}
           telefono={teen.telefono}
           telefonoPadre={teen.telefonoPadre}
-          templates={getAllTemplates(teen.nombre, teen.apellido, s.presentStreak, s.consecutiveAbsences, teen.telefonoPadre || "")}
+          templates={allTemplates}
           onClose={() => setShowQuickWA(false)}
         />
       )}

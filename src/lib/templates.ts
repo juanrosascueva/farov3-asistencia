@@ -13,7 +13,7 @@ export interface Vars {
   telefonoPadre: string;
 }
 
-function fill(t: string, v: Vars): string {
+export function fill(t: string, v: Vars): string {
   return t
     .replace(/\{nombre\}/g, v.nombre)
     .replace(/\{apellido\}/g, v.apellido)

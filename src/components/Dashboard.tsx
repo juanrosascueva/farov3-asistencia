@@ -13,7 +13,8 @@ import {
   fmtDate,
 } from "../lib/utils";
 import { Avatar } from "./Layout";
-import { getTemplates } from "../lib/templates";
+import { fill } from "../lib/templates";
+import { useTemplates } from "../hooks/useTemplates";
 import WhatsAppModal from "./WhatsAppModal";
 
 interface DashboardProps {
@@ -302,6 +303,17 @@ function AlertRow({
   onOpenProfile: (id: string) => void;
 }) {
   const [showWA, setShowWA] = useState(false);
+  const { templates } = useTemplates();
+  const vars = {
+    nombre: teen.nombre,
+    apellido: teen.apellido,
+    racha: s.presentStreak,
+    faltas: s.consecutiveAbsences,
+    telefonoPadre: teen.telefonoPadre || "",
+  };
+  const alertTemplates = templates
+    .filter((t) => t.category === "absence")
+    .map((t) => ({ ...t, text: fill(t.text, vars) }));
   const colorMap: Record<string, string> = {
     teal: "bg-teal-50 text-teal-700 border-teal-100",
     amber: "bg-amber-50 text-amber-600 border-amber-100",
@@ -354,7 +366,7 @@ function AlertRow({
           nombre={teen.nombre}
           telefono={teen.telefono}
           telefonoPadre={teen.telefonoPadre}
-          templates={getTemplates(al.color, teen.nombre, s.consecutiveAbsences, teen.apellido, s.presentStreak, teen.telefonoPadre || "")}
+          templates={alertTemplates}
           onClose={() => setShowWA(false)}
         />
       )}

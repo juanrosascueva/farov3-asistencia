@@ -2,9 +2,10 @@ import { useState, useRef } from "react";
 import { useMutation } from "convex/react";
 import { api } from "../../convex/_generated/api";
 import type { Doc } from "../../convex/_generated/dataModel";
-import type { AttendanceMap, Leader } from "../lib/types";
+import type { AttendanceMap, Leader, MessageTemplate } from "../lib/types";
 import { downloadFile, fmtDate } from "../lib/utils";
 import { useLeaderContext } from "../hooks/useLeaders";
+import { useTemplates } from "../hooks/useTemplates";
 import Modal from "./Modal";
 
 interface AjustesProps {
@@ -21,6 +22,15 @@ export default function Ajustes({ teens, attendanceMap }: AjustesProps) {
   const [newName, setNewName] = useState("");
   const [newRole, setNewRole] = useState<Leader["role"]>("leader");
   const [adding, setAdding] = useState(false);
+
+  const { templates, addTemplate, updateTemplate, deleteTemplate, resetTemplates } = useTemplates();
+  const [editTpl, setEditTpl] = useState<MessageTemplate | null>(null);
+  const [tplName, setTplName] = useState("");
+  const [tplCategory, setTplCategory] = useState<MessageTemplate["category"]>("general");
+  const [tplRecipient, setTplRecipient] = useState<MessageTemplate["recipient"]>("teen");
+  const [tplText, setTplText] = useState("");
+  const [tplEmoji, setTplEmoji] = useState("💬");
+  const [showTplForm, setShowTplForm] = useState(false);
 
   const createTeen = useMutation(api.teens.create);
 
@@ -259,6 +269,199 @@ export default function Ajustes({ teens, attendanceMap }: AjustesProps) {
             Agregar líder
           </button>
         )}
+      </div>
+
+      {/* ─── WhatsApp Templates ─── */}
+      <div className="bg-white rounded-card shadow-soft p-5 space-y-4">
+        <div>
+          <p className="text-xs font-semibold text-ink/40 uppercase tracking-wide">
+            Plantillas de WhatsApp
+          </p>
+          <p className="text-sm text-ink/60 mt-0.5">
+            Personaliza los mensajes que se envían desde el perfil de cada adolescente.
+          </p>
+        </div>
+
+        {showTplForm ? (
+          <div className="bg-ink/[0.02] border border-ink/10 rounded-xl p-4 space-y-3">
+            <p className="text-sm font-semibold">{editTpl ? "Editar plantilla" : "Nueva plantilla"}</p>
+            <div className="grid grid-cols-2 gap-3">
+              <div>
+                <label className="text-xs font-semibold text-ink/50 mb-1 block">Nombre</label>
+                <input
+                  type="text"
+                  value={tplName}
+                  onChange={(e) => setTplName(e.target.value)}
+                  placeholder="Ej: Una falta (cálido)"
+                  className="w-full bg-white border border-ink/10 rounded-xl px-3.5 py-2 text-sm"
+                />
+              </div>
+              <div>
+                <label className="text-xs font-semibold text-ink/50 mb-1 block">Emoji</label>
+                <input
+                  type="text"
+                  value={tplEmoji}
+                  onChange={(e) => setTplEmoji(e.target.value)}
+                  placeholder="🟡"
+                  maxLength={3}
+                  className="w-full bg-white border border-ink/10 rounded-xl px-3.5 py-2 text-sm"
+                />
+              </div>
+            </div>
+            <div className="grid grid-cols-2 gap-3">
+              <div>
+                <label className="text-xs font-semibold text-ink/50 mb-1 block">Categoría</label>
+                <select
+                  value={tplCategory}
+                  onChange={(e) => setTplCategory(e.target.value as MessageTemplate["category"])}
+                  className="w-full bg-white border border-ink/10 rounded-xl px-3.5 py-2 text-sm"
+                >
+                  <option value="absence">Ausencias</option>
+                  <option value="streak">Racha / Incentivo</option>
+                  <option value="birthday">Cumpleaños</option>
+                  <option value="general">General</option>
+                </select>
+              </div>
+              <div>
+                <label className="text-xs font-semibold text-ink/50 mb-1 block">Destinatario</label>
+                <select
+                  value={tplRecipient}
+                  onChange={(e) => setTplRecipient(e.target.value as MessageTemplate["recipient"])}
+                  className="w-full bg-white border border-ink/10 rounded-xl px-3.5 py-2 text-sm"
+                >
+                  <option value="teen">Adolescente</option>
+                  <option value="parent">Tutor / Encargado</option>
+                </select>
+              </div>
+            </div>
+            <div>
+              <label className="text-xs font-semibold text-ink/50 mb-1 block">
+                Texto del mensaje
+              </label>
+              <textarea
+                value={tplText}
+                onChange={(e) => setTplText(e.target.value)}
+                rows={4}
+                className="w-full bg-white border border-ink/10 rounded-xl px-3.5 py-2.5 text-sm resize-none"
+              />
+              <div className="flex flex-wrap gap-1.5 mt-1.5">
+                {["{nombre}", "{apellido}", "{racha}", "{faltas}", "{telefono_padre}"].map((v) => (
+                  <button
+                    key={v}
+                    type="button"
+                    onClick={() => setTplText((prev) => prev + " " + v)}
+                    className="text-[11px] font-mono bg-ink/5 hover:bg-ink/10 rounded-md px-2 py-0.5 text-ink/60"
+                  >
+                    {v}
+                  </button>
+                ))}
+              </div>
+            </div>
+            <div className="flex gap-2">
+              <button
+                onClick={() => {
+                  if (!tplName.trim() || !tplText.trim()) return;
+                  if (editTpl) {
+                    updateTemplate(editTpl.id, {
+                      name: tplName.trim(),
+                      category: tplCategory,
+                      recipient: tplRecipient,
+                      text: tplText.trim(),
+                      emoji: tplEmoji,
+                    });
+                  } else {
+                    addTemplate({
+                      name: tplName.trim(),
+                      category: tplCategory,
+                      recipient: tplRecipient,
+                      text: tplText.trim(),
+                      emoji: tplEmoji,
+                    });
+                  }
+                  setShowTplForm(false);
+                  setEditTpl(null);
+                }}
+                className="flex-1 bg-ink text-white rounded-xl py-2.5 text-sm font-semibold"
+              >
+                {editTpl ? "Guardar cambios" : "Agregar plantilla"}
+              </button>
+              <button
+                onClick={() => { setShowTplForm(false); setEditTpl(null); }}
+                className="flex-1 bg-ink/5 text-ink/60 rounded-xl py-2.5 text-sm font-semibold"
+              >
+                Cancelar
+              </button>
+            </div>
+          </div>
+        ) : (
+          <button
+            onClick={() => {
+              setTplName(""); setTplEmoji("💬"); setTplCategory("general"); setTplRecipient("teen"); setTplText("");
+              setEditTpl(null); setShowTplForm(true);
+            }}
+            className="flex items-center gap-2 text-sm font-semibold text-teal-700 hover:text-teal-600 transition"
+          >
+            <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><path d="M12 5v14M5 12h14" /></svg>
+            Nueva plantilla
+          </button>
+        )}
+
+        <div className="space-y-3">
+          {(["absence", "streak", "birthday", "general"] as const).map((cat) => {
+            const group = templates.filter((t) => t.category === cat);
+            if (group.length === 0) return null;
+            return (
+              <div key={cat}>
+                <p className="text-[11px] font-semibold text-ink/40 uppercase tracking-wide mb-1.5">
+                  {cat === "absence" ? "Ausencias" : cat === "streak" ? "Rachas" : cat === "birthday" ? "Cumpleaños" : "General"}
+                </p>
+                <div className="space-y-1">
+                  {group.map((t) => (
+                    <div
+                      key={t.id}
+                      className="flex items-center gap-2 py-2 px-3 rounded-xl bg-ink/[0.02] border border-ink/5"
+                    >
+                      <span className="text-sm shrink-0">{t.emoji}</span>
+                      <span className="flex-1 text-sm min-w-0 truncate">{t.name}</span>
+                      <span className="text-[10px] font-semibold text-ink/40 uppercase px-1.5 py-0.5 rounded-full bg-ink/5">
+                        {t.recipient === "teen" ? "Joven" : "Tutor"}
+                      </span>
+                      <button
+                        onClick={() => {
+                          setEditTpl(t);
+                          setTplName(t.name);
+                          setTplCategory(t.category);
+                          setTplRecipient(t.recipient);
+                          setTplText(t.text);
+                          setTplEmoji(t.emoji);
+                          setShowTplForm(true);
+                        }}
+                        className="w-6 h-6 rounded-full bg-ink/5 flex items-center justify-center text-ink/30 hover:text-teal-600 hover:bg-teal-50 transition"
+                        title="Editar"
+                      >
+                        <svg className="w-3 h-3" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><path d="M12 20h9" /><path d="M16.5 3.5a2.1 2.1 0 013 3L7 19l-4 1 1-4z" /></svg>
+                      </button>
+                      <button
+                        onClick={() => deleteTemplate(t.id)}
+                        className="w-6 h-6 rounded-full bg-ink/5 flex items-center justify-center text-ink/30 hover:text-coral-600 hover:bg-coral-50 transition"
+                        title="Eliminar"
+                      >
+                        <svg className="w-3 h-3" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M18 6L6 18M6 6l12 12" /></svg>
+                      </button>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            );
+          })}
+        </div>
+
+        <button
+          onClick={resetTemplates}
+          className="text-xs font-semibold text-ink/40 hover:text-coral-600 transition"
+        >
+          Restablecer plantillas de fábrica
+        </button>
       </div>
 
       <div className="bg-coral-50 border border-coral-100 rounded-card p-4">

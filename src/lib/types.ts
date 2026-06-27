@@ -67,3 +67,12 @@ export interface Leader {
   name: string;
   role: "pastor" | "teacher" | "leader" | "helper";
 }
+
+export interface MessageTemplate {
+  id: string;
+  name: string;
+  category: "absence" | "streak" | "birthday" | "general";
+  recipient: "teen" | "parent";
+  text: string;
+  emoji: string;
+}
