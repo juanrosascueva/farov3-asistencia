@@ -1,9 +1,10 @@
 import { v } from "convex/values";
 import { action, internalMutation, internalQuery, query } from "./_generated/server";
 import { internal } from "./_generated/api";
+import { Id } from "./_generated/dataModel";
 
 interface PppItem {
-  teenId: string;
+  teenId: Id<"teens">;
   ppp: number;
   dropoutRisk: number;
   vulnerabilityLevel: number;
