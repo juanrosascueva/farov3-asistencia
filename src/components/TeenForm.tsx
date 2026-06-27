@@ -78,9 +78,10 @@ export default function TeenForm({ teen, onClose, onSuccess }: TeenFormProps) {
     <Modal
       title={teen ? "Editar adolescente" : "Agregar adolescente"}
       onClose={onClose}
+      panelClassName="sm:max-w-2xl"
     >
       <form onSubmit={handleSubmit} className="p-5 space-y-4">
-        <div className="grid grid-cols-2 gap-3">
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
           <Field
             label="Nombre"
             value={form.nombre}
@@ -100,7 +101,7 @@ export default function TeenForm({ teen, onClose, onSuccess }: TeenFormProps) {
           value={form.nacimiento}
           onChange={set("nacimiento")}
         />
-        <div className="grid grid-cols-2 gap-3">
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
           <Field
             label="Teléfono del adolescente"
             type="tel"
