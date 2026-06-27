@@ -65,7 +65,13 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       if (!token) setLoading(false);
       return;
     }
-    setUser(userData as AuthUser | null);
+    if (userData === null) {
+      clearToken();
+      setToken(null);
+      setUser(null);
+    } else {
+      setUser(userData as AuthUser | null);
+    }
     setLoading(false);
   }, [userData, token]);
 

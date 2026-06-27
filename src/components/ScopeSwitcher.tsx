@@ -10,13 +10,13 @@ type MinistryDoc = Doc<"ministry">;
 type GroupDoc = Doc<"group">;
 
 export default function ScopeSwitcher({ fullWidth = false }: { fullWidth?: boolean }) {
-  const { token } = useAuth();
+  const { token, user } = useAuth();
   const { scope, setScope, scopeLabel, canViewAll } = useScope();
   const [open, setOpen] = useState(false);
   const [step, setStep] = useState<"campus" | "ministry" | "group">("campus");
   const ref = useRef<HTMLDivElement>(null);
 
-  const campuses = useQuery(api.campus.list, token ? { token } : "skip");
+  const campuses = useQuery(api.campus.list, user && token ? { token } : "skip");
   const ministries = useQuery(
     api.ministry.list,
     token && scope.campusId ? { token, campusId: scope.campusId as any } : "skip"
