@@ -100,11 +100,11 @@ export default function Profile({
   };
 
   const riskColorMap: Record<string, string> = {
-    gray: "bg-slate-50 border-slate-200 text-slate-600",
-    teal: "bg-teal-50 border-teal-100 text-teal-700",
-    amber: "bg-amber-50 border-amber-100 text-amber-700",
-    coral: "bg-coral-50 border-coral-100 text-coral-700",
-    red: "bg-red-50 border-red-200 text-red-700",
+    gray: "bg-slate-50 border-slate-200 text-slate-600 dark:bg-slate-950/30 dark:border-slate-800/60 dark:text-slate-400",
+    teal: "bg-teal-50 border-teal-100 text-teal-700 dark:bg-teal-950/30 dark:border-teal-900/40 dark:text-teal-400",
+    amber: "bg-amber-50 border-amber-100 text-amber-700 dark:bg-amber-950/30 dark:border-amber-900/40 dark:text-amber-400",
+    coral: "bg-coral-50 border-coral-100 text-coral-700 dark:bg-orange-950/30 dark:border-orange-900/40 dark:text-orange-400",
+    red: "bg-red-50 border-red-200 text-red-700 dark:bg-red-950/30 dark:border-red-900/40 dark:text-red-400",
   };
 
   return (
@@ -186,8 +186,32 @@ export default function Profile({
           className={`mt-4 p-3.5 rounded-xl border ${riskColorMap[risk.color]} ${risk.score === 0 ? "opacity-50" : ""}`}
         >
           <div className="flex items-start gap-3">
-            <div className="shrink-0 w-10 h-10 rounded-full flex items-center justify-center font-bold text-sm text-white" style={{ background: ({ gray: "#6B7280", teal: "#0B7285", amber: "#F0A33C", coral: "#E8590C", red: "#DC2626" } as Record<string, string>)[risk.color] }}>
-              {risk.score}
+            <div className="relative shrink-0 w-12 h-12 flex items-center justify-center">
+              <svg className="w-12 h-12 transform -rotate-90" viewBox="0 0 44 44">
+                <circle
+                  cx="22"
+                  cy="22"
+                  r="18"
+                  className="stroke-ink/5 dark:stroke-white/5"
+                  strokeWidth="3.5"
+                  fill="transparent"
+                />
+                <circle
+                  cx="22"
+                  cy="22"
+                  r="18"
+                  className="transition-all duration-500 ease-out"
+                  strokeWidth="3.5"
+                  strokeDasharray="113.1"
+                  strokeDashoffset={113.1 - (risk.score / 5) * 113.1}
+                  strokeLinecap="round"
+                  stroke={({ gray: "#6B7280", teal: "#0B7285", amber: "#F0A33C", coral: "#E8590C", red: "#DC2626" } as Record<string, string>)[risk.color]}
+                  fill="transparent"
+                />
+              </svg>
+              <span className="absolute text-sm font-extrabold text-ink">
+                {risk.score}
+              </span>
             </div>
             <div className="text-sm flex-1 min-w-0">
               <p className="font-semibold">
@@ -550,11 +574,11 @@ function StatCardInline({
   color: string;
 }) {
   const colorMap: Record<string, string> = {
-    ink: "text-ink bg-ink/5",
-    teal: "text-teal-700 bg-teal-50",
-    sage: "text-sage-600 bg-sage-50",
-    coral: "text-coral-600 bg-coral-50",
-    amber: "text-amber-600 bg-amber-50",
+    ink: "text-ink bg-ink/5 dark:text-ink/80 dark:bg-ink/10",
+    teal: "text-teal-700 bg-teal-50 dark:text-teal-400 dark:bg-teal-950/35 dark:border dark:border-teal-900/30",
+    sage: "text-sage-600 bg-sage-50 dark:text-sage-400 dark:bg-sage-950/35 dark:border dark:border-sage-900/30",
+    coral: "text-coral-600 bg-coral-50 dark:text-coral-400 dark:bg-coral-950/35 dark:border dark:border-coral-900/30",
+    amber: "text-amber-600 bg-amber-50 dark:text-amber-400 dark:bg-amber-950/35 dark:border dark:border-amber-900/30",
   };
   const icons: Record<string, string> = {
     check: `<rect x="3" y="4" width="18" height="17" rx="2"/><path d="M8 2v4M16 2v4M3 10h18"/><path d="M8.5 14.5l2 2 4-4"/>`,

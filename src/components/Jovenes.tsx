@@ -228,7 +228,7 @@ export default function Jovenes({
           ]
             .filter((x) => x.label)
             .map((x) => (
-              <span key={x.label} className="inline-flex items-center gap-1 text-xs font-semibold bg-teal-50 text-teal-700 rounded-full pl-2.5 pr-1 py-1">
+              <span key={x.label} className="inline-flex items-center gap-1 text-xs font-semibold bg-teal-50 text-teal-700 border border-teal-100 rounded-full pl-2.5 pr-1 py-1 dark:bg-teal-950/30 dark:text-teal-400 dark:border-teal-900/40">
                 {x.label}
                 <button onClick={x.onClear} className="w-4 h-4 flex items-center justify-center rounded-full hover:bg-teal-200/60 transition">
                   <svg className="w-3 h-3" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
@@ -246,64 +246,114 @@ export default function Jovenes({
         </div>
       )}
 
+      {/* Overlay de filtros */}
       {showFilters && (
-        <div className="bg-card border border-ink/10 rounded-card p-4 space-y-4">
-          <div>
-            <p className="text-[11px] font-semibold text-ink/40 uppercase tracking-wide mb-2">Fidelidad</p>
-            <div className="flex flex-wrap gap-1.5">
-              {(["all", 1, 2, 3, 4] as const).map((v) => (
-                <button
-                  key={String(v)}
-                  onClick={() => setFiltroFidelidad(v)}
-                  className={`text-xs font-semibold rounded-full px-3 py-1.5 transition ${
-                    filtroFidelidad === v
-                      ? "bg-teal-600 text-white"
-                      : "bg-ink/5 text-ink/60 hover:bg-ink/10"
-                  }`}
-                >
-                  {v === "all" ? "Todos" : ["", "Iniciado", "Fiel", "Líder", "Mentor"][v]}
-                </button>
-              ))}
-            </div>
+        <div
+          className="fixed inset-0 bg-ink/40 backdrop-blur-sm z-50 animate-overlay-in"
+          onClick={() => setShowFilters(false)}
+        />
+      )}
+
+      {/* Panel lateral de filtros (Drawer) */}
+      <div
+        className={`fixed right-0 top-0 h-full w-80 bg-card/95 dark:bg-card/98 shadow-2xl border-l border-ink/10 dark:border-white/5 z-50 p-5 flex flex-col justify-between transition-transform duration-300 ease-out transform ${
+          showFilters ? "translate-x-0" : "translate-x-full"
+        }`}
+      >
+        <div className="flex flex-col flex-1 min-h-0">
+          <div className="flex items-center justify-between pb-4 border-b border-ink/5 mb-4">
+            <p className="text-sm font-bold text-ink flex items-center gap-1.5">
+              <span>🎛️</span> Filtros de búsqueda
+            </p>
+            <button
+              onClick={() => setShowFilters(false)}
+              className="w-8 h-8 rounded-full bg-ink/5 hover:bg-ink/10 text-ink/50 hover:text-ink/80 flex items-center justify-center pressable"
+            >
+              <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+                <path d="M18 6L6 18M6 6l12 12" />
+              </svg>
+            </button>
           </div>
-          <div>
-            <p className="text-[11px] font-semibold text-ink/40 uppercase tracking-wide mb-2">Estado Pastoral</p>
-            <div className="flex flex-wrap gap-1.5">
-              {(["all", 0, 1, 2, 3, 4, 5] as const).map((v) => (
-                <button
-                  key={String(v)}
-                  onClick={() => setFiltroPastoral(v)}
-                  className={`text-xs font-semibold rounded-full px-3 py-1.5 transition ${
-                    filtroPastoral === v
-                      ? "bg-teal-600 text-white"
-                      : "bg-ink/5 text-ink/60 hover:bg-ink/10"
-                  }`}
-                >
-                  {v === "all" ? "Todos" : ({ 0: "Sin riesgo", 1: "Seguimiento", 2: "Atención", 3: "Urgente", 4: "Crítico", 5: "Crisis" } as Record<number, string>)[v]}
-                </button>
-              ))}
+
+          <div className="flex-1 overflow-y-auto space-y-5 pr-1">
+            <div>
+              <p className="text-[11px] font-semibold text-ink/40 uppercase tracking-wide mb-2">Fidelidad</p>
+              <div className="flex flex-wrap gap-1.5">
+                {(["all", 1, 2, 3, 4] as const).map((v) => (
+                  <button
+                    key={String(v)}
+                    onClick={() => setFiltroFidelidad(v)}
+                    className={`text-xs font-semibold rounded-full px-3 py-1.5 transition pressable ${
+                      filtroFidelidad === v
+                        ? "bg-teal-600 text-white"
+                        : "bg-ink/5 text-ink/60 hover:bg-ink/10"
+                    }`}
+                  >
+                    {v === "all" ? "Todos" : ["", "Iniciado", "Fiel", "Líder", "Mentor"][v]}
+                  </button>
+                ))}
+              </div>
             </div>
-          </div>
-          <div>
-            <p className="text-[11px] font-semibold text-ink/40 uppercase tracking-wide mb-2">Grupo de Edad</p>
-            <div className="flex flex-wrap gap-1.5">
-              {(["all", "12-13", "14-15", "16-17", "18+"] as const).map((v) => (
-                <button
-                  key={v}
-                  onClick={() => setFiltroEdad(v)}
-                  className={`text-xs font-semibold rounded-full px-3 py-1.5 transition ${
-                    filtroEdad === v
-                      ? "bg-teal-600 text-white"
-                      : "bg-ink/5 text-ink/60 hover:bg-ink/10"
-                  }`}
-                >
-                  {v === "all" ? "Todos" : v === "18+" ? "18+" : `${v} años`}
-                </button>
-              ))}
+
+            <div>
+              <p className="text-[11px] font-semibold text-ink/40 uppercase tracking-wide mb-2">Estado Pastoral</p>
+              <div className="flex flex-wrap gap-1.5">
+                {(["all", 0, 1, 2, 3, 4, 5] as const).map((v) => (
+                  <button
+                    key={String(v)}
+                    onClick={() => setFiltroPastoral(v)}
+                    className={`text-xs font-semibold rounded-full px-3 py-1.5 transition pressable ${
+                      filtroPastoral === v
+                        ? "bg-teal-600 text-white"
+                        : "bg-ink/5 text-ink/60 hover:bg-ink/10"
+                    }`}
+                  >
+                    {v === "all" ? "Todos" : ({ 0: "Sin riesgo", 1: "Seguimiento", 2: "Atención", 3: "Urgente", 4: "Crítico", 5: "Crisis" } as Record<number, string>)[v]}
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            <div>
+              <p className="text-[11px] font-semibold text-ink/40 uppercase tracking-wide mb-2">Grupo de Edad</p>
+              <div className="flex flex-wrap gap-1.5">
+                {(["all", "12-13", "14-15", "16-17", "18+"] as const).map((v) => (
+                  <button
+                    key={v}
+                    onClick={() => setFiltroEdad(v)}
+                    className={`text-xs font-semibold rounded-full px-3 py-1.5 transition pressable ${
+                      filtroEdad === v
+                        ? "bg-teal-600 text-white"
+                        : "bg-ink/5 text-ink/60 hover:bg-ink/10"
+                    }`}
+                  >
+                    {v === "all" ? "Todos" : v === "18+" ? "18+" : `${v} años`}
+                  </button>
+                ))}
+              </div>
             </div>
           </div>
         </div>
-      )}
+
+        <div className="pt-4 border-t border-ink/5 flex gap-3 mt-4">
+          <button
+            onClick={() => {
+              setFiltroFidelidad("all");
+              setFiltroPastoral("all");
+              setFiltroEdad("all");
+            }}
+            className="flex-1 bg-ink/5 hover:bg-ink/10 text-ink/60 rounded-xl py-2 text-xs font-semibold pressable"
+          >
+            Limpiar todo
+          </button>
+          <button
+            onClick={() => setShowFilters(false)}
+            className="flex-1 bg-teal-600 hover:bg-teal-700 text-white rounded-xl py-2 text-xs font-semibold pressable"
+          >
+            Aplicar
+          </button>
+        </div>
+      </div>
 
       {upcoming.length > 0 && (
         <div className="bg-amber-50 border border-amber-100 rounded-card p-3.5 flex items-start gap-3">
@@ -370,7 +420,7 @@ export default function Jovenes({
               <div
                 key={t._id}
                 onClick={() => onOpenProfile(t._id)}
-                className="bg-card rounded-card shadow-soft p-4 cursor-pointer hover:shadow-md transition"
+                className="bg-card rounded-card shadow-soft p-4 cursor-pointer premium-card pressable"
               >
                 <div className="flex items-start gap-3">
                   <div className="relative shrink-0">
@@ -459,8 +509,14 @@ export default function Jovenes({
                           Niv.{game.level.level}
                         </span>
                       )}
-                      <span className={`text-[10px] font-semibold px-1.5 py-0.5 rounded-full ${
-                        ppp >= 0.7 ? "bg-red-50 text-red-700" : ppp >= 0.5 ? "bg-amber-50 text-amber-700" : ppp >= 0.3 ? "bg-yellow-50 text-yellow-700" : "bg-green-50 text-green-700"
+                      <span className={`text-[10px] font-semibold px-1.5 py-0.5 rounded-full border ${
+                        ppp >= 0.7
+                          ? "bg-red-50 text-red-700 border-red-100 dark:bg-red-950/20 dark:text-red-400 dark:border-red-900/30"
+                          : ppp >= 0.5
+                          ? "bg-amber-50 text-amber-700 border-amber-100 dark:bg-amber-950/20 dark:text-amber-400 dark:border-amber-900/30"
+                          : ppp >= 0.3
+                          ? "bg-yellow-50 text-yellow-700 border-yellow-100 dark:bg-yellow-950/20 dark:text-yellow-400 dark:border-yellow-900/30"
+                          : "bg-green-50 text-green-700 border-green-100 dark:bg-green-950/20 dark:text-green-400 dark:border-green-900/30"
                       }`}>
                         PPP {pppLabel(ppp)}
                       </span>

@@ -91,10 +91,10 @@ export default function Dashboard({
     .filter((x: any): x is NonNullable<typeof x> => x !== null);
 
   const colorMap: Record<string, string> = {
-    ink: "text-ink bg-ink/5",
-    teal: "text-teal-700 bg-teal-50",
-    sage: "text-sage-600 bg-sage-50",
-    coral: "text-coral-600 bg-coral-50",
+    ink: "text-ink bg-ink/5 dark:text-ink/80 dark:bg-ink/10",
+    teal: "text-teal-700 bg-teal-50 dark:text-teal-400 dark:bg-teal-950/35 dark:border dark:border-teal-900/30",
+    sage: "text-sage-600 bg-sage-50 dark:text-sage-400 dark:bg-sage-950/35 dark:border dark:border-sage-900/30",
+    coral: "text-coral-600 bg-coral-50 dark:text-coral-400 dark:bg-coral-950/35 dark:border dark:border-coral-900/30",
   };
 
   return (
@@ -356,7 +356,7 @@ export default function Dashboard({
               >
                 <div className="w-full flex items-end h-28 rounded-md bg-ink/[0.04] overflow-hidden relative">
                   <div
-                    className="w-full bg-teal-600/85 group-hover:bg-teal-700 transition-all rounded-t-sm"
+                    className="w-full bg-gradient-to-t from-teal-600/60 to-teal-500 group-hover:from-teal-600 group-hover:to-teal-400 transition-all rounded-t-md"
                     style={{ height: `${p.pct}%` }}
                   />
                 </div>
@@ -437,11 +437,11 @@ function AlertRow({
     .filter((t) => t.category === "absence")
     .map((t) => ({ ...t, text: fill(t.text, vars) }));
   const colorMap: Record<string, string> = {
-    gray: "bg-slate-50 text-slate-600 border-slate-200",
-    teal: "bg-teal-50 text-teal-700 border-teal-100",
-    amber: "bg-amber-50 text-amber-600 border-amber-100",
-    coral: "bg-coral-50 text-coral-600 border-coral-100",
-    red: "bg-red-50 text-red-700 border-red-200",
+    gray: "bg-slate-50 text-slate-600 border-slate-200 dark:bg-slate-950/30 dark:border-slate-800/60 dark:text-slate-400",
+    teal: "bg-teal-50 text-teal-700 border-teal-100 dark:bg-teal-950/30 dark:border-teal-900/40 dark:text-teal-400",
+    amber: "bg-amber-50 text-amber-600 border-amber-100 dark:bg-amber-950/30 dark:border-amber-900/40 dark:text-amber-400",
+    coral: "bg-coral-50 text-coral-600 border-coral-100 dark:bg-orange-950/30 dark:border-orange-900/40 dark:text-orange-400",
+    red: "bg-red-50 text-red-700 border-red-200 dark:bg-red-950/30 dark:border-red-900/40 dark:text-red-400",
   };
 
   const hasPhone = !!(teen.telefono || teen.telefonoPadre);
