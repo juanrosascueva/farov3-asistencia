@@ -71,9 +71,14 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   const login = useCallback(async (email: string, password: string) => {
     setLoading(true);
-    const result = await loginMutation({ email, password });
-    saveToken(result.token);
-    setToken(result.token);
+    try {
+      const result = await loginMutation({ email, password });
+      saveToken(result.token);
+      setToken(result.token);
+    } catch (err) {
+      setLoading(false);
+      throw err;
+    }
   }, [loginMutation]);
 
   const register = useCallback(async (
