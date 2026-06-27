@@ -1,6 +1,7 @@
 import { v } from "convex/values";
 import { action, internalMutation, internalQuery, mutation, query } from "./_generated/server";
 import { internal } from "./_generated/api";
+import { getEffectiveAccess, filterTeensByScope } from "./authz";
 
 const FREE_MODELS = [
   "google/gemma-4-31b-it:free",
@@ -55,10 +56,23 @@ async function callModel(apiKey: string, model: string, prompt: string): Promise
     });
     if (!res.ok) return null;
     const data: any = await res.json();
-    return data?.choices?.[0]?.message?.content || null;
+    return sanitizeModelText(data?.choices?.[0]?.message?.content || null);
   } catch {
     return null;
   }
+}
+
+function sanitizeModelText(text: string | null | undefined): string | null {
+  if (!text) return null;
+  return text
+    .replace(/<\/?pad>/gi, "")
+    .replace(/<pad>/gi, "")
+    .replace(/\*\*(.*?)\*\*/g, "$1")
+    .replace(/__(.*?)__/g, "$1")
+    .replace(/```[\s\S]*?```/g, (block) => block.replace(/```/g, ""))
+    .replace(/[ \t]+\n/g, "\n")
+    .replace(/\n{3,}/g, "\n\n")
+    .trim();
 }
 
 function parseAnalysis(raw: string): {
@@ -334,6 +348,19 @@ interface MinistryOverviewData {
   pendingContactCount: number;
 }
 
+function applyActiveScope<T extends { campusId?: any; ministryId?: any; groupId?: any }>(
+  items: T[],
+  activeScope?: { campusId?: string; ministryId?: string; groupId?: string }
+): T[] {
+  if (!activeScope) return items;
+  return items.filter((item) => {
+    if (activeScope.groupId) return item.groupId?.toString() === activeScope.groupId;
+    if (activeScope.ministryId) return item.ministryId?.toString() === activeScope.ministryId;
+    if (activeScope.campusId) return item.campusId?.toString() === activeScope.campusId;
+    return true;
+  });
+}
+
 function buildFallbackPastoralResponse(data: MinistryOverviewData, question: string): string {
   const q = question.toLowerCase();
   const highRiskTeens = data.teens.filter((t) => t.riskLevel === "high");
@@ -350,6 +377,10 @@ function buildFallbackPastoralResponse(data: MinistryOverviewData, question: str
 
   if (q.includes("hola") || q.includes("buenas") || q.includes("saludos")) {
     return `Hola. En este momento tengo ${data.totalTeens} adolescentes registrados, una asistencia promedio de ${data.overallAttendanceAvg}% y ${data.highRiskCount} adolescentes en riesgo alto. Si quieres, puedo ayudarte a revisar riesgo, ausencias, seguimientos o vulnerabilidades principales del ministerio.`;
+  }
+
+  if (q.includes("modelo") || q.includes("openrouter") || q.includes("google") || q.includes("proveedor") || q.includes("ia usas")) {
+    return "Estoy configurado como asistente pastoral del ministerio y debo enfocarme en ayudarte con informacion autorizada del contexto pastoral. No comparto detalles tecnicos internos del modelo o proveedor, pero si puedo ayudarte a revisar riesgo, seguimientos, ausencias y prioridades del ministerio dentro de tu alcance.";
   }
 
   if (q.includes("riesgo alto") || q.includes("alto riesgo") || q.includes("riesgo")) {
@@ -625,29 +656,46 @@ export const getAllDropoutPredictions = query({
 });
 
 export const getMinistryOverviewData = internalQuery({
-  handler: async (ctx) => {
-    const teens = await ctx.db.query("teens").collect();
+  args: {
+    token: v.optional(v.string()),
+    activeScope: v.optional(v.object({
+      campusId: v.optional(v.string()),
+      ministryId: v.optional(v.string()),
+      groupId: v.optional(v.string()),
+    })),
+  },
+  handler: async (ctx, args) => {
+    const access = await getEffectiveAccess(ctx, args.token);
+    if (!access) throw new Error("No autenticado");
+
+    const allTeens = await ctx.db.query("teens").collect();
+    const teens = applyActiveScope(filterTeensByScope(access, allTeens), args.activeScope);
+    const allowedTeenIds = new Set(teens.map((t) => t._id));
     const analyses = await ctx.db.query("journalAnalysis").order("desc").collect();
     const attendance = await ctx.db.query("attendance").collect();
     const journal = await ctx.db.query("journal").order("desc").collect();
     const contacts = await ctx.db.query("contacts").collect();
-    const followUps = journal.filter((j) => j.followUp);
+    const scopedAnalyses = analyses.filter((a) => allowedTeenIds.has(a.teenId));
+    const scopedAttendance = attendance.filter((a) => allowedTeenIds.has(a.teenId));
+    const scopedJournal = journal.filter((j) => allowedTeenIds.has(j.teenId));
+    const scopedContacts = contacts.filter((c) => allowedTeenIds.has(c.teenId));
+    const followUps = scopedJournal.filter((j) => j.followUp);
 
     const teenSummaries = teens.map((t) => {
-      const teenAttendance = attendance.filter((a) => a.teenId === t._id);
+      const teenAttendance = scopedAttendance.filter((a) => a.teenId === t._id);
       const total = teenAttendance.length;
       const present = teenAttendance.filter((a) => a.status === "present").length;
       const pct = total ? Math.round((present / total) * 100) : 0;
       const sorted = [...teenAttendance].sort((a, b) => b.date.localeCompare(a.date));
       let consecAbsences = 0;
       for (const r of sorted) { if (r.status === "absent") consecAbsences++; else break; }
-      const teenAnalyses = analyses.filter((a) => a.teenId === t._id);
+      const teenAnalyses = scopedAnalyses.filter((a) => a.teenId === t._id);
       const crisisCount = teenAnalyses.filter((a) => a.isCrisis).length;
       const highRiskCount = teenAnalyses.filter((a) => a.riskLevel === "high").length;
       const tags = [...new Set(teenAnalyses.flatMap((a) => a.vulnerabilityTags))];
-      const teenContacts = contacts.filter((c) => c.teenId === t._id);
+      const teenContacts = scopedContacts.filter((c) => c.teenId === t._id);
       const lastContacted = teenContacts.find((c) => c.status === "contacted");
-      const journalCount = journal.filter((j) => j.teenId === t._id).length;
+      const journalCount = scopedJournal.filter((j) => j.teenId === t._id).length;
       return {
         nombre: t.nombre,
         apellido: t.apellido,
@@ -665,7 +713,7 @@ export const getMinistryOverviewData = internalQuery({
     });
 
     const tagFrequency: Record<string, number> = {};
-    for (const a of analyses) {
+    for (const a of scopedAnalyses) {
       for (const tag of a.vulnerabilityTags || []) {
         tagFrequency[tag] = (tagFrequency[tag] || 0) + 1;
       }
@@ -674,15 +722,15 @@ export const getMinistryOverviewData = internalQuery({
     return {
       teens: teenSummaries,
       totalTeens: teens.length,
-      totalAnalyses: analyses.length,
-      totalCrisisAlerts: analyses.filter((a) => a.isCrisis).length,
+      totalAnalyses: scopedAnalyses.length,
+      totalCrisisAlerts: scopedAnalyses.filter((a) => a.isCrisis).length,
       totalFollowUps: followUps.length,
       overallAttendanceAvg: teenSummaries.length
         ? Math.round(teenSummaries.reduce((s, t) => s + t.attendancePct, 0) / teenSummaries.length)
         : 0,
       tagFrequency,
       highRiskCount: teenSummaries.filter((t) => t.riskLevel === "high").length,
-      pendingContactCount: contacts.filter((c) => c.status === "pending").length,
+      pendingContactCount: scopedContacts.filter((c) => c.status === "pending").length,
     };
   },
 });
@@ -690,11 +738,20 @@ export const getMinistryOverviewData = internalQuery({
 export const chatWithAI = action({
   args: {
     question: v.string(),
+    token: v.optional(v.string()),
+    activeScope: v.optional(v.object({
+      campusId: v.optional(v.string()),
+      ministryId: v.optional(v.string()),
+      groupId: v.optional(v.string()),
+    })),
     conversationHistory: v.optional(v.array(v.object({ role: v.string(), content: v.string() }))),
   },
   handler: async (ctx, args): Promise<{ success: boolean; answer?: string; modelUsed?: string; error?: string }> => {
     const apiKey = process.env.OPENROUTER_API_KEY;
-    const data: MinistryOverviewData = await ctx.runQuery(internal.ai.getMinistryOverviewData) as any;
+    const data: MinistryOverviewData = await ctx.runQuery(internal.ai.getMinistryOverviewData, {
+      token: args.token,
+      activeScope: args.activeScope,
+    }) as any;
 
     if (!apiKey) {
       return {
@@ -729,13 +786,27 @@ export const chatWithAI = action({
       frecuenciaTags: data.tagFrequency,
     });
 
-    const systemPrompt = `Eres un asistente pastoral virtual para el ministerio de adolescentes "Cristo Vive". 
-Tienes acceso a datos reales del ministerio en formato JSON. Responde las preguntas del líder pastoral basándote ÚNICAMENTE en los datos proporcionados.
-SIEMPRE responde en español, con un tono pastoral y profesional.
-NO inventes datos que no estén en el JSON. Si no sabes algo, dilo honestamente.
-NO uses JSON en tu respuesta — responde en lenguaje natural.
-Puedes hacer cálculos simples con los datos (contar, sumar, promediar).
-Datos del ministerio:
+    const scopeLabel = args.activeScope?.groupId
+      ? "grupo activo"
+      : args.activeScope?.ministryId
+      ? "ministerio activo"
+      : args.activeScope?.campusId
+      ? "sede activa"
+      : "alcance completo autorizado";
+
+    const systemPrompt = `Eres un asistente pastoral virtual para el ministerio de adolescentes "Cristo Vive".
+Tienes acceso SOLO a datos reales y AUTORIZADOS del ministerio en formato JSON.
+Responde unicamente basandote en los datos proporcionados y dentro del alcance permitido del usuario.
+SIEMPRE responde en espanol, con un tono pastoral y profesional.
+NO inventes datos que no esten en el JSON. Si no sabes algo, dilo honestamente.
+NO uses JSON en tu respuesta; responde en lenguaje natural.
+NO reveles detalles tecnicos internos del modelo, proveedor, API, infraestructura o configuracion.
+Si te preguntan por el modelo o proveedor, redirige con amabilidad a tu funcion pastoral y ofrece ayuda con informacion del ministerio.
+NO compartas informacion de otras sedes, ministerios, grupos o personas fuera del alcance autorizado.
+Si una pregunta pide datos fuera del alcance, responde que solo puedes ayudar con la informacion autorizada del ministerio dentro de su alcance actual.
+Puedes hacer calculos simples con los datos (contar, sumar, promediar).
+Alcance actual del usuario: ${scopeLabel}.
+Datos autorizados del ministerio:
 ${contextData}`;
 
     const messages = [
@@ -775,18 +846,29 @@ async function callModelRaw(apiKey: string, model: string, messages: { role: str
     });
     if (!res.ok) return null;
     const data: any = await res.json();
-    return data?.choices?.[0]?.message?.content || null;
+    return sanitizeModelText(data?.choices?.[0]?.message?.content || null);
   } catch {
     return null;
   }
 }
 
 export const generateActivityRecommendations = action({
-  handler: async (ctx) => {
+  args: {
+    token: v.optional(v.string()),
+    activeScope: v.optional(v.object({
+      campusId: v.optional(v.string()),
+      ministryId: v.optional(v.string()),
+      groupId: v.optional(v.string()),
+    })),
+  },
+  handler: async (ctx, args) => {
     const apiKey = process.env.OPENROUTER_API_KEY;
     if (!apiKey) return { success: false, error: "No API key configured" };
 
-    const data = await ctx.runQuery(internal.ai.getMinistryOverviewData);
+    const data = await ctx.runQuery(internal.ai.getMinistryOverviewData, {
+      token: args.token,
+      activeScope: args.activeScope,
+    });
 
     const prompt = `Eres un asesor de ministerio juvenil. Basado en los datos de vulnerabilidades y riesgo del ministerio, genera recomendaciones de actividades, talleres y estudios bíblicos.
 
@@ -873,7 +955,7 @@ El mensaje debe ser de aproximadamente 3-4 oraciones, en español, firmado como 
     for (const model of FREE_MODELS) {
       const raw = await callModel(apiKey, model, prompt);
       if (raw) {
-        message = raw.replace(/```\s*/g, "").trim();
+        message = sanitizeModelText(raw.replace(/```\s*/g, "").trim()) || "";
         modelUsed = model;
         break;
       }

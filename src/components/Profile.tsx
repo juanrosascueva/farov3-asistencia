@@ -22,6 +22,17 @@ import { Avatar } from "./Layout";
 import TeenForm from "./TeenForm";
 import Modal from "./Modal";
 
+function sanitizeAiText(text: string): string {
+  return text
+    .replace(/<\/?pad>/gi, "")
+    .replace(/<pad>/gi, "")
+    .replace(/\*\*(.*?)\*\*/g, "$1")
+    .replace(/__(.*?)__/g, "$1")
+    .replace(/[ \t]+\n/g, "\n")
+    .replace(/\n{3,}/g, "\n\n")
+    .trim();
+}
+
 interface ProfileProps {
   teen: Doc<"teens">;
   attendanceMap: AttendanceMap;
@@ -300,8 +311,14 @@ export default function Profile({
                 setGeneratingMsg(true);
                 setAiMsgTone("aliento");
                 setAiMsgTarget("teen");
+                setAiMsg("Generando mensaje pastoral...");
+                setShowAIMsg(true);
                 const r = await generateMsg({ teenId: teen._id as any, tone: "aliento" }) as any;
-                if (r.success) { setAiMsg(r.message); setShowAIMsg(true); }
+                if (r.success) {
+                  setAiMsg(sanitizeAiText(r.message || ""));
+                } else {
+                  setAiMsg("No se pudo generar el mensaje en este momento. Intenta nuevamente.");
+                }
                 setGeneratingMsg(false);
               }}
               disabled={generatingMsg}
@@ -456,8 +473,10 @@ export default function Profile({
                 onChange={async (e) => {
                   setAiMsgTone(e.target.value);
                   setGeneratingMsg(true);
+                  setAiMsg("Regenerando mensaje pastoral...");
                   const r = await generateMsg({ teenId: teen._id as any, tone: e.target.value }) as any;
-                  if (r.success) setAiMsg(r.message);
+                  if (r.success) setAiMsg(sanitizeAiText(r.message || ""));
+                  else setAiMsg("No se pudo regenerar el mensaje en este momento. Intenta nuevamente.");
                   setGeneratingMsg(false);
                 }}
                 className="flex-1 bg-card border border-ink/10 rounded-xl px-3 py-2 text-sm"
@@ -476,12 +495,13 @@ export default function Profile({
                 <option value="parent">Al encargado</option>
               </select>
             </div>
-            <textarea
-              value={aiMsg}
-              onChange={(e) => setAiMsg(e.target.value)}
-              rows={5}
-              className="w-full bg-ink/[0.02] border border-ink/10 rounded-xl p-3.5 text-sm resize-none"
-            />
+              <textarea
+                value={aiMsg}
+                onChange={(e) => setAiMsg(e.target.value)}
+                rows={5}
+                disabled={generatingMsg}
+                className="w-full bg-ink/[0.02] border border-ink/10 rounded-xl p-3.5 text-sm resize-none"
+              />
             <div className="flex gap-3">
               <button
                 onClick={() => {

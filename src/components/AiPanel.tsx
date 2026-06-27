@@ -5,6 +5,8 @@ import type { Doc } from "../../convex/_generated/dataModel";
 import type { AttendanceMap } from "../lib/types";
 import { VULNERABILITY_TAGS } from "../lib/types";
 import { statsFor, riskScore, fmtDate, esc } from "../lib/utils";
+import { useAuth } from "../hooks/useAuth";
+import { useScope } from "../hooks/useScope";
 import { Avatar } from "./Layout";
 
 interface AiPanelProps {
@@ -26,6 +28,8 @@ const barColors: Record<string, string> = {
 };
 
 export default function AiPanel({ teens, attendanceMap, onOpenProfile }: AiPanelProps) {
+  const { token } = useAuth();
+  const { scope } = useScope();
   const allAnalyses = useQuery(api.ai.getAllAnalyses) ?? [];
   const allJournal = useQuery(api.journal.listAll) ?? [];
   const generateSummary = useAction(api.ai.generateWeeklySummary as any);
@@ -251,7 +255,14 @@ export default function AiPanel({ teens, attendanceMap, onOpenProfile }: AiPanel
           <button
             onClick={async () => {
               setRecsLoading(true);
-              const result = await generateRecommendations();
+              const result = await generateRecommendations({
+                token: token ?? undefined,
+                activeScope: {
+                  campusId: scope.campusId,
+                  ministryId: scope.ministryId,
+                  groupId: scope.groupId,
+                },
+              });
               setRecommendations(result);
               setRecsLoading(false);
             }}

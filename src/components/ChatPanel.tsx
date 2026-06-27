@@ -1,13 +1,28 @@
 import { useState, useRef, useEffect } from "react";
 import { useAction, useMutation, useQuery } from "convex/react";
 import { api } from "../../convex/_generated/api";
+import { useAuth } from "../hooks/useAuth";
+import { useScope } from "../hooks/useScope";
 
 interface ChatMessage {
   role: "user" | "assistant";
   content: string;
 }
 
+function sanitizeChatText(text: string): string {
+  return text
+    .replace(/<\/?pad>/gi, "")
+    .replace(/<pad>/gi, "")
+    .replace(/\*\*(.*?)\*\*/g, "$1")
+    .replace(/__(.*?)__/g, "$1")
+    .replace(/[ \t]+\n/g, "\n")
+    .replace(/\n{3,}/g, "\n\n")
+    .trim();
+}
+
 export default function ChatPanel({ onClose }: { onClose: () => void }) {
+  const { token } = useAuth();
+  const { scope } = useScope();
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [input, setInput] = useState("");
   const [sending, setSending] = useState(false);
@@ -40,7 +55,7 @@ export default function ChatPanel({ onClose }: { onClose: () => void }) {
 
   useEffect(() => {
     if (savedMessages && savedMessages.length > 0) {
-      setMessages(savedMessages.map((m: any) => ({ role: m.role, content: m.content })));
+      setMessages(savedMessages.map((m: any) => ({ role: m.role, content: sanitizeChatText(m.content) })));
     } else if (initialized && savedMessages && savedMessages.length === 0) {
       setMessages([
         { role: "assistant", content: "¡Hola! Soy tu asistente pastoral virtual. Pregúntame lo que necesites sobre el ministerio.\n\nEjemplos:\n• ¿Quiénes tienen riesgo alto?\n• ¿Cuántos adolescentes faltan seguido?\n• ¿Qué vulnerabilidades son más comunes?\n• ¿Quiénes no han sido contactados?" },
@@ -62,10 +77,20 @@ export default function ChatPanel({ onClose }: { onClose: () => void }) {
     try {
       await addMessage({ sessionId: sessionId as any, role: "user", content: userMsg });
       const history = messages.map((m) => ({ role: m.role, content: m.content }));
-      const result = await chatAction({ question: userMsg, conversationHistory: history }) as any;
+      const result = await chatAction({
+        question: userMsg,
+        token: token ?? undefined,
+        activeScope: {
+          campusId: scope.campusId,
+          ministryId: scope.ministryId,
+          groupId: scope.groupId,
+        },
+        conversationHistory: history,
+      }) as any;
       if (result.success) {
-        setMessages((m) => [...m, { role: "assistant", content: result.answer }]);
-        await addMessage({ sessionId: sessionId as any, role: "assistant", content: result.answer });
+        const cleanAnswer = sanitizeChatText(result.answer || "");
+        setMessages((m) => [...m, { role: "assistant", content: cleanAnswer }]);
+        await addMessage({ sessionId: sessionId as any, role: "assistant", content: cleanAnswer });
       } else {
         const errMsg = "Lo siento, no pude procesar tu pregunta. Intenta de nuevo.";
         setMessages((m) => [...m, { role: "assistant", content: errMsg }]);
