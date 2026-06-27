@@ -1,5 +1,5 @@
-import { useState, useCallback } from "react";
-import { useMutation } from "convex/react";
+import { useState, useCallback, useMemo } from "react";
+import { useQuery, useMutation } from "convex/react";
 import { api } from "../../convex/_generated/api";
 import type { Doc } from "../../convex/_generated/dataModel";
 import type { AttendanceMap } from "../lib/types";
@@ -24,15 +24,49 @@ export default function Jovenes({
   const [editingTeen, setEditingTeen] = useState<Doc<"teens"> | null>(null);
   const [deletingTeen, setDeletingTeen] = useState<Doc<"teens"> | null>(null);
 
+  type FilterFidelidad = "all" | 1 | 2 | 3 | 4;
+  type FilterPastoral = "all" | "no_alert" | "check" | "urgent" | "critical";
+  type FilterEdad = "all" | "12-13" | "14-15" | "16-17" | "18+";
+
+  const [showFilters, setShowFilters] = useState(false);
+  const [filtroFidelidad, setFiltroFidelidad] = useState<FilterFidelidad>("all");
+  const [filtroPastoral, setFiltroPastoral] = useState<FilterPastoral>("all");
+  const [filtroEdad, setFiltroEdad] = useState<FilterEdad>("all");
+
   const deleteTeen = useMutation(api.teens.remove);
 
-  const filtered = teens.filter((t) => {
-    const q = query.toLowerCase();
-    return (
-      !q ||
-      (t.nombre + " " + t.apellido).toLowerCase().includes(q)
-    );
-  });
+  const followUps = useQuery(api.journal.listFollowUps);
+  const followUpTeenIds = useMemo(() => {
+    if (!followUps) return new Set<string>();
+    return new Set(followUps.map((e) => e.teenId));
+  }, [followUps]);
+
+  const activeFilterCount = [filtroFidelidad, filtroPastoral, filtroEdad].filter((f) => f !== "all").length;
+
+  const teenData = teens
+    .map((t) => {
+      const s = statsFor(t._id, attendanceMap);
+      const alert = alertLevel(s.consecutiveAbsences);
+      return { t, s, alert, age: ageFromDOB(t.nacimiento), game: getGamification(s), rc: ringColor(alert), hasFollowUp: followUpTeenIds.has(t._id) };
+    })
+    .filter(({ t }) => {
+      const q = query.toLowerCase();
+      return !q || (t.nombre + " " + t.apellido).toLowerCase().includes(q);
+    })
+    .filter(({ t, s, alert, age, game, hasFollowUp }) => {
+      if (activeFilterCount === 0) return true;
+      if (filtroFidelidad !== "all" && game.level.level !== filtroFidelidad) return false;
+      if (filtroPastoral !== "all") {
+        if (filtroPastoral === "no_alert" && alert !== null) return false;
+        if (filtroPastoral !== "no_alert" && (!alert || alert.level !== filtroPastoral)) return false;
+      }
+      if (filtroEdad !== "all") {
+        if (age === null) return false;
+        const [min, max] = filtroEdad.split("-").map(Number);
+        if (age < min || age > max) return false;
+      }
+      return true;
+    });
 
   const upcoming = teens
     .map((t) => ({ t, days: daysToNextBirthday(t.nacimiento) }))
@@ -84,26 +118,127 @@ export default function Jovenes({
         </button>
       </div>
 
-      <div className="relative">
-        <svg
-          className="w-4 h-4 absolute left-3.5 top-1/2 -translate-y-1/2 text-ink/30"
-          viewBox="0 0 24 24"
-          fill="none"
-          stroke="currentColor"
-          strokeWidth="1.8"
-          strokeLinecap="round"
-          strokeLinejoin="round"
+      <div className="flex gap-2">
+        <div className="relative flex-1">
+          <svg
+            className="w-4 h-4 absolute left-3.5 top-1/2 -translate-y-1/2 text-ink/30"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            strokeWidth="1.8"
+            strokeLinecap="round"
+            strokeLinejoin="round"
+          >
+            <circle cx="11" cy="11" r="7" />
+            <path d="M21 21l-4.3-4.3" />
+          </svg>
+          <input
+            value={query}
+            onChange={(e) => setQuery(e.target.value)}
+            placeholder="Buscar por nombre..."
+            className="w-full bg-card border border-ink/10 rounded-xl pl-10 pr-4 py-2.5 text-sm"
+          />
+        </div>
+        <button
+          onClick={() => setShowFilters((v) => !v)}
+          className="relative shrink-0 w-10 h-10 flex items-center justify-center rounded-xl border border-ink/10 bg-card text-ink/50 hover:text-ink/70 hover:bg-ink/5 transition"
         >
-          <circle cx="11" cy="11" r="7" />
-          <path d="M21 21l-4.3-4.3" />
-        </svg>
-        <input
-          value={query}
-          onChange={(e) => setQuery(e.target.value)}
-          placeholder="Buscar por nombre..."
-          className="w-full bg-card border border-ink/10 rounded-xl pl-10 pr-4 py-2.5 text-sm"
-        />
+          <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+            <path d="M22 3H2l8 9.46V19l4 2v-8.54L22 3z" />
+          </svg>
+          {activeFilterCount > 0 && (
+            <span className="absolute -top-1.5 -right-1.5 w-4.5 h-4.5 flex items-center justify-center text-[10px] font-bold text-white bg-teal-600 rounded-full">
+              {activeFilterCount}
+            </span>
+          )}
+        </button>
       </div>
+
+      {activeFilterCount > 0 && (
+        <div className="flex flex-wrap items-center gap-1.5">
+          {[
+            { val: filtroFidelidad, label: filtroFidelidad !== "all" ? `Nivel: ${["", "Iniciado", "Fiel", "Líder", "Mentor"][filtroFidelidad as number]}` : null, onClear: () => setFiltroFidelidad("all") },
+            { val: filtroPastoral, label: filtroPastoral !== "all" ? ({ no_alert: "Sin alerta", check: "Seguimiento", urgent: "Urgente", critical: "Crítica" } as const)[filtroPastoral] : null, onClear: () => setFiltroPastoral("all") },
+            { val: filtroEdad, label: filtroEdad !== "all" ? `Edad: ${filtroEdad}` : null, onClear: () => setFiltroEdad("all") },
+          ]
+            .filter((x) => x.label)
+            .map((x) => (
+              <span key={x.label} className="inline-flex items-center gap-1 text-xs font-semibold bg-teal-50 text-teal-700 rounded-full pl-2.5 pr-1 py-1">
+                {x.label}
+                <button onClick={x.onClear} className="w-4 h-4 flex items-center justify-center rounded-full hover:bg-teal-200/60 transition">
+                  <svg className="w-3 h-3" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                    <path d="M18 6L6 18M6 6l12 12" />
+                  </svg>
+                </button>
+              </span>
+            ))}
+          <button
+            onClick={() => { setFiltroFidelidad("all"); setFiltroPastoral("all"); setFiltroEdad("all"); }}
+            className="text-[11px] font-semibold text-ink/40 hover:text-ink/60 underline underline-offset-2"
+          >
+            Limpiar todo
+          </button>
+        </div>
+      )}
+
+      {showFilters && (
+        <div className="bg-card border border-ink/10 rounded-card p-4 space-y-4">
+          <div>
+            <p className="text-[11px] font-semibold text-ink/40 uppercase tracking-wide mb-2">Fidelidad</p>
+            <div className="flex flex-wrap gap-1.5">
+              {(["all", 1, 2, 3, 4] as const).map((v) => (
+                <button
+                  key={String(v)}
+                  onClick={() => setFiltroFidelidad(v)}
+                  className={`text-xs font-semibold rounded-full px-3 py-1.5 transition ${
+                    filtroFidelidad === v
+                      ? "bg-teal-600 text-white"
+                      : "bg-ink/5 text-ink/60 hover:bg-ink/10"
+                  }`}
+                >
+                  {v === "all" ? "Todos" : ["", "Iniciado", "Fiel", "Líder", "Mentor"][v]}
+                </button>
+              ))}
+            </div>
+          </div>
+          <div>
+            <p className="text-[11px] font-semibold text-ink/40 uppercase tracking-wide mb-2">Estado Pastoral</p>
+            <div className="flex flex-wrap gap-1.5">
+              {(["all", "no_alert", "check", "urgent", "critical"] as const).map((v) => (
+                <button
+                  key={v}
+                  onClick={() => setFiltroPastoral(v)}
+                  className={`text-xs font-semibold rounded-full px-3 py-1.5 transition ${
+                    filtroPastoral === v
+                      ? "bg-teal-600 text-white"
+                      : "bg-ink/5 text-ink/60 hover:bg-ink/10"
+                  }`}
+                >
+                  {({ all: "Todos", no_alert: "Sin alerta", check: "Seguimiento", urgent: "Urgente", critical: "Crítica" } as const)[v]}
+                </button>
+              ))}
+            </div>
+          </div>
+          <div>
+            <p className="text-[11px] font-semibold text-ink/40 uppercase tracking-wide mb-2">Grupo de Edad</p>
+            <div className="flex flex-wrap gap-1.5">
+              {(["all", "12-13", "14-15", "16-17", "18+"] as const).map((v) => (
+                <button
+                  key={v}
+                  onClick={() => setFiltroEdad(v)}
+                  className={`text-xs font-semibold rounded-full px-3 py-1.5 transition ${
+                    filtroEdad === v
+                      ? "bg-teal-600 text-white"
+                      : "bg-ink/5 text-ink/60 hover:bg-ink/10"
+                  }`}
+                >
+                  {v === "all" ? "Todos" : v === "18+" ? "18+" : `${v} años`}
+                </button>
+              ))}
+            </div>
+          </div>
+        </div>
+      )}
 
       {upcoming.length > 0 && (
         <div className="bg-amber-50 border border-amber-100 rounded-card p-3.5 flex items-start gap-3">
@@ -139,7 +274,7 @@ export default function Jovenes({
         </div>
       )}
 
-      {filtered.length === 0 ? (
+      {teenData.length === 0 ? (
         <div className="text-center py-8 px-4">
           <div className="w-12 h-12 mx-auto rounded-full bg-ink/5 flex items-center justify-center mb-3 text-ink/30">
             <svg
@@ -166,13 +301,7 @@ export default function Jovenes({
         </div>
       ) : (
         <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-3">
-          {filtered.map((t) => {
-            const s = statsFor(t._id, attendanceMap);
-            const alert = alertLevel(s.consecutiveAbsences);
-            const age = ageFromDOB(t.nacimiento);
-            const rc = ringColor(alert);
-            const game = getGamification(s);
-            return (
+          {teenData.map(({ t, s, alert, age, game, rc, hasFollowUp }) => (
               <div
                 key={t._id}
                 onClick={() => onOpenProfile(t._id)}
@@ -196,15 +325,59 @@ export default function Jovenes({
                     )}
                   </div>
                   <div className="flex-1 min-w-0">
-                    <p className="text-sm font-semibold truncate flex items-center gap-1.5">
+                    <p className="text-sm font-semibold truncate">
                       {esc(t.nombre)} {esc(t.apellido)}
-                      {game.streakTier && (
-                        <span className="text-sm shrink-0" title={`Racha ${game.streakTier.label}: ${s.presentStreak} semanas`}>
-                          {game.streakTier.icon}
-                        </span>
-                      )}
                     </p>
-                    <p className="text-xs text-ink/40 flex items-center gap-2">
+                    {(s.presentStreak > 2 || s.consecutiveAbsences >= 2 || hasFollowUp) && (
+                      <div className="flex flex-wrap items-center gap-1 mt-1">
+                        {s.presentStreak > 2 && (
+                          <span className="inline-flex items-center gap-0.5 text-[11px] font-semibold bg-orange-50 text-orange-600 border border-orange-200/60 rounded-full px-1.5 py-0.5 dark:bg-orange-950/20 dark:text-orange-400 dark:border-orange-900/40">
+                            <svg className="w-3 h-3" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+                              <path d="M8.5 14.5A2.5 2.5 0 0011 12c0-1.38-.8-2-1.83-2.37A4.5 4.5 0 008.5 6.5 4.5 4.5 0 006 11c-.1 1.37.57 2.5 1.5 3.5z" />
+                              <path d="M12 22c-3.31 0-6-2.69-6-6 0-2.5 2-5 3.5-7C10 11 10 12 10 13c0 1.1.9 2 2 2s2-.9 2-2c0-1 0-2 1.5-4C16 11 18 13.5 18 16c0 3.31-2.69 6-6 6z" />
+                            </svg>
+                            Racha {s.presentStreak}
+                          </span>
+                        )}
+                        {s.consecutiveAbsences === 2 && (
+                          <span className="inline-flex items-center gap-0.5 text-[11px] font-semibold bg-amber-50 text-amber-700 border border-amber-200 rounded-full px-1.5 py-0.5 dark:bg-amber-950/30 dark:text-amber-400 dark:border-amber-900/40">
+                            <svg className="w-3 h-3" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+                              <path d="M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z" />
+                              <line x1="12" y1="9" x2="12" y2="13" />
+                              <line x1="12" y1="17" x2="12.01" y2="17" />
+                            </svg>
+                            2 faltas
+                          </span>
+                        )}
+                        {s.consecutiveAbsences >= 3 && (
+                          <span className="inline-flex items-center gap-0.5 text-[11px] font-semibold bg-red-50 text-red-700 border border-red-200 rounded-full px-1.5 py-0.5 dark:bg-red-950/30 dark:text-red-400 dark:border-red-900/40">
+                            <svg className="w-3 h-3" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+                              <path d="M7.86 2h8.28L22 7.86v8.28L16.14 22H7.86L2 16.14V7.86L7.86 2z" />
+                              <line x1="12" y1="8" x2="12" y2="12" />
+                              <line x1="12" y1="16" x2="12.01" y2="16" />
+                            </svg>
+                            Crítico
+                          </span>
+                        )}
+                        {hasFollowUp && (
+                          <span className="inline-flex items-center gap-0.5 text-[11px] font-semibold bg-blue-50 text-blue-700 border border-blue-200 rounded-full px-1.5 py-0.5 dark:bg-blue-950/30 dark:text-blue-400 dark:border-blue-900/40">
+                            <svg className="w-3 h-3" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+                              <path d="M11 17a1 1 0 01-1-1c0-.4.2-.8.5-1.1L14 12" />
+                              <path d="M19 9c.5 0 1 .2 1.4.6l3 3c.4.4.6.9.6 1.4" />
+                              <path d="M5 15c-.5 0-1-.2-1.4-.6l-3-3c-.4-.4-.6-.9-.6-1.4" />
+                              <path d="M22 9l-1-1-4-2" />
+                              <path d="M2 9l1-1 4-2" />
+                              <path d="M13 17l3 2 4-2" />
+                              <path d="M5 15l-3 2 4 2" />
+                              <path d="M5 17l-1 1" />
+                              <path d="M19 9l-4-6h-3" />
+                            </svg>
+                            Seguimiento
+                          </span>
+                        )}
+                      </div>
+                    )}
+                    <p className="text-xs text-ink/40 flex items-center gap-2 mt-1">
                       {age !== null ? age + " años" : "—"}
                       {s.total > 0 && (
                         <span className="text-[10px] font-semibold text-ink/30 bg-ink/5 rounded-full px-1.5 py-0.5">
@@ -231,8 +404,7 @@ export default function Jovenes({
                   </p>
                 )}
               </div>
-            );
-          })}
+          ))}
         </div>
       )}
 
