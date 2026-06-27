@@ -9,7 +9,7 @@ type CampusDoc = Doc<"campus">;
 type MinistryDoc = Doc<"ministry">;
 type GroupDoc = Doc<"group">;
 
-export default function ScopeSwitcher() {
+export default function ScopeSwitcher({ fullWidth = false }: { fullWidth?: boolean }) {
   const { token } = useAuth();
   const { scope, setScope, scopeLabel, canViewAll } = useScope();
   const [open, setOpen] = useState(false);
@@ -96,7 +96,9 @@ export default function ScopeSwitcher() {
     <div className="relative" ref={ref}>
       <button
         onClick={() => { setOpen(!open); setStep("campus"); }}
-        className="flex items-center gap-1.5 text-xs font-medium rounded-lg px-2.5 py-1.5 bg-ink/5 text-ink/60 hover:bg-ink/10 transition"
+        className={`flex items-center gap-1.5 text-xs font-medium rounded-2xl px-3 py-2.5 bg-ink/5 text-ink/70 hover:bg-ink/10 transition ${
+          fullWidth ? "w-full justify-between" : ""
+        }`}
       >
         <svg className="w-3.5 h-3.5 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
           <path d="M3 9l9-7 9 7v11a2 2 0 01-2 2H5a2 2 0 01-2-2z" />
@@ -107,7 +109,7 @@ export default function ScopeSwitcher() {
       </button>
 
       {open && (
-        <div className="absolute left-0 top-full mt-1 w-64 bg-white border border-ink/10 rounded-xl shadow-soft py-1 z-50">
+        <div className="absolute left-0 top-full mt-2 w-64 bg-card border border-ink/10 rounded-2xl shadow-soft py-1 z-50">
           <div className="px-3 py-2 border-b border-ink/5 flex items-center justify-between">
             <p className="text-xs font-semibold text-ink/60">
               {step === "campus" ? "Seleccionar sede" : step === "ministry" ? "Seleccionar ministerio" : "Seleccionar grupo"}

@@ -2,7 +2,6 @@ import { useState, useRef, useEffect } from "react";
 import type { Doc } from "../../convex/_generated/dataModel";
 import { stringHue } from "../lib/utils";
 import { useAuth } from "../hooks/useAuth";
-import { useScope } from "../hooks/useScope";
 import ScopeSwitcher from "./ScopeSwitcher";
 import ChatPanel from "./ChatPanel";
 
@@ -33,24 +32,26 @@ export default function Layout({
 }: LayoutProps) {
   const [chatOpen, setChatOpen] = useState(false);
   return (
-    <div className="max-w-7xl mx-auto lg:flex lg:gap-6 lg:px-6 lg:pt-6">
-      <aside className="hidden lg:flex lg:flex-col w-64 shrink-0 sticky top-6 self-start">
-        <div className="flex items-center gap-2 px-2 mb-8">
-          <LogoIcon />
-          <div>
-            <p className="font-display font-bold text-lg leading-none">Congregación Cristo Vive</p>
-            <p className="text-[11px] text-ink/50 leading-none mt-0.5">
+    <div className="max-w-7xl mx-auto lg:flex lg:gap-8 lg:px-6 lg:pt-6">
+      <aside className="hidden lg:flex lg:flex-col w-72 shrink-0 sticky top-6 self-start">
+        <div className="rounded-[28px] border border-amber-100/70 bg-card/90 shadow-soft backdrop-blur-sm p-4 mb-5 dark:border-amber-900/30 dark:bg-card/95">
+          <div className="flex items-start gap-3">
+            <LogoIcon />
+            <div className="min-w-0 flex-1 pr-2">
+              <p className="font-display font-bold text-lg leading-none text-ink">Congregación Cristo Vive</p>
+              <p className="text-[11px] text-ink/55 leading-none mt-1">
                 Ministerio de Adolescentes
-            </p>
+              </p>
+            </div>
           </div>
-          <div className="mt-3">
+          <div className="mt-4">
             <LeaderBadge />
           </div>
+          <div className="mt-3">
+            <ScopeSwitcher fullWidth />
+          </div>
         </div>
-        <div className="mb-4">
-          <ScopeSwitcher />
-        </div>
-        <nav className="flex flex-col gap-1">
+        <nav className="flex flex-col gap-1 rounded-[28px] border border-amber-100/60 bg-card/88 shadow-soft backdrop-blur-sm p-3 dark:border-amber-900/30 dark:bg-card/92">
           {ROUTES.map((r) => (
             <button
               key={r.id}
@@ -69,7 +70,7 @@ export default function Layout({
         {setDark && (
           <button
             onClick={() => setDark(!dark)}
-            className="flex items-center gap-2 px-3 py-2.5 text-sm text-ink/40 hover:text-ink transition mt-8"
+            className="flex items-center gap-2 px-4 py-3 text-sm text-ink/60 hover:text-ink transition mt-5 rounded-2xl border border-amber-100/60 bg-card/85 shadow-soft dark:border-amber-900/30 dark:bg-card/92"
           >
             {dark ? (
               <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="5"/><path d="M12 1v2M12 21v2M4.2 4.2l1.4 1.4M18.4 18.4l1.4 1.4M1 12h2M21 12h2M4.2 19.8l1.4-1.4M18.4 5.6l1.4-1.4"/></svg>
@@ -198,14 +199,14 @@ function LeaderBadge() {
     <div className="relative" ref={ref}>
       <button
         onClick={() => setOpen(!open)}
-        className="flex items-center gap-1.5 text-xs font-medium rounded-lg px-2.5 py-1.5 transition bg-teal-50 text-teal-700 hover:bg-teal-100"
+        className="flex w-full items-center gap-2 text-xs font-medium rounded-2xl px-3 py-2.5 transition bg-gradient-to-r from-teal-50 to-amber-50 text-teal-700 hover:from-teal-100 hover:to-amber-100 dark:from-teal-50/10 dark:to-amber-50/10 dark:text-amber-100"
       >
         <svg className="w-3.5 h-3.5 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><path d="M20 21v-2a4 4 0 00-4-4H8a4 4 0 00-4 4v2" /><circle cx="12" cy="7" r="4" /></svg>
-        <span className="truncate max-w-[100px]">{user.name}</span>
+        <span className="truncate flex-1 text-left">{user.name}</span>
         <svg className="w-3 h-3 shrink-0 opacity-50" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M6 9l6 6 6-6" /></svg>
       </button>
       {open && (
-        <div className="absolute right-0 lg:left-0 top-full mt-1 w-56 bg-white border border-ink/10 rounded-xl shadow-soft py-1 z-50">
+        <div className="absolute right-0 lg:left-0 top-full mt-2 w-56 bg-card border border-ink/10 rounded-2xl shadow-soft py-1 z-50">
           <div className="px-3 py-2 border-b border-ink/5 mb-1">
             <p className="text-sm font-semibold truncate">{user.name}</p>
             <p className="text-[11px] text-ink/40 capitalize">{user.role} · {user.email}</p>

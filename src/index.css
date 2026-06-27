@@ -3,24 +3,33 @@
 @tailwind utilities;
 
 :root {
-  --clr-ink: 28 37 65;
-  --clr-paper: 250 248 244;
+  --clr-ink: 47 31 27;
+  --clr-paper: 251 247 240;
   --clr-card: 255 255 255;
 }
 .dark {
-  --clr-ink: 216 216 230;
-  --clr-paper: 15 15 26;
-  --clr-card: 26 26 46;
+  --clr-ink: 244 236 228;
+  --clr-paper: 20 16 17;
+  --clr-card: 34 28 30;
 }
 
-html, body { background: #FAF8F4; }
-.dark, .dark body { background: #0f0f1a; }
+html, body {
+  background:
+    radial-gradient(circle at top left, #fff9ef 0, #f8efe3 42%, #f3ecdf 100%);
+  color: rgb(var(--clr-ink));
+}
+
+.dark, .dark body {
+  background:
+    radial-gradient(circle at top left, #3b1b17 0, #1d1718 38%, #120f10 100%);
+  color: rgb(var(--clr-ink));
+}
 
 .beam {
   background: conic-gradient(from -90deg, var(--c1) calc(var(--p)*1%), #ECE7DC 0);
 }
 
-.tab-active { color: #0B7285; }
+.tab-active { color: #8A2D1C; }
 .tab-active .tab-dot { opacity: 1; transform: scale(1); }
 
 .fade-in { animation: fadeIn .25s ease both; }
@@ -28,12 +37,31 @@ html, body { background: #FAF8F4; }
 @media (prefers-reduced-motion: reduce) { .fade-in { animation: none; } }
 
 input:focus, textarea:focus, select:focus, button:focus-visible {
-  outline: 2px solid #0B7285;
+  outline: 2px solid #8A2D1C;
   outline-offset: 2px;
+}
+
+input, textarea, select {
+  color: rgb(var(--clr-ink));
+}
+
+input::placeholder, textarea::placeholder {
+  color: rgb(var(--clr-ink) / 0.42);
+}
+
+.dark input,
+.dark textarea,
+.dark select {
+  background: rgb(var(--clr-card));
+  border-color: rgb(var(--clr-ink) / 0.12);
+}
+
+.dark .tab-active {
+  color: #f0d5cb;
 }
 
 .chip { display: inline-flex; align-items: center; gap: 4px; }
 
 ::-webkit-scrollbar { width: 6px; height: 6px; }
 ::-webkit-scrollbar-thumb { background: #D9D2C5; border-radius: 8px; }
-.dark ::-webkit-scrollbar-thumb { background: #3a3a52; }
+.dark ::-webkit-scrollbar-thumb { background: #6b4a42; }
