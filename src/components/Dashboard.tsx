@@ -70,6 +70,16 @@ export default function Dashboard({
   });
 
   const crisisAlerts = useQuery(api.ai.getCrisisAnalyses) ?? [];
+  const dropoutPredictions = useQuery(api.ai.getAllDropoutPredictions) ?? [];
+
+  const highDropout = (dropoutPredictions as any[])
+    .filter((d: any) => d.riskLevel === "high")
+    .map((d: any) => {
+      const teen = teens.find((t) => t._id === d.teenId);
+      return teen ? { teen, prediction: d } : null;
+    })
+    .filter((x: any): x is NonNullable<typeof x> => x !== null)
+    .sort((a: any, b: any) => b.prediction.probability - a.prediction.probability);
 
   const crisisTeens = teens
     .map((t) => {
@@ -122,6 +132,38 @@ export default function Dashboard({
                 <span className="text-[11px] font-bold text-red-700 bg-red-100 px-2 py-1 rounded-full shrink-0">
                   Atención inmediata
                 </span>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {highDropout.length > 0 && (
+        <div className="bg-amber-50 border border-amber-200 rounded-card p-4">
+          <div className="flex items-center gap-2 mb-3">
+            <span className="text-lg">⚠️</span>
+            <h2 className="font-display font-bold text-sm text-amber-800">
+              Riesgo de abandono ({highDropout.length} teen{highDropout.length > 1 ? "s" : ""})
+            </h2>
+          </div>
+          <div className="space-y-2">
+            {highDropout.slice(0, 5).map((c: any) => (
+              <div
+                key={c.teen._id}
+                className="flex items-center gap-3 p-2.5 rounded-xl bg-white/60 border border-amber-100 cursor-pointer hover:bg-white transition"
+                onClick={() => onOpenProfile(c.teen._id)}
+              >
+                <Avatar teen={c.teen} />
+                <div className="flex-1 min-w-0">
+                  <p className="text-sm font-semibold">
+                    {esc(c.teen.nombre)} {esc(c.teen.apellido)}
+                  </p>
+                  <p className="text-xs text-amber-700/80 truncate">{c.prediction.primaryFactor}</p>
+                </div>
+                <div className="text-right shrink-0">
+                  <span className="text-sm font-bold text-amber-800">{c.prediction.probability}%</span>
+                  <p className="text-[10px] text-amber-600">probabilidad</p>
+                </div>
               </div>
             ))}
           </div>

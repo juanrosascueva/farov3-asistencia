@@ -416,3 +416,174 @@ export const getTeenSummary = query({
       .first();
   },
 });
+
+function buildDropoutPrompt(data: TeenData): string {
+  return `Eres un asesor pastoral experto en prevención de abandono juvenil. Analiza los datos del adolescente ${data.nombre} ${data.apellido} y predice su riesgo de abandono del ministerio.
+Responde ÚNICAMENTE con JSON válido en este formato:
+{
+  "probability": 0-100,
+  "riskLevel": "low|medium|high",
+  "primaryFactor": "factor principal detectado (una frase corta)",
+  "recommendation": "recomendación pastoral concreta para retener al adolescente"
+}
+
+Datos del adolescente:
+- Asistencia: ${data.pct}% (${data.presentAttendance}/${data.totalAttendance} registros)
+- Faltas consecutivas: ${data.consecAbsences}
+- Análisis de IA: ${data.analysesCount} totales, ${data.highRiskCount} de alto riesgo
+- Tags de vulnerabilidad: ${data.topTags.join(", ") || "ninguno"}
+- Bitácoras escritas: ${data.journalCount}
+- Registros en campaña de contactos: ${data.contactCount}
+- Alertas de crisis: ${data.crisisCount}
+- Última bitácora: ${data.lastJournalDate || "ninguna"}
+- Último contacto: ${data.lastContactDate || "ninguno"}
+- Intereses: ${data.gustos || "no registrados"}
+
+Probabilidad debe ser un número entero entre 0 y 100.
+riskLevel: "low" si probability < 30, "medium" si 30-69, "high" si >= 70.`;
+}
+
+function parseDropout(raw: string): {
+  probability: number;
+  riskLevel: "low" | "medium" | "high";
+  primaryFactor: string;
+  recommendation: string;
+} | null {
+  try {
+    const cleaned = raw.replace(/```json\s*/gi, "").replace(/```\s*/g, "").trim();
+    const parsed = JSON.parse(cleaned);
+    const p = Math.max(0, Math.min(100, Math.round(Number(parsed.probability) || 0)));
+    let rl = parsed.riskLevel;
+    if (!["low", "medium", "high"].includes(rl)) {
+      rl = p < 30 ? "low" : p < 70 ? "medium" : "high";
+    }
+    return {
+      probability: p,
+      riskLevel: rl,
+      primaryFactor: typeof parsed.primaryFactor === "string" ? parsed.primaryFactor : "",
+      recommendation: typeof parsed.recommendation === "string" ? parsed.recommendation : "",
+    };
+  } catch {
+    return null;
+  }
+}
+
+export const predictDropout = action({
+  args: { teenId: v.id("teens") },
+  handler: async (ctx, args) => {
+    const apiKey = process.env.OPENROUTER_API_KEY;
+    if (!apiKey) return { success: false, error: "No API key configured" };
+
+    const data = await ctx.runQuery(internal.ai.getTeenData, { teenId: args.teenId });
+    if (!data) return { success: false, error: "Teen not found" };
+
+    const prompt = buildDropoutPrompt(data);
+    let result: ReturnType<typeof parseDropout> = null;
+    let modelUsed = "";
+
+    for (const model of FREE_MODELS) {
+      const raw = await callModel(apiKey, model, prompt);
+      if (!raw) continue;
+      result = parseDropout(raw);
+      if (result) {
+        modelUsed = model;
+        break;
+      }
+    }
+
+    if (!result) return { success: false, error: "All models failed" };
+
+    await ctx.runMutation(internal.ai.storeDropoutPrediction, {
+      teenId: args.teenId,
+      ...result,
+      modelUsed,
+    });
+
+    return { success: true, ...result, modelUsed };
+  },
+});
+
+export const storeDropoutPrediction = internalMutation({
+  args: {
+    teenId: v.id("teens"),
+    probability: v.number(),
+    riskLevel: v.union(v.literal("low"), v.literal("medium"), v.literal("high")),
+    primaryFactor: v.string(),
+    recommendation: v.string(),
+    modelUsed: v.string(),
+  },
+  handler: async (ctx, args) => {
+    const existing = await ctx.db
+      .query("dropoutPredictions")
+      .withIndex("by_teenId", (q) => q.eq("teenId", args.teenId))
+      .first();
+    if (existing) {
+      await ctx.db.patch(existing._id, { ...args, generatedAt: new Date().toISOString() });
+    } else {
+      await ctx.db.insert("dropoutPredictions", { ...args, generatedAt: new Date().toISOString() });
+    }
+  },
+});
+
+export const getDropoutPrediction = query({
+  args: { teenId: v.id("teens") },
+  handler: async (ctx, args) => {
+    return await ctx.db
+      .query("dropoutPredictions")
+      .withIndex("by_teenId", (q) => q.eq("teenId", args.teenId))
+      .first();
+  },
+});
+
+export const getAllDropoutPredictions = query({
+  handler: async (ctx) => {
+    return await ctx.db.query("dropoutPredictions").order("desc").collect();
+  },
+});
+
+export const generatePersonalizedMessage = action({
+  args: {
+    teenId: v.id("teens"),
+    tone: v.union(v.literal("aliento"), v.literal("correccion"), v.literal("invitacion"), v.literal("celebracion")),
+  },
+  handler: async (ctx, args) => {
+    const apiKey = process.env.OPENROUTER_API_KEY;
+    if (!apiKey) return { success: false, error: "No API key configured" };
+
+    const data = await ctx.runQuery(internal.ai.getTeenData, { teenId: args.teenId });
+    if (!data) return { success: false, error: "Teen not found" };
+
+    const toneLabels: Record<string, string> = {
+      aliento: "ánimo y aliento",
+      correccion: "corrección amorosa",
+      invitacion: "invitación cordial",
+      celebracion: "celebración y felicitación",
+    };
+
+    const prompt = `Eres un asistente pastoral. Redacta un mensaje personalizado de ${toneLabels[args.tone]} para ${data.nombre} ${data.apellido}, un adolescente del ministerio juvenil.
+Responde ÚNICAMENTE con el texto del mensaje en español, sin JSON, sin formato adicional. Usa un tono natural y cercano, como de un líder juvenil.
+
+Contexto del adolescente:
+- Asistencia: ${data.pct}% (${data.presentAttendance}/${data.totalAttendance} registros)
+- Faltas consecutivas: ${data.consecAbsences}
+- Vulnerabilidades detectadas: ${data.topTags.join(", ") || "ninguna"}
+- Intereses: ${data.gustos || "no registrados"}
+- Alertas de crisis: ${data.crisisCount > 0 ? "SÍ (manejar con cuidado)" : "ninguna"}
+
+El mensaje debe ser de aproximadamente 3-4 oraciones, en español, firmado como "Tu líder".`;
+
+    let message = "";
+    let modelUsed = "";
+    for (const model of FREE_MODELS) {
+      const raw = await callModel(apiKey, model, prompt);
+      if (raw) {
+        message = raw.replace(/```\s*/g, "").trim();
+        modelUsed = model;
+        break;
+      }
+    }
+
+    if (!message) return { success: false, error: "All models failed" };
+    return { success: true, message, modelUsed };
+  },
+});

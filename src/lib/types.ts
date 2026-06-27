@@ -48,6 +48,16 @@ export interface PriorityScore {
   };
 }
 
+export interface DropoutPrediction {
+  teenId: string;
+  probability: number;
+  riskLevel: "low" | "medium" | "high";
+  primaryFactor: string;
+  recommendation: string;
+  generatedAt: string;
+  modelUsed: string;
+}
+
 export const VULNERABILITY_TAGS: { id: string; label: string; icon: string }[] = [
   { id: "salud_mental", label: "Salud Mental", icon: "🧠" },
   { id: "familiar", label: "Familiar", icon: "👪" },

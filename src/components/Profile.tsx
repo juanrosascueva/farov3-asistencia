@@ -46,6 +46,16 @@ export default function Profile({
   const analyses = useQuery(api.ai.getAnalysisByTeen, { teenId: teen._id as any }) ?? [];
   const [generatingSummary, setGeneratingSummary] = useState(false);
 
+  const dropoutPred = useQuery(api.ai.getDropoutPrediction, { teenId: teen._id as any });
+  const predictDropout = useAction(api.ai.predictDropout as any);
+  const generateMsg = useAction(api.ai.generatePersonalizedMessage as any);
+  const [generatingDropout, setGeneratingDropout] = useState(false);
+  const [generatingMsg, setGeneratingMsg] = useState(false);
+  const [showAIMsg, setShowAIMsg] = useState(false);
+  const [aiMsg, setAiMsg] = useState("");
+  const [aiMsgTone, setAiMsgTone] = useState<string>("aliento");
+  const [aiMsgTarget, setAiMsgTarget] = useState<"teen" | "parent">("teen");
+
   const crisisAnalyses = (analyses as any[]).filter((a: any) => a.isCrisis);
   const hasCrisis = crisisAnalyses.length > 0;
 
@@ -202,6 +212,53 @@ export default function Profile({
         </div>
       )}
 
+      {!dropoutPred && (
+        <div className="bg-card border border-ink/10 rounded-card p-3.5 flex items-center justify-between">
+          <div className="flex items-center gap-3">
+            <div className="w-8 h-8 rounded-lg bg-ink/5 flex items-center justify-center text-ink/30">
+              <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+                <path d="M12 9v4" /><path d="M12 17h.01" /><path d="M10.3 3.9L2.7 17a2 2 0 001.7 3h15.2a2 2 0 001.7-3L13.7 3.9a2 2 0 00-3.4 0z" />
+              </svg>
+            </div>
+            <div>
+              <p className="text-sm font-semibold text-ink/70">Predicción de abandono</p>
+              <p className="text-xs text-ink/40">Analiza el riesgo con IA</p>
+            </div>
+          </div>
+          <button
+            onClick={async () => { setGeneratingDropout(true); await predictDropout({ teenId: teen._id as any }); setGeneratingDropout(false); }}
+            disabled={generatingDropout}
+            className="text-xs font-semibold bg-ink/5 hover:bg-ink/10 rounded-full px-3 py-1.5 disabled:opacity-50"
+          >
+            {generatingDropout ? "Analizando..." : "Predecir"}
+          </button>
+        </div>
+      )}
+
+      {dropoutPred && (
+        <div className={`rounded-card p-4 border flex items-start gap-3 ${
+          dropoutPred.riskLevel === "high" ? "bg-red-50 border-red-200" : dropoutPred.riskLevel === "medium" ? "bg-amber-50 border-amber-200" : "bg-green-50 border-green-200"
+        }`}>
+          <div className={`w-10 h-10 rounded-full flex items-center justify-center text-lg font-bold text-white shrink-0 ${
+            dropoutPred.riskLevel === "high" ? "bg-red-500" : dropoutPred.riskLevel === "medium" ? "bg-amber-500" : "bg-green-500"
+          }`}>
+            {dropoutPred.probability}%
+          </div>
+          <div className="flex-1 min-w-0">
+            <p className="text-sm font-bold">{dropoutPred.riskLevel === "high" ? "Alto riesgo de abandono" : dropoutPred.riskLevel === "medium" ? "Riesgo de abandono moderado" : "Bajo riesgo de abandono"}</p>
+            <p className="text-xs mt-0.5 opacity-80">Factor principal: {dropoutPred.primaryFactor}</p>
+            <p className="text-xs mt-1 italic opacity-70">{dropoutPred.recommendation}</p>
+            <button
+              onClick={async () => { setGeneratingDropout(true); await predictDropout({ teenId: teen._id as any }); setGeneratingDropout(false); }}
+              disabled={generatingDropout}
+              className="text-[11px] font-semibold mt-2 underline underline-offset-2 opacity-60 hover:opacity-100 disabled:opacity-30"
+            >
+              {generatingDropout ? "Actualizando..." : "Actualizar predicción"}
+            </button>
+          </div>
+        </div>
+      )}
+
       <div className="grid grid-cols-3 gap-3">
         <StatCardInline label="Asistencia" value={s.pct + "%"} icon="check" color="teal" />
         <StatCardInline
@@ -230,13 +287,30 @@ export default function Profile({
           </div>
         )}
         {(teen.telefono || teen.telefonoPadre) && (
-          <div className="pt-2">
+          <div className="pt-2 space-y-2">
             <button
               onClick={() => setShowQuickWA(true)}
               className="w-full flex items-center justify-center gap-2 bg-green-600 text-white rounded-xl py-2.5 text-sm font-semibold hover:bg-green-700 transition"
             >
               <WhatsAppIcon />
               Mensajes Rápidos
+            </button>
+            <button
+              onClick={async () => {
+                setGeneratingMsg(true);
+                setAiMsgTone("aliento");
+                setAiMsgTarget("teen");
+                const r = await generateMsg({ teenId: teen._id as any, tone: "aliento" }) as any;
+                if (r.success) { setAiMsg(r.message); setShowAIMsg(true); }
+                setGeneratingMsg(false);
+              }}
+              disabled={generatingMsg}
+              className="w-full flex items-center justify-center gap-2 bg-teal-600 text-white rounded-xl py-2.5 text-sm font-semibold hover:bg-teal-700 transition disabled:opacity-50"
+            >
+              <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+                <path d="M12 20h9" /><path d="M16.5 3.5a2.1 2.1 0 013 3L7 19l-4 1 1-4z" /><path d="M15 5l3 3" />
+              </svg>
+              {generatingMsg ? "Generando..." : "Mensaje con IA"}
             </button>
           </div>
         )}
@@ -371,6 +445,66 @@ export default function Profile({
           templates={allTemplates}
           onClose={() => setShowQuickWA(false)}
         />
+      )}
+
+      {showAIMsg && (
+        <Modal title="Mensaje generado por IA" onClose={() => setShowAIMsg(false)}>
+          <div className="p-5 space-y-4">
+            <div className="flex gap-2">
+              <select
+                value={aiMsgTone}
+                onChange={async (e) => {
+                  setAiMsgTone(e.target.value);
+                  setGeneratingMsg(true);
+                  const r = await generateMsg({ teenId: teen._id as any, tone: e.target.value }) as any;
+                  if (r.success) setAiMsg(r.message);
+                  setGeneratingMsg(false);
+                }}
+                className="flex-1 bg-card border border-ink/10 rounded-xl px-3 py-2 text-sm"
+              >
+                <option value="aliento">💪 Ánimo</option>
+                <option value="correccion">❤️ Corrección</option>
+                <option value="invitacion">📅 Invitación</option>
+                <option value="celebracion">🎉 Celebración</option>
+              </select>
+              <select
+                value={aiMsgTarget}
+                onChange={(e) => setAiMsgTarget(e.target.value as "teen" | "parent")}
+                className="bg-card border border-ink/10 rounded-xl px-3 py-2 text-sm"
+              >
+                <option value="teen">Al adolescente</option>
+                <option value="parent">Al encargado</option>
+              </select>
+            </div>
+            <textarea
+              value={aiMsg}
+              onChange={(e) => setAiMsg(e.target.value)}
+              rows={5}
+              className="w-full bg-ink/[0.02] border border-ink/10 rounded-xl p-3.5 text-sm resize-none"
+            />
+            <div className="flex gap-3">
+              <button
+                onClick={() => {
+                  const phone = aiMsgTarget === "parent" ? teen.telefonoPadre : teen.telefono;
+                  if (!phone) return;
+                  const url = `https://wa.me/${phone.replace(/[^0-9]/g, "")}?text=${encodeURIComponent(aiMsg)}`;
+                  window.open(url, "_blank");
+                }}
+                disabled={!aiMsg || generatingMsg || (aiMsgTarget === "parent" ? !teen.telefonoPadre : !teen.telefono)}
+                className="flex-1 bg-green-600 text-white rounded-xl py-2.5 text-sm font-semibold hover:bg-green-700 disabled:opacity-40 flex items-center justify-center gap-2"
+              >
+                <WhatsAppIcon />
+                Enviar por WhatsApp
+              </button>
+              <button
+                onClick={() => setShowAIMsg(false)}
+                className="flex-1 bg-ink/5 text-ink/60 rounded-xl py-2.5 text-sm font-semibold"
+              >
+                Cerrar
+              </button>
+            </div>
+          </div>
+        </Modal>
       )}
     </div>
   );

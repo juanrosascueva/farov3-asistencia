@@ -88,4 +88,16 @@ export default defineSchema({
     modelUsed: v.string(),
   })
     .index("by_teenId", ["teenId"]),
+
+  dropoutPredictions: defineTable({
+    teenId: v.id("teens"),
+    probability: v.number(),
+    riskLevel: v.union(v.literal("low"), v.literal("medium"), v.literal("high")),
+    primaryFactor: v.string(),
+    recommendation: v.string(),
+    generatedAt: v.string(),
+    modelUsed: v.string(),
+  })
+    .index("by_teenId", ["teenId"])
+    .index("by_riskLevel", ["riskLevel"]),
 });
