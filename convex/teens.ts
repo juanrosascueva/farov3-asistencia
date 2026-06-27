@@ -78,6 +78,8 @@ export const migrateNotasToJournal = mutation({
           entryDate: new Date().toISOString().slice(0, 10),
           content: teen.notas.trim(),
           category: "other",
+          leaderName: "Migración",
+          followUp: false,
         });
         await ctx.db.patch(teen._id, { notas: "" });
         migrated++;

@@ -33,11 +33,15 @@ export default defineSchema({
     category: v.union(
       v.literal("call"),
       v.literal("visit"),
+      v.literal("chat"),
       v.literal("counseling"),
       v.literal("prayer"),
       v.literal("other")
     ),
+    leaderName: v.optional(v.string()),
+    followUp: v.optional(v.boolean()),
   })
     .index("by_teenId", ["teenId"])
-    .index("by_teenId_and_date", ["teenId", "entryDate"]),
+    .index("by_teenId_and_date", ["teenId", "entryDate"])
+    .index("by_followUp", ["followUp"]),
 });

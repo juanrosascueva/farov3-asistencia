@@ -13,21 +13,10 @@ const categoryMeta: Record<
   { label: string; icon: string; color: string }
 > = {
   call: { label: "Llamada", icon: "📞", color: "bg-teal-50 border-teal-100" },
-  visit: {
-    label: "Visita",
-    icon: "🏠",
-    color: "bg-sage-50 border-sage-100",
-  },
-  counseling: {
-    label: "Consejería",
-    icon: "💬",
-    color: "bg-amber-50 border-amber-100",
-  },
-  prayer: {
-    label: "Oración",
-    icon: "🙏",
-    color: "bg-coral-50 border-coral-100",
-  },
+  visit: { label: "Visita", icon: "🏠", color: "bg-sage-50 border-sage-100" },
+  chat: { label: "WhatsApp", icon: "📱", color: "bg-green-50 border-green-100" },
+  counseling: { label: "Consejería", icon: "💬", color: "bg-amber-50 border-amber-100" },
+  prayer: { label: "Oración", icon: "🙏", color: "bg-coral-50 border-coral-100" },
   other: { label: "Nota", icon: "📝", color: "bg-ink/5 border-ink/10" },
 };
 
@@ -39,20 +28,24 @@ export default function JournalTimeline({ teenId }: JournalProps) {
   const [showForm, setShowForm] = useState(false);
   const [content, setContent] = useState("");
   const [category, setCategory] = useState("other");
-  const [entryDate, setEntryDate] = useState(
-    new Date().toISOString().slice(0, 10)
-  );
+  const [entryDate, setEntryDate] = useState(new Date().toISOString().slice(0, 10));
+  const [leaderName, setLeaderName] = useState("");
+  const [followUp, setFollowUp] = useState(false);
 
   const handleSubmit = async (e: FormEvent) => {
     e.preventDefault();
-    if (!content.trim()) return;
+    if (!content.trim() || !leaderName.trim()) return;
     await createEntry({
       teenId: teenId as any,
       entryDate,
       content: content.trim(),
       category: category as any,
+      leaderName: leaderName.trim(),
+      followUp,
     });
     setContent("");
+    setLeaderName("");
+    setFollowUp(false);
     setShowForm(false);
   };
 
@@ -110,11 +103,25 @@ export default function JournalTimeline({ teenId }: JournalProps) {
               >
                 <option value="call">📞 Llamada</option>
                 <option value="visit">🏠 Visita</option>
+                <option value="chat">📱 WhatsApp</option>
                 <option value="counseling">💬 Consejería</option>
                 <option value="prayer">🙏 Oración</option>
                 <option value="other">📝 Nota</option>
               </select>
             </div>
+          </div>
+          <div>
+            <label className="text-xs font-semibold text-ink/50 mb-1 block">
+              Líder a cargo
+            </label>
+            <input
+              type="text"
+              value={leaderName}
+              onChange={(e) => setLeaderName(e.target.value)}
+              placeholder="Tu nombre o iniciales"
+              required
+              className="w-full bg-white border border-ink/10 rounded-xl px-3.5 py-2 text-sm"
+            />
           </div>
           <div>
             <label className="text-xs font-semibold text-ink/50 mb-1 block">
@@ -129,6 +136,20 @@ export default function JournalTimeline({ teenId }: JournalProps) {
               className="w-full bg-white border border-ink/10 rounded-xl px-3.5 py-2.5 text-sm resize-none"
             />
           </div>
+          <label className="flex items-center gap-2.5 cursor-pointer">
+            <input
+              type="checkbox"
+              checked={followUp}
+              onChange={(e) => setFollowUp(e.target.checked)}
+              className="w-4 h-4 rounded border-ink/20 text-coral-600 focus:ring-coral-500"
+            />
+            <span className="text-sm text-ink/70">
+              <span className="font-semibold">Requiere seguimiento</span>
+              <span className="text-xs text-ink/40 ml-1">
+                — aparecerá en el panel de inicio
+              </span>
+            </span>
+          </label>
           <button
             type="submit"
             className="w-full bg-ink text-white rounded-xl py-2.5 text-sm font-semibold"
@@ -190,7 +211,15 @@ export default function JournalTimeline({ teenId }: JournalProps) {
                         <span className="text-[10px] font-medium text-ink/30 px-1.5 py-0.5 rounded-full bg-ink/5">
                           {meta.label}
                         </span>
+                        {entry.followUp && (
+                          <span className="text-[10px] font-semibold text-coral-600 bg-coral-50 px-1.5 py-0.5 rounded-full">
+                            📌 Seguimiento
+                          </span>
+                        )}
                       </div>
+                      <p className="text-xs text-ink/40 font-medium">
+                        por {esc(entry.leaderName || "Anónimo")}
+                      </p>
                       <p className="text-sm text-ink/80 whitespace-pre-line leading-relaxed">
                         {esc(entry.content)}
                       </p>

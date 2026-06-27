@@ -1,4 +1,6 @@
 import { useState } from "react";
+import { useQuery } from "convex/react";
+import { api } from "../../convex/_generated/api";
 import type { Doc } from "../../convex/_generated/dataModel";
 import type { AttendanceMap } from "../lib/types";
 import {
@@ -8,6 +10,7 @@ import {
   alertLevel,
   esc,
   streakTier,
+  fmtDate,
 } from "../lib/utils";
 import { Avatar } from "./Layout";
 import { getTemplates } from "../lib/templates";
@@ -43,6 +46,15 @@ export default function Dashboard({
     .map((x) => ({ ...x, alert: alertLevel(x.s.consecutiveAbsences) }))
     .filter((x) => x.alert)
     .sort((a, b) => b.s.consecutiveAbsences - a.s.consecutiveAbsences);
+
+  const allFollowUps = useQuery(api.journal.listFollowUps) ?? [];
+  const latestFollowUps = teens
+    .map((t) => {
+      const teenEntries = allFollowUps.filter((e) => e.teenId === t._id);
+      if (teenEntries.length === 0) return null;
+      return { teen: t, entry: teenEntries[0] };
+    })
+    .filter((x): x is NonNullable<typeof x> => x !== null);
 
   const streaks = all
     .filter((x) => x.s.presentStreak >= 3)
@@ -97,10 +109,10 @@ export default function Dashboard({
           colorMap={colorMap}
         />
         <StatCard
-          label="Alertas activas"
-          value={alerts.length}
+          label="Seguimientos"
+          value={latestFollowUps.length}
           icon="alert"
-          color={alerts.length ? "coral" : "ink"}
+          color={latestFollowUps.length ? "coral" : "ink"}
           colorMap={colorMap}
         />
       </div>
@@ -109,29 +121,57 @@ export default function Dashboard({
         <div className="lg:col-span-2 bg-white rounded-card shadow-soft p-5">
           <div className="flex items-center justify-between mb-4">
             <h2 className="font-display font-semibold text-base">
-              Alertas de seguimiento
+              Seguimiento pastoral
             </h2>
             <span className="text-xs text-ink/40">
-              {alerts.length} pendiente{alerts.length === 1 ? "" : "s"}
+              {alerts.length + latestFollowUps.length} pendiente{alerts.length + latestFollowUps.length === 1 ? "" : "s"}
             </span>
           </div>
-          {alerts.length === 0 ? (
+
+          {latestFollowUps.length > 0 && (
+            <>
+              <p className="text-[11px] font-semibold text-coral-600 uppercase tracking-wide mb-2 flex items-center gap-1">
+                <span>📌</span> Requieren seguimiento
+              </p>
+              <div className="space-y-2.5 mb-4">
+                {latestFollowUps.map((f) => (
+                  <FollowUpRow
+                    key={f.teen._id}
+                    teen={f.teen}
+                    entry={f.entry}
+                    onOpenProfile={onOpenProfile}
+                  />
+                ))}
+              </div>
+            </>
+          )}
+
+          {alerts.length > 0 && (
+            <>
+              {latestFollowUps.length > 0 && (
+                <p className="text-[11px] font-semibold text-ink/40 uppercase tracking-wide mb-2 flex items-center gap-1">
+                  <span>⚠️</span> Alertas de asistencia
+                </p>
+              )}
+              <div className="space-y-2.5">
+                {alerts.map((a) => (
+                  <AlertRow
+                    key={a.t._id}
+                    teen={a.t}
+                    alert={a.alert!}
+                    stats={a.s}
+                    onOpenProfile={onOpenProfile}
+                  />
+                ))}
+              </div>
+            </>
+          )}
+
+          {alerts.length === 0 && latestFollowUps.length === 0 && (
             <EmptyState
-              title="Sin alertas por ahora"
-              sub="Todos los adolescentes están asistiendo con regularidad. Buen trabajo pastoreando esta semana."
+              title="Todo al día"
+              sub="No hay alertas de asistencia ni seguimientos pendientes. Buen trabajo pastoreando esta semana."
             />
-          ) : (
-            <div className="space-y-2.5">
-              {alerts.map((a) => (
-                <AlertRow
-                  key={a.t._id}
-                  teen={a.t}
-                  alert={a.alert!}
-                  stats={a.s}
-                  onOpenProfile={onOpenProfile}
-                />
-              ))}
-            </div>
           )}
         </div>
 
@@ -319,6 +359,40 @@ function AlertRow({
         />
       )}
     </>
+  );
+}
+
+function FollowUpRow({
+  teen,
+  entry,
+  onOpenProfile,
+}: {
+  teen: Doc<"teens">;
+  entry: Doc<"journal">;
+  onOpenProfile: (id: string) => void;
+}) {
+  const categoryIcons: Record<string, string> = {
+    call: "📞", visit: "🏠", chat: "📱", counseling: "💬", prayer: "🙏", other: "📝",
+  };
+  const icon = categoryIcons[entry.category] || "📝";
+  return (
+    <div
+      className="flex items-center gap-3 p-3 rounded-xl border border-coral-100 bg-coral-50/50 cursor-pointer hover:bg-coral-50 transition"
+      onClick={() => onOpenProfile(teen._id)}
+    >
+      <Avatar teen={teen} />
+      <div className="flex-1 min-w-0">
+        <p className="text-sm font-semibold truncate">
+          {esc(teen.nombre)} {esc(teen.apellido)}
+        </p>
+        <p className="text-xs text-ink/50 truncate">
+          {icon} {esc(entry.leaderName || "Anónimo")} · {fmtDate(entry.entryDate)}
+        </p>
+      </div>
+      <span className="text-[11px] font-semibold text-coral-600 shrink-0">
+        📌 Pendiente
+      </span>
+    </div>
   );
 }
 
