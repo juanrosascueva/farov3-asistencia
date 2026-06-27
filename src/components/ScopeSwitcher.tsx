@@ -109,7 +109,9 @@ export default function ScopeSwitcher({ fullWidth = false }: { fullWidth?: boole
       </button>
 
       {open && (
-        <div className="absolute left-0 top-full mt-2 w-64 bg-card border border-ink/10 rounded-2xl shadow-soft py-1 z-50">
+        <div className={`absolute left-0 top-full mt-2 w-64 bg-card border border-ink/10 rounded-2xl shadow-soft py-1 z-50 ${
+          fullWidth ? "lg:left-full lg:top-0 lg:mt-0 lg:ml-3" : ""
+        }`}>
           <div className="px-3 py-2 border-b border-ink/5 flex items-center justify-between">
             <p className="text-xs font-semibold text-ink/60">
               {step === "campus" ? "Seleccionar sede" : step === "ministry" ? "Seleccionar ministerio" : "Seleccionar grupo"}
