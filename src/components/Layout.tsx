@@ -4,6 +4,7 @@ import { stringHue } from "../lib/utils";
 import { useAuth } from "../hooks/useAuth";
 import ScopeSwitcher from "./ScopeSwitcher";
 import ChatPanel from "./ChatPanel";
+import Modal from "./Modal";
 
 const ROUTES = [
   { id: "dashboard", label: "Resumen", icon: "home" },
@@ -31,6 +32,8 @@ export default function Layout({
   setDark,
 }: LayoutProps) {
   const [chatOpen, setChatOpen] = useState(false);
+  const [moreOpen, setMoreOpen] = useState(false);
+  const { logout } = useAuth();
   return (
     <div className="max-w-7xl mx-auto lg:flex lg:gap-8 lg:px-6 lg:pt-6">
       <aside className="hidden lg:flex lg:flex-col w-72 shrink-0 sticky top-6 self-start z-20">
@@ -82,7 +85,7 @@ export default function Layout({
         )}
       </aside>
 
-      <main className="flex-1 px-4 sm:px-6 lg:px-0 pt-5 lg:pt-0">
+      <main className="flex-1 px-4 sm:px-6 lg:px-0 pt-5 lg:pt-0 pb-24 lg:pb-6">
         <header className="flex items-center justify-between mb-5 lg:hidden">
           <div className="flex items-center gap-2">
             <LogoIcon />
@@ -109,22 +112,112 @@ export default function Layout({
       </main>
 
       <nav className="fixed bottom-0 left-0 right-0 bg-card border-t border-ink/10 flex lg:hidden z-40">
-        {ROUTES.map((r) => (
+        {[
+          { id: "dashboard", label: "Resumen", icon: "home" },
+          { id: "asistencia", label: "Asistencia", icon: "check" },
+          { id: "jovenes", label: "Adolescentes", icon: "users" },
+        ].map((r) => (
           <button
             key={r.id}
             onClick={() => onNavigate(r.id)}
-            className={`flex-1 flex flex-col items-center justify-center gap-0.5 py-2.5 ${
+            className={`flex-1 flex flex-col items-center justify-center gap-0.5 py-2.5 pressable ${
               currentRoute === r.id
-                ? "tab-active"
+                ? "tab-active text-teal-700"
                 : "text-ink/45"
             }`}
           >
             <Icon name={r.icon} cls="w-5 h-5" />
             <span className="text-[10.5px] font-medium">{r.label}</span>
-            <span className="tab-dot w-1 h-1 rounded-full bg-teal-600 opacity-0 scale-0 transition" />
+            <span className={`tab-dot w-1 h-1 rounded-full bg-teal-600 transition ${currentRoute === r.id ? "opacity-100 scale-100" : "opacity-0 scale-0"}`} />
           </button>
         ))}
+        {/* Botón de "Más" */}
+        <button
+          onClick={() => setMoreOpen(true)}
+          className={`flex-1 flex flex-col items-center justify-center gap-0.5 py-2.5 pressable ${
+            ["campana", "ia", "reportes", "ajustes"].includes(currentRoute)
+              ? "tab-active text-teal-700 font-semibold"
+              : "text-ink/45"
+          }`}
+        >
+          <Icon name="menu" cls="w-5 h-5" />
+          <span className="text-[10.5px] font-medium">Más</span>
+          <span className={`tab-dot w-1 h-1 rounded-full bg-teal-600 transition ${["campana", "ia", "reportes", "ajustes"].includes(currentRoute) ? "opacity-100 scale-100" : "opacity-0 scale-0"}`} />
+        </button>
       </nav>
+
+      {/* Modal de navegación "Más" */}
+      {moreOpen && (
+        <Modal
+          title="Menú de Navegación"
+          onClose={() => setMoreOpen(false)}
+          panelClassName="sm:max-w-xs"
+        >
+          <div className="p-4 space-y-4">
+            <p className="text-[11px] font-semibold text-ink/40 uppercase tracking-wide px-1">
+              Herramientas y Ajustes
+            </p>
+            <nav className="flex flex-col gap-1">
+              {[
+                { id: "campana", label: "Campaña", icon: "clipboard" },
+                { id: "ia", label: "IA Pastoral", icon: "sparkles" },
+                { id: "reportes", label: "Reportes", icon: "chart" },
+                { id: "ajustes", label: "Ajustes", icon: "settings" },
+              ].map((r) => (
+                <button
+                  key={r.id}
+                  onClick={() => {
+                    onNavigate(r.id);
+                    setMoreOpen(false);
+                  }}
+                  className={`flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium transition pressable ${
+                    currentRoute === r.id
+                      ? "bg-teal-50 text-teal-700 dark:bg-teal-950/20 dark:text-teal-400"
+                      : "text-ink/60 hover:bg-ink/5"
+                  }`}
+                >
+                  <Icon name={r.icon} cls="w-[18px] h-[18px]" />
+                  <span>{r.label}</span>
+                </button>
+              ))}
+            </nav>
+
+            <div className="border-t border-ink/5 pt-3 space-y-2">
+              {setDark && (
+                <button
+                  onClick={() => setDark(!dark)}
+                  className="w-full flex items-center justify-between px-3 py-2 text-xs font-medium text-ink/60 hover:bg-ink/5 transition pressable"
+                >
+                  <div className="flex items-center gap-2">
+                    {dark ? (
+                      <svg className="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="5"/><path d="M12 1v2M12 21v2M4.2 4.2l1.4 1.4M18.4 18.4l1.4 1.4M1 12h2M21 12h2M4.2 19.8l1.4-1.4M18.4 5.6l1.4-1.4"/></svg>
+                    ) : (
+                      <svg className="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><path d="M21 12.8A9 9 0 1111.2 3a7 7 0 109.8 9.8z"/></svg>
+                    )}
+                    <span>Tema oscuro</span>
+                  </div>
+                  <div className={`w-8 h-4 rounded-full relative transition-colors ${dark ? "bg-teal-600" : "bg-ink/20"}`}>
+                    <div className={`w-3.5 h-3.5 bg-card rounded-full absolute top-0.25 shadow transition-transform ${dark ? "left-[14px]" : "left-0.5"}`} />
+                  </div>
+                </button>
+              )}
+              
+              <button
+                onClick={() => {
+                  logout();
+                  setMoreOpen(false);
+                }}
+                className="w-full flex items-center gap-3 px-3 py-2 text-xs font-medium text-coral-600 hover:bg-coral-50 dark:hover:bg-coral-950/20 transition pressable"
+              >
+                <svg className="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+                  <path d="M9 21H5a2 2 0 01-2-2V5a2 2 0 012-2h4M16 17l5-5-5-5M21 12H9" />
+                </svg>
+                <span>Cerrar sesión</span>
+              </button>
+            </div>
+          </div>
+        </Modal>
+      )}
 
       {chatOpen && <ChatPanel onClose={() => setChatOpen(false)} />}
 
@@ -150,6 +243,7 @@ const icons: Record<string, string> = {
   chart: `<path d="M3 17l5-5 4 4 6-6" /><path d="M3 21h18" /><path d="M19 3v6" /><path d="M16 6h6" />`,
   clipboard: `<path d="M16 4h2a2 2 0 012 2v14a2 2 0 01-2 2H6a2 2 0 01-2-2V6a2 2 0 012-2h2" /><rect x="8" y="2" width="8" height="4" rx="1" /><path d="M9 14l2 2 4-4" />`,
   sparkles: `<path d="M12 2l1.5 4.5L18 8l-4.5 1.5L12 14l-1.5-4.5L6 8l4.5-1.5L12 2z" /><path d="M18 14l.8 2.2L21 17l-2.2.8L18 20l-.8-2.2L15 17l2.2-.8L18 14z" /><path d="M6 14l.8 2.2L9 17l-2.2.8L6 20l-.8-2.2L3 17l2.2-.8L6 14z" />`,
+  menu: `<line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="18" x2="21" y2="18"/>`,
 };
 
 function Icon({ name, cls = "w-5 h-5" }: { name: string; cls?: string }) {
