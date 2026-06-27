@@ -2,12 +2,13 @@ import { useState, useRef } from "react";
 import { useMutation } from "convex/react";
 import { api } from "../../convex/_generated/api";
 import type { Doc } from "../../convex/_generated/dataModel";
-import type { AttendanceMap, Leader, MessageTemplate } from "../lib/types";
+import type { AttendanceMap, MessageTemplate } from "../lib/types";
 import { downloadFile, fmtDate } from "../lib/utils";
-import { useLeaderContext } from "../hooks/useLeaders";
+import { useAuth } from "../hooks/useAuth";
 import { useTemplates } from "../hooks/useTemplates";
 import { usePastoralTarget } from "../hooks/usePastoralTarget";
 import Modal from "./Modal";
+import OrgManager from "./OrgManager";
 
 interface AjustesProps {
   teens: Doc<"teens">[];
@@ -20,11 +21,7 @@ export default function Ajustes({ teens, attendanceMap, dark, setDark }: Ajustes
   const importRef = useRef<HTMLInputElement>(null);
   const [showReset, setShowReset] = useState(false);
 
-  const { leaders, currentLeader, currentLeaderId, addLeader, deleteLeader, setCurrentLeader } =
-    useLeaderContext();
-  const [newName, setNewName] = useState("");
-  const [newRole, setNewRole] = useState<Leader["role"]>("leader");
-  const [adding, setAdding] = useState(false);
+  const { user } = useAuth();
 
   const { templates, addTemplate, updateTemplate, deleteTemplate, resetTemplates } = useTemplates();
   const [editTpl, setEditTpl] = useState<MessageTemplate | null>(null);
@@ -172,143 +169,9 @@ export default function Ajustes({ teens, attendanceMap, dark, setDark }: Ajustes
         </div>
       </div>
 
-      <div className="bg-card rounded-card shadow-soft p-5 space-y-4">
-        <div>
-          <p className="text-xs font-semibold text-ink/40 uppercase tracking-wide">
-            Equipo de Líderes
-          </p>
-          <p className="text-sm text-ink/60 mt-0.5">
-            Gestiona quiénes están usando la aplicación.
-          </p>
-        </div>
+      <OrgManager />
 
-        <div>
-          <label className="text-xs font-semibold text-ink/50 mb-1.5 block">
-            ¿Quién está usando la aplicación?
-          </label>
-          <select
-            value={currentLeaderId || ""}
-            onChange={(e) => setCurrentLeader(e.target.value || null)}
-            className="w-full bg-card border border-ink/10 rounded-xl px-3.5 py-2.5 text-sm"
-          >
-            <option value="">— Sin sesión activa —</option>
-            {leaders.map((l) => (
-              <option key={l.id} value={l.id}>
-                {l.name} ({roleLabel(l.role)})
-              </option>
-            ))}
-          </select>
-        </div>
 
-        <div className="space-y-2">
-          <p className="text-xs font-semibold text-ink/40 uppercase tracking-wide">
-            Líderes registrados ({leaders.length})
-          </p>
-          {leaders.length === 0 ? (
-            <p className="text-sm text-ink/30 py-2">Aún no hay líderes. Agrega uno debajo.</p>
-          ) : (
-            <div className="space-y-1.5">
-              {leaders.map((l) => (
-                <div
-                  key={l.id}
-                  className="flex items-center gap-3 py-2 px-3 rounded-xl bg-ink/[0.02] border border-ink/5"
-                >
-                  <span
-                    className="w-2.5 h-2.5 rounded-full shrink-0"
-                    style={{
-                      background:
-                        l.role === "pastor"
-                          ? "#0B7285"
-                          : l.role === "teacher"
-                          ? "#2F9E73"
-                          : l.role === "leader"
-                          ? "#E08F22"
-                          : "#E8590C",
-                    }}
-                  />
-                  <span className="flex-1 text-sm font-medium min-w-0 truncate">
-                    {l.name}
-                  </span>
-                  <span className="text-[10px] font-semibold text-ink/40 uppercase px-2 py-0.5 rounded-full bg-ink/5">
-                    {roleLabel(l.role)}
-                  </span>
-                  {currentLeaderId !== l.id && (
-                    <button
-                      onClick={() => deleteLeader(l.id)}
-                      className="shrink-0 w-6 h-6 rounded-full bg-ink/5 flex items-center justify-center text-ink/30 hover:text-coral-600 hover:bg-coral-50 transition"
-                      title="Eliminar líder"
-                    >
-                      <svg className="w-3 h-3" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M18 6L6 18M6 6l12 12" /></svg>
-                    </button>
-                  )}
-                </div>
-              ))}
-            </div>
-          )}
-        </div>
-
-        {adding ? (
-          <div className="bg-ink/[0.02] border border-ink/10 rounded-xl p-4 space-y-3">
-            <p className="text-sm font-semibold">Agregar líder</p>
-            <div>
-              <label className="text-xs font-semibold text-ink/50 mb-1 block">
-                Nombre completo
-              </label>
-              <input
-                type="text"
-                value={newName}
-                onChange={(e) => setNewName(e.target.value)}
-                placeholder="Ej: Carlos Mendoza"
-                className="w-full bg-card border border-ink/10 rounded-xl px-3.5 py-2.5 text-sm"
-              />
-            </div>
-            <div>
-              <label className="text-xs font-semibold text-ink/50 mb-1 block">
-                Rol
-              </label>
-              <select
-                value={newRole}
-                onChange={(e) => setNewRole(e.target.value as Leader["role"])}
-                className="w-full bg-card border border-ink/10 rounded-xl px-3.5 py-2.5 text-sm"
-              >
-                <option value="pastor">Pastor</option>
-                <option value="teacher">Maestro</option>
-                <option value="leader">Líder</option>
-                <option value="helper">Ayudante</option>
-              </select>
-            </div>
-            <div className="flex gap-2">
-              <button
-                onClick={() => {
-                  if (newName.trim()) {
-                    addLeader(newName.trim(), newRole);
-                    setNewName("");
-                    setNewRole("leader");
-                    setAdding(false);
-                  }
-                }}
-                className="flex-1 bg-ink text-white rounded-xl py-2.5 text-sm font-semibold"
-              >
-                Agregar
-              </button>
-              <button
-                onClick={() => setAdding(false)}
-                className="flex-1 bg-ink/5 text-ink/60 rounded-xl py-2.5 text-sm font-semibold"
-              >
-                Cancelar
-              </button>
-            </div>
-          </div>
-        ) : (
-          <button
-            onClick={() => setAdding(true)}
-            className="flex items-center gap-2 text-sm font-semibold text-teal-700 hover:text-teal-600 transition"
-          >
-            <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><path d="M12 5v14M5 12h14" /></svg>
-            Agregar líder
-          </button>
-        )}
-      </div>
 
       {/* ─── WhatsApp Templates ─── */}
       <div className="bg-card rounded-card shadow-soft p-5 space-y-4">
@@ -518,12 +381,6 @@ export default function Ajustes({ teens, attendanceMap, dark, setDark }: Ajustes
       )}
     </div>
   );
-}
-
-function roleLabel(role: Leader["role"]): string {
-  return (
-    { pastor: "Pastor", teacher: "Maestro", leader: "Líder", helper: "Ayudante" } as Record<string, string>
-  )[role] || role;
 }
 
 function ResetForm({ onCancel }: { onCancel: () => void }) {

@@ -1,14 +1,22 @@
 import { v } from "convex/values";
 import { mutation, query } from "./_generated/server";
+import { getUserFromToken } from "./authHelper";
 
 export const list = query({
-  args: { teenId: v.id("teens") },
+  args: { teenId: v.id("teens"), token: v.optional(v.string()) },
   handler: async (ctx, args) => {
-    return await ctx.db
+    const entries = await ctx.db
       .query("journal")
       .withIndex("by_teenId_and_date", (q) => q.eq("teenId", args.teenId))
       .order("desc")
       .collect();
+    // Filter out confidential entries for unauthorized users
+    if (!args.token) return entries.filter(e => !e.isConfidential);
+    const user = await getUserFromToken(ctx, args.token);
+    if (!user || (user.role !== "pastor" && user.role !== "director" && user.role !== "coordinador")) {
+      return entries.filter(e => !e.isConfidential);
+    }
+    return entries;
   },
 });
 
@@ -27,6 +35,8 @@ export const create = mutation({
     ),
     leaderName: v.string(),
     followUp: v.boolean(),
+    isConfidential: v.optional(v.boolean()),
+    createdBy: v.optional(v.string()),
   },
   handler: async (ctx, args) => {
     return await ctx.db.insert("journal", args);

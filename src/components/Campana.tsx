@@ -6,7 +6,7 @@ import type { AttendanceMap } from "../lib/types";
 import { esc } from "../lib/utils";
 import { Avatar } from "./Layout";
 import { useCampaignWeek } from "../hooks/useCampaignWeek";
-import { useLeaderContext } from "../hooks/useLeaders";
+import { useAuth } from "../hooks/useAuth";
 
 interface CampanaProps {
   teens: Doc<"teens">[];
@@ -18,7 +18,7 @@ type FilterStatus = "all" | "pending" | "contacted" | "skipped";
 
 export default function Campana({ teens, onOpenProfile }: CampanaProps) {
   const { currentWeek, goNextWeek, goPrevWeek, goCurrentWeek, weekLabel, isCurrentWeek } = useCampaignWeek();
-  const { currentLeader } = useLeaderContext();
+  const { user } = useAuth();
 
   const tasks = useQuery(api.contacts.listByWeek, { weekStart: currentWeek }) ?? [];
   const counts = useQuery(api.contacts.getCounts, { weekStart: currentWeek });
@@ -67,7 +67,7 @@ export default function Campana({ teens, onOpenProfile }: CampanaProps) {
   }, [sorted, statusFilter, taskMap]);
 
   const handleContacted = useCallback(async (teenId: string) => {
-    const leaderName = currentLeader?.name || "Líder";
+    const leaderName = user?.name || "Líder";
     await doMarkContacted({
       weekStart: currentWeek,
       teenId: teenId as any,
@@ -81,7 +81,7 @@ export default function Campana({ teens, onOpenProfile }: CampanaProps) {
     setJournalText("");
     setJournalCat("call");
     setCreateJournalEntry(true);
-  }, [currentWeek, currentLeader, doMarkContacted, createJournalEntry, journalCat, journalText]);
+  }, [currentWeek, user, doMarkContacted, createJournalEntry, journalCat, journalText]);
 
   const handleSkipped = useCallback(async (teenId: string) => {
     await doMarkSkipped({ weekStart: currentWeek, teenId: teenId as any });

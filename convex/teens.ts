@@ -1,9 +1,16 @@
 import { v } from "convex/values";
 import { mutation, query } from "./_generated/server";
+import { getEffectiveAccess, filterTeensByScope } from "./authz";
 
 export const list = query({
-  handler: async (ctx) => {
-    return await ctx.db.query("teens").collect();
+  args: { token: v.optional(v.string()) },
+  handler: async (ctx, args) => {
+    const all = await ctx.db.query("teens").collect();
+    if (!args.token) return all;
+    const access = await getEffectiveAccess(ctx, args.token);
+    if (!access) return all;
+    if (access.isGlobal) return all;
+    return filterTeensByScope(access, all);
   },
 });
 
@@ -24,6 +31,9 @@ export const create = mutation({
     gustos: v.string(),
     notas: v.string(),
     foto: v.string(),
+    campusId: v.optional(v.id("campus")),
+    ministryId: v.optional(v.id("ministry")),
+    groupId: v.optional(v.id("group")),
   },
   handler: async (ctx, args) => {
     return await ctx.db.insert("teens", args);
@@ -41,6 +51,9 @@ export const update = mutation({
     gustos: v.optional(v.string()),
     notas: v.optional(v.string()),
     foto: v.optional(v.string()),
+    campusId: v.optional(v.id("campus")),
+    ministryId: v.optional(v.id("ministry")),
+    groupId: v.optional(v.id("group")),
   },
   handler: async (ctx, args) => {
     const { id, ...fields } = args;

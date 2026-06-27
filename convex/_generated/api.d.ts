@@ -10,13 +10,22 @@
 
 import type * as ai from "../ai.js";
 import type * as attendance from "../attendance.js";
+import type * as auditLog from "../auditLog.js";
+import type * as authHelper from "../authHelper.js";
+import type * as authz from "../authz.js";
+import type * as campus from "../campus.js";
 import type * as chat from "../chat.js";
 import type * as contacts from "../contacts.js";
 import type * as crisis from "../crisis.js";
+import type * as group from "../group.js";
 import type * as journal from "../journal.js";
+import type * as migration from "../migration.js";
+import type * as ministry from "../ministry.js";
 import type * as ppp from "../ppp.js";
 import type * as seed from "../seed.js";
 import type * as teens from "../teens.js";
+import type * as userScopes from "../userScopes.js";
+import type * as users from "../users.js";
 
 import type {
   ApiFromModules,
@@ -27,13 +36,22 @@ import type {
 declare const fullApi: ApiFromModules<{
   ai: typeof ai;
   attendance: typeof attendance;
+  auditLog: typeof auditLog;
+  authHelper: typeof authHelper;
+  authz: typeof authz;
+  campus: typeof campus;
   chat: typeof chat;
   contacts: typeof contacts;
   crisis: typeof crisis;
+  group: typeof group;
   journal: typeof journal;
+  migration: typeof migration;
+  ministry: typeof ministry;
   ppp: typeof ppp;
   seed: typeof seed;
   teens: typeof teens;
+  userScopes: typeof userScopes;
+  users: typeof users;
 }>;
 
 /**

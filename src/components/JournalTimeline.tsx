@@ -5,7 +5,7 @@ import type { Doc } from "../../convex/_generated/dataModel";
 import type { JournalAnalysis } from "../lib/types";
 import { VULNERABILITY_TAGS } from "../lib/types";
 import { fmtDate, esc } from "../lib/utils";
-import { useLeaderContext } from "../hooks/useLeaders";
+import { useAuth } from "../hooks/useAuth";
 
 interface JournalProps {
   teenId: string;
@@ -35,14 +35,13 @@ export default function JournalTimeline({ teenId }: JournalProps) {
   const deleteEntry = useMutation(api.journal.remove);
   const analyzeEntry = useAction(api.ai.analyzeJournalEntry as any);
   const allAnalyses = useQuery(api.ai.getAllAnalyses);
-  const { leaders, currentLeader } = useLeaderContext();
+  const { user } = useAuth();
 
   const [showForm, setShowForm] = useState(false);
   const [content, setContent] = useState("");
   const [category, setCategory] = useState("other");
   const [entryDate, setEntryDate] = useState(new Date().toISOString().slice(0, 10));
-  const [leaderName, setLeaderName] = useState(currentLeader?.name || "");
-  const [customLeader, setCustomLeader] = useState(false);
+  const [leaderName, setLeaderName] = useState(user?.name || "");
   const [followUp, setFollowUp] = useState(false);
   const [listening, setListening] = useState(false);
   const [structuring, setStructuring] = useState(false);
@@ -138,46 +137,14 @@ export default function JournalTimeline({ teenId }: JournalProps) {
             <label className="text-xs font-semibold text-ink/50 mb-1 block">
               Líder a cargo
             </label>
-            {customLeader ? (
-              <div className="flex gap-2">
-                <input
-                  type="text"
-                  value={leaderName}
-                  onChange={(e) => setLeaderName(e.target.value)}
-                  placeholder="Nombre del líder"
-                  required
-                  className="flex-1 bg-card border border-ink/10 rounded-xl px-3.5 py-2 text-sm"
-                />
-                <button
-                  type="button"
-                  onClick={() => { setCustomLeader(false); setLeaderName(currentLeader?.name || ""); }}
-                  className="shrink-0 px-3 py-2 text-xs font-semibold text-ink/50 hover:text-ink bg-ink/5 rounded-xl"
-                >
-                  Volver
-                </button>
-              </div>
-            ) : (
-              <select
-                value={leaders.some((l) => l.name === leaderName) ? leaderName : ""}
-                onChange={(e) => {
-                  if (e.target.value === "__other__") {
-                    setCustomLeader(true);
-                    setLeaderName("");
-                  } else {
-                    setLeaderName(e.target.value);
-                  }
-                }}
-                className="w-full bg-card border border-ink/10 rounded-xl px-3.5 py-2 text-sm"
-              >
-                <option value="">Seleccionar líder...</option>
-                {leaders.map((l) => (
-                  <option key={l.id} value={l.name}>
-                    {l.name}
-                  </option>
-                ))}
-                <option value="__other__">✏️ Otro (escribir nombre)</option>
-              </select>
-            )}
+            <input
+              type="text"
+              value={leaderName}
+              onChange={(e) => setLeaderName(e.target.value)}
+              placeholder="Nombre del líder"
+              required
+              className="w-full bg-card border border-ink/10 rounded-xl px-3.5 py-2 text-sm"
+            />
           </div>
           <div>
             <label className="text-xs font-semibold text-ink/50 mb-1 block">

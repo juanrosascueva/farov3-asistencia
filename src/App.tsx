@@ -2,7 +2,8 @@ import { useState, useCallback, useEffect } from "react";
 import { useQuery } from "convex/react";
 import { api } from "../convex/_generated/api";
 import { useAttendanceMap } from "./hooks/useAttendanceMap";
-import { useLeaders, LeaderContext } from "./hooks/useLeaders";
+import { AuthProvider, useAuth } from "./hooks/useAuth";
+import { ScopeProvider } from "./hooks/useScope";
 import Layout from "./components/Layout";
 import Dashboard from "./components/Dashboard";
 import Asistencia from "./components/Asistencia";
@@ -12,10 +13,11 @@ import Ajustes from "./components/Ajustes";
 import ReportsPanel from "./components/ReportsPanel";
 import Campana from "./components/Campana";
 import AiPanel from "./components/AiPanel";
+import LoginPage from "./components/LoginPage";
 
 const DARK_KEY = "cristovive_dark_mode";
 
-export default function App() {
+function AppContent() {
   const [currentRoute, setCurrentRoute] = useState("dashboard");
   const [currentProfileId, setCurrentProfileId] = useState<string | null>(null);
   const [dark, setDark] = useState(() => localStorage.getItem(DARK_KEY) === "true");
@@ -25,16 +27,16 @@ export default function App() {
     localStorage.setItem(DARK_KEY, String(dark));
   }, [dark]);
 
-  const teens = useQuery(api.teens.list);
+  const { user, token, loading: authLoading } = useAuth();
+  const teens = useQuery(api.teens.list, token ? { token } : {});
   const attendanceMap = useAttendanceMap();
-  const leaderState = useLeaders();
 
   const navigate = useCallback((route: string, profileId?: string | null) => {
     setCurrentRoute(route);
     setCurrentProfileId(profileId ?? null);
   }, []);
 
-  if (teens === undefined || attendanceMap === undefined) {
+  if (authLoading || teens === undefined || attendanceMap === undefined) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-paper">
         <div className="text-center">
@@ -43,6 +45,10 @@ export default function App() {
         </div>
       </div>
     );
+  }
+
+  if (!user) {
+    return <LoginPage />;
   }
 
   const profileTeen = currentProfileId
@@ -116,10 +122,18 @@ export default function App() {
   };
 
   return (
-    <LeaderContext.Provider value={leaderState}>
-      <Layout currentRoute={currentRoute} onNavigate={navigate} dark={dark} setDark={setDark}>
-        {renderView()}
-      </Layout>
-    </LeaderContext.Provider>
+    <Layout currentRoute={currentRoute} onNavigate={navigate} dark={dark} setDark={setDark}>
+      {renderView()}
+    </Layout>
+  );
+}
+
+export default function App() {
+  return (
+    <AuthProvider>
+      <ScopeProvider>
+        <AppContent />
+      </ScopeProvider>
+    </AuthProvider>
   );
 }

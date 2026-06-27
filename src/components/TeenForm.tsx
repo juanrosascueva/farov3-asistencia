@@ -1,7 +1,8 @@
 import { useState, FormEvent } from "react";
-import { useMutation } from "convex/react";
+import { useMutation, useQuery } from "convex/react";
 import { api } from "../../convex/_generated/api";
 import type { Doc } from "../../convex/_generated/dataModel";
+import { useAuth } from "../hooks/useAuth";
 import Modal from "./Modal";
 
 const empty = {
@@ -22,6 +23,7 @@ interface TeenFormProps {
 }
 
 export default function TeenForm({ teen, onClose, onSuccess }: TeenFormProps) {
+  const { token } = useAuth();
   const [form, setForm] = useState(
     teen
       ? {
@@ -37,15 +39,34 @@ export default function TeenForm({ teen, onClose, onSuccess }: TeenFormProps) {
       : { ...empty }
   );
 
+  const [campusId, setCampusId] = useState<string>(teen?.campusId || "");
+  const [ministryId, setMinistryId] = useState<string>(teen?.ministryId || "");
+  const [groupId, setGroupId] = useState<string>(teen?.groupId || "");
+
+  const campuses = useQuery(api.campus.list, token ? { token } : "skip");
+  const ministries = useQuery(
+    api.ministry.list,
+    token && campusId ? { token, campusId: campusId as any } : "skip"
+  );
+  const groups = useQuery(
+    api.group.list,
+    token && ministryId ? { token, ministryId: ministryId as any } : "skip"
+  );
+
   const createTeen = useMutation(api.teens.create);
   const updateTeen = useMutation(api.teens.update);
 
   const handleSubmit = async (e: FormEvent) => {
     e.preventDefault();
+    const scopeFields = campusId ? {
+      campusId: campusId as any,
+      ministryId: ministryId ? (ministryId as any) : undefined,
+      groupId: groupId ? (groupId as any) : undefined,
+    } : {};
     if (teen) {
-      await updateTeen({ id: teen._id, ...form });
+      await updateTeen({ id: teen._id, ...form, ...scopeFields });
     } else {
-      await createTeen({ ...form });
+      await createTeen({ ...form, ...scopeFields });
     }
     onSuccess();
   };
@@ -104,6 +125,58 @@ export default function TeenForm({ teen, onClose, onSuccess }: TeenFormProps) {
           value={form.notas}
           onChange={set("notas")}
         />
+
+        <div className="border-t border-ink/5 pt-4">
+          <p className="text-xs font-semibold text-ink/40 uppercase tracking-wide mb-3">
+            Asignación
+          </p>
+          <div className="space-y-3">
+            <div>
+              <label className="text-xs font-semibold text-ink/50 mb-1 block">Sede</label>
+              <select
+                value={campusId}
+                onChange={(e) => { setCampusId(e.target.value); setMinistryId(""); setGroupId(""); }}
+                className="w-full bg-card border border-ink/10 rounded-xl px-3.5 py-2.5 text-sm"
+              >
+                <option value="">Sin sede</option>
+                {(campuses || []).map((c: any) => (
+                  <option key={c._id} value={c._id}>{c.name}</option>
+                ))}
+              </select>
+            </div>
+            {campusId && (
+              <div>
+                <label className="text-xs font-semibold text-ink/50 mb-1 block">Ministerio</label>
+                <select
+                  value={ministryId}
+                  onChange={(e) => { setMinistryId(e.target.value); setGroupId(""); }}
+                  className="w-full bg-card border border-ink/10 rounded-xl px-3.5 py-2.5 text-sm"
+                >
+                  <option value="">Sin ministerio</option>
+                  {(ministries || []).map((m: any) => (
+                    <option key={m._id} value={m._id}>{m.name}</option>
+                  ))}
+                </select>
+              </div>
+            )}
+            {ministryId && (
+              <div>
+                <label className="text-xs font-semibold text-ink/50 mb-1 block">Grupo</label>
+                <select
+                  value={groupId}
+                  onChange={(e) => setGroupId(e.target.value)}
+                  className="w-full bg-card border border-ink/10 rounded-xl px-3.5 py-2.5 text-sm"
+                >
+                  <option value="">Sin grupo</option>
+                  {(groups || []).map((g: any) => (
+                    <option key={g._id} value={g._id}>{g.name}</option>
+                  ))}
+                </select>
+              </div>
+            )}
+          </div>
+        </div>
+
         <button
           type="submit"
           className="w-full bg-ink text-white rounded-xl py-3 text-sm font-semibold mt-2"

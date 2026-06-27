@@ -2,6 +2,74 @@ import { defineSchema, defineTable } from "convex/server";
 import { v } from "convex/values";
 
 export default defineSchema({
+  users: defineTable({
+    email: v.string(),
+    name: v.string(),
+    role: v.union(
+      v.literal("pastor"),
+      v.literal("director"),
+      v.literal("coordinador"),
+      v.literal("leader"),
+      v.literal("helper")
+    ),
+    hashedPassword: v.string(),
+    salt: v.string(),
+    isActive: v.boolean(),
+    createdAt: v.string(),
+  })
+    .index("by_email", ["email"]),
+
+  sessions: defineTable({
+    userId: v.id("users"),
+    token: v.string(),
+    expiresAt: v.string(),
+    createdAt: v.string(),
+  })
+    .index("by_token", ["token"])
+    .index("by_userId", ["userId"]),
+
+  campus: defineTable({
+    name: v.string(),
+    address: v.optional(v.string()),
+    createdAt: v.string(),
+  }),
+
+  ministry: defineTable({
+    campusId: v.id("campus"),
+    name: v.string(),
+    createdAt: v.string(),
+  })
+    .index("by_campusId", ["campusId"]),
+
+  group: defineTable({
+    ministryId: v.id("ministry"),
+    name: v.string(),
+    leaderId: v.optional(v.id("users")),
+    createdAt: v.string(),
+  })
+    .index("by_ministryId", ["ministryId"])
+    .index("by_leaderId", ["leaderId"]),
+
+  userScopes: defineTable({
+    userId: v.id("users"),
+    role: v.union(
+      v.literal("pastor"),
+      v.literal("director"),
+      v.literal("coordinador"),
+      v.literal("leader"),
+      v.literal("helper")
+    ),
+    campusId: v.optional(v.id("campus")),
+    ministryId: v.optional(v.id("ministry")),
+    groupId: v.optional(v.id("group")),
+    assignedBy: v.optional(v.id("users")),
+    createdAt: v.string(),
+  })
+    .index("by_userId", ["userId"])
+    .index("by_campusId", ["campusId"])
+    .index("by_ministryId", ["ministryId"])
+    .index("by_groupId", ["groupId"]),
+
   teens: defineTable({
     nombre: v.string(),
     apellido: v.string(),
@@ -11,7 +79,13 @@ export default defineSchema({
     gustos: v.string(),
     notas: v.string(),
     foto: v.string(),
-  }),
+    campusId: v.optional(v.id("campus")),
+    ministryId: v.optional(v.id("ministry")),
+    groupId: v.optional(v.id("group")),
+  })
+    .index("by_campusId", ["campusId"])
+    .index("by_ministryId", ["ministryId"])
+    .index("by_groupId", ["groupId"]),
 
   attendance: defineTable({
     date: v.string(),
@@ -40,6 +114,8 @@ export default defineSchema({
     ),
     leaderName: v.optional(v.string()),
     followUp: v.optional(v.boolean()),
+    isConfidential: v.optional(v.boolean()),
+    createdBy: v.optional(v.string()),
   })
     .index("by_teenId", ["teenId"])
     .index("by_teenId_and_date", ["teenId", "entryDate"])
@@ -113,6 +189,19 @@ export default defineSchema({
     createdAt: v.string(),
   })
     .index("by_sessionId", ["sessionId"]),
+
+  auditLog: defineTable({
+    action: v.string(),
+    userId: v.optional(v.id("users")),
+    userName: v.optional(v.string()),
+    targetType: v.string(),
+    targetId: v.optional(v.string()),
+    details: v.optional(v.string()),
+    createdAt: v.string(),
+  })
+    .index("by_createdAt", ["createdAt"])
+    .index("by_action", ["action"])
+    .index("by_userId", ["userId"]),
 
   crisisAlerts: defineTable({
     analysisId: v.id("journalAnalysis"),

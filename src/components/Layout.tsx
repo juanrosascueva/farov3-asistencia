@@ -1,7 +1,9 @@
 import { useState, useRef, useEffect } from "react";
 import type { Doc } from "../../convex/_generated/dataModel";
 import { stringHue } from "../lib/utils";
-import { useLeaderContext } from "../hooks/useLeaders";
+import { useAuth } from "../hooks/useAuth";
+import { useScope } from "../hooks/useScope";
+import ScopeSwitcher from "./ScopeSwitcher";
 import ChatPanel from "./ChatPanel";
 
 const ROUTES = [
@@ -45,6 +47,9 @@ export default function Layout({
             <LeaderBadge />
           </div>
         </div>
+        <div className="mb-4">
+          <ScopeSwitcher />
+        </div>
         <nav className="flex flex-col gap-1">
           {ROUTES.map((r) => (
             <button
@@ -83,6 +88,7 @@ export default function Layout({
             <p className="font-display font-bold text-lg">Congregación Cristo Vive</p>
           </div>
           <div className="flex items-center gap-1">
+            <ScopeSwitcher />
             {setDark && (
               <button
                 onClick={() => setDark(!dark)}
@@ -173,7 +179,7 @@ function LogoIcon() {
 }
 
 function LeaderBadge() {
-  const { leaders, currentLeader, setCurrentLeader } = useLeaderContext();
+  const { user, logout } = useAuth();
   const [open, setOpen] = useState(false);
   const ref = useRef<HTMLDivElement>(null);
 
@@ -186,62 +192,32 @@ function LeaderBadge() {
     return () => document.removeEventListener("mousedown", handler);
   }, [open]);
 
+  if (!user) return null;
+
   return (
     <div className="relative" ref={ref}>
       <button
         onClick={() => setOpen(!open)}
-        className={`flex items-center gap-1.5 text-xs font-medium rounded-lg px-2.5 py-1.5 transition ${
-          currentLeader
-            ? "bg-teal-50 text-teal-700 hover:bg-teal-100"
-            : "bg-amber-50 text-amber-700 hover:bg-amber-100"
-        }`}
+        className="flex items-center gap-1.5 text-xs font-medium rounded-lg px-2.5 py-1.5 transition bg-teal-50 text-teal-700 hover:bg-teal-100"
       >
-        {currentLeader ? (
-          <>
-            <svg className="w-3.5 h-3.5 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><path d="M20 21v-2a4 4 0 00-4-4H8a4 4 0 00-4 4v2" /><circle cx="12" cy="7" r="4" /></svg>
-            <span className="truncate max-w-[100px]">{currentLeader.name}</span>
-            <svg className="w-3 h-3 shrink-0 opacity-50" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M6 9l6 6 6-6" /></svg>
-          </>
-        ) : (
-          <>
-            <svg className="w-3.5 h-3.5 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><path d="M12 9v4" /><path d="M12 17h.01" /><path d="M10.3 3.9L2.7 17a2 2 0 001.7 3h15.2a2 2 0 001.7-3L13.7 3.9a2 2 0 00-3.4 0z" /></svg>
-            <span>Seleccionar líder</span>
-          </>
-        )}
+        <svg className="w-3.5 h-3.5 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><path d="M20 21v-2a4 4 0 00-4-4H8a4 4 0 00-4 4v2" /><circle cx="12" cy="7" r="4" /></svg>
+        <span className="truncate max-w-[100px]">{user.name}</span>
+        <svg className="w-3 h-3 shrink-0 opacity-50" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M6 9l6 6 6-6" /></svg>
       </button>
       {open && (
-        <div className="absolute right-0 lg:left-0 top-full mt-1 w-48 bg-white border border-ink/10 rounded-xl shadow-soft py-1 z-50">
-          {leaders.length === 0 ? (
-            <p className="px-3 py-2 text-xs text-ink/40">No hay líderes registrados</p>
-          ) : (
-            leaders.map((l) => (
-              <button
-                key={l.id}
-                onClick={() => { setCurrentLeader(l.id); setOpen(false); }}
-                className={`w-full text-left px-3 py-2 text-sm flex items-center gap-2 hover:bg-ink/5 transition ${
-                  currentLeader?.id === l.id ? "text-teal-700 font-semibold" : "text-ink/70"
-                }`}
-              >
-                <span className="w-2 h-2 rounded-full shrink-0" style={{
-                  background: l.role === "pastor" ? "#0B7285" : l.role === "teacher" ? "#2F9E73" : l.role === "leader" ? "#E08F22" : "#E8590C"
-                }} />
-                <span className="truncate">{l.name}</span>
-                {currentLeader?.id === l.id && (
-                  <svg className="w-3.5 h-3.5 ml-auto shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M20 6L9 17l-5-5" /></svg>
-                )}
-              </button>
-            ))
-          )}
+        <div className="absolute right-0 lg:left-0 top-full mt-1 w-56 bg-white border border-ink/10 rounded-xl shadow-soft py-1 z-50">
+          <div className="px-3 py-2 border-b border-ink/5 mb-1">
+            <p className="text-sm font-semibold truncate">{user.name}</p>
+            <p className="text-[11px] text-ink/40 capitalize">{user.role} · {user.email}</p>
+          </div>
           <div className="border-t border-ink/5 mt-1 pt-1">
-            {currentLeader && (
-              <button
-                onClick={() => { setCurrentLeader(null); setOpen(false); }}
-                className="w-full text-left px-3 py-2 text-xs text-ink/40 hover:text-coral-600 hover:bg-coral-50 transition flex items-center gap-2"
-              >
-                <svg className="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><path d="M18 6L6 18M6 6l12 12" /></svg>
-                Cerrar sesión
-              </button>
-            )}
+            <button
+              onClick={() => { logout(); setOpen(false); }}
+              className="w-full text-left px-3 py-2 text-xs text-ink/40 hover:text-coral-600 hover:bg-coral-50 transition flex items-center gap-2"
+            >
+              <svg className="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><path d="M18 6L6 18M6 6l12 12" /></svg>
+              Cerrar sesión
+            </button>
           </div>
         </div>
       )}

@@ -126,12 +126,6 @@ export interface GamificationResult {
   streakTier: StreakTier | null;
 }
 
-export interface Leader {
-  id: string;
-  name: string;
-  role: "pastor" | "teacher" | "leader" | "helper";
-}
-
 export interface MessageTemplate {
   id: string;
   name: string;
