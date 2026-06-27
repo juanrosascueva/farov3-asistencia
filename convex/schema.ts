@@ -44,4 +44,20 @@ export default defineSchema({
     .index("by_teenId", ["teenId"])
     .index("by_teenId_and_date", ["teenId", "entryDate"])
     .index("by_followUp", ["followUp"]),
+
+  contacts: defineTable({
+    weekStart: v.string(),
+    teenId: v.id("teens"),
+    status: v.union(
+      v.literal("pending"),
+      v.literal("contacted"),
+      v.literal("skipped")
+    ),
+    contactedAt: v.optional(v.string()),
+    leaderName: v.optional(v.string()),
+    notes: v.optional(v.string()),
+  })
+    .index("by_weekStart", ["weekStart"])
+    .index("by_teenId", ["teenId"])
+    .index("by_weekStart_and_teenId", ["weekStart", "teenId"]),
 });

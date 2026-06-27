@@ -10,6 +10,7 @@ import Jovenes from "./components/Jovenes";
 import Profile from "./components/Profile";
 import Ajustes from "./components/Ajustes";
 import ReportsPanel from "./components/ReportsPanel";
+import Campana from "./components/Campana";
 
 const DARK_KEY = "cristovive_dark_mode";
 
@@ -90,6 +91,14 @@ export default function App() {
         );
       case "reportes":
         return <ReportsPanel teens={teens} attendanceMap={attendanceMap} />;
+      case "campana":
+        return (
+          <Campana
+            teens={teens}
+            attendanceMap={attendanceMap}
+            onOpenProfile={(id) => navigate(currentRoute, id)}
+          />
+        );
       case "ajustes":
         return <Ajustes teens={teens} attendanceMap={attendanceMap} dark={dark} setDark={setDark} />;
       default:
