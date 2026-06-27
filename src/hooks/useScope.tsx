@@ -43,14 +43,14 @@ export function ScopeProvider({ children }: { children: React.ReactNode }) {
   const { user, token } = useAuth();
   const [scope, setScopeState] = useState<ActiveScope>(loadScope);
 
-  const campuses = useQuery(api.campus.list, token ? { token } : "skip");
+  const campuses = useQuery(api.campus.list, user && token ? { token } : "skip");
   const ministries = useQuery(
     api.ministry.list,
-    token && scope.campusId ? { token, campusId: scope.campusId as any } : "skip"
+    user && token && scope.campusId ? { token, campusId: scope.campusId as any } : "skip"
   );
   const groups = useQuery(
     api.group.list,
-    token && scope.ministryId ? { token, ministryId: scope.ministryId as any } : "skip"
+    user && token && scope.ministryId ? { token, ministryId: scope.ministryId as any } : "skip"
   );
 
   const setScope = useCallback((newScope: ActiveScope) => {

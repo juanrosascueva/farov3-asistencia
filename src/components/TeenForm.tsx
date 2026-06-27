@@ -23,7 +23,7 @@ interface TeenFormProps {
 }
 
 export default function TeenForm({ teen, onClose, onSuccess }: TeenFormProps) {
-  const { token } = useAuth();
+  const { token, user } = useAuth();
   const [submitting, setSubmitting] = useState(false);
   const [form, setForm] = useState(
     teen
@@ -44,14 +44,14 @@ export default function TeenForm({ teen, onClose, onSuccess }: TeenFormProps) {
   const [ministryId, setMinistryId] = useState<string>(teen?.ministryId || "");
   const [groupId, setGroupId] = useState<string>(teen?.groupId || "");
 
-  const campuses = useQuery(api.campus.list, token ? { token } : "skip");
+  const campuses = useQuery(api.campus.list, user && token ? { token } : "skip");
   const ministries = useQuery(
     api.ministry.list,
-    token && campusId ? { token, campusId: campusId as any } : "skip"
+    user && token && campusId ? { token, campusId: campusId as any } : "skip"
   );
   const groups = useQuery(
     api.group.list,
-    token && ministryId ? { token, ministryId: ministryId as any } : "skip"
+    user && token && ministryId ? { token, ministryId: ministryId as any } : "skip"
   );
 
   const createTeen = useMutation(api.teens.create);

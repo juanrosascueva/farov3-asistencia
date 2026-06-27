@@ -152,14 +152,14 @@ function UserManager() {
 }
 
 function CampusManager() {
-  const { token } = useAuth();
+  const { token, user } = useAuth();
   const [showForm, setShowForm] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   const [name, setName] = useState("");
   const [address, setAddress] = useState("");
   const [editingId, setEditingId] = useState<string | null>(null);
 
-  const campuses = useQuery(api.campus.list, token ? { token } : "skip");
+  const campuses = useQuery(api.campus.list, user && token ? { token } : "skip");
   const createCampus = useMutation(api.campus.create);
   const updateCampus = useMutation(api.campus.update);
   const deleteCampus = useMutation(api.campus.remove);
@@ -428,22 +428,22 @@ interface UserScopesManagerProps {
 }
 
 function UserScopesManager({ userId }: UserScopesManagerProps) {
-  const { token } = useAuth();
+  const { token, user } = useAuth();
   const [selectedRole, setSelectedRole] = useState<string>("leader");
   const [selectedCampusId, setSelectedCampusId] = useState<string>("");
   const [selectedMinistryId, setSelectedMinistryId] = useState<string>("");
   const [selectedGroupId, setSelectedGroupId] = useState<string>("");
   const [submitting, setSubmitting] = useState(false);
 
-  const scopes = useQuery(api.userScopes.list, token ? { token, userId: userId as any } : "skip");
-  const campuses = useQuery(api.campus.list, token ? { token } : "skip");
+  const scopes = useQuery(api.userScopes.list, user && token ? { token, userId: userId as any } : "skip");
+  const campuses = useQuery(api.campus.list, user && token ? { token } : "skip");
   const ministries = useQuery(
     api.ministry.list,
-    token && selectedCampusId ? { token, campusId: selectedCampusId as any } : "skip"
+    user && token && selectedCampusId ? { token, campusId: selectedCampusId as any } : "skip"
   );
   const groups = useQuery(
     api.group.list,
-    token && selectedMinistryId ? { token, ministryId: selectedMinistryId as any } : "skip"
+    user && token && selectedMinistryId ? { token, ministryId: selectedMinistryId as any } : "skip"
   );
 
   const createScope = useMutation(api.userScopes.create);
