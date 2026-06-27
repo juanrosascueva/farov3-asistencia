@@ -7,6 +7,7 @@ import { allDatesSorted, statsFor, getGamification } from "../lib/utils";
 import AttendanceCharts from "./reports/AttendanceCharts";
 import PastoralStats from "./reports/PastoralStats";
 import GamificationStats from "./reports/GamificationStats";
+import { usePastoralTarget } from "../hooks/usePastoralTarget";
 
 interface ReportsPanelProps {
   teens: Doc<"teens">[];
@@ -21,6 +22,7 @@ export default function ReportsPanel({ teens, attendanceMap }: ReportsPanelProps
   const [range, setRange] = useState<Range>("30d");
   const allJournal = useQuery(api.journal.listAll) ?? [];
   const followUps = useQuery(api.journal.listFollowUps) ?? [];
+  const { pastoralTargetCoverage } = usePastoralTarget();
 
   const dates = allDatesSorted(attendanceMap);
   const now = new Date();
@@ -94,6 +96,7 @@ export default function ReportsPanel({ teens, attendanceMap }: ReportsPanelProps
           teens={teens}
           allJournal={filteredJournal}
           followUps={followUps}
+          pastoralTargetCoverage={pastoralTargetCoverage}
         />
       )}
       {tab === "levels" && (

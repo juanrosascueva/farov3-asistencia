@@ -5,6 +5,7 @@ interface Props {
   teens: Doc<"teens">[];
   allJournal: Doc<"journal">[];
   followUps: Doc<"journal">[];
+  pastoralTargetCoverage?: number;
 }
 
 const CATEGORY_META: Record<string, { label: string; color: string }> = {
@@ -16,7 +17,7 @@ const CATEGORY_META: Record<string, { label: string; color: string }> = {
   other: { label: "Nota", color: "#8B8FA3" },
 };
 
-export default function PastoralStats({ teens, allJournal, followUps }: Props) {
+export default function PastoralStats({ teens, allJournal, followUps, pastoralTargetCoverage = 80 }: Props) {
   const cutoff = new Date(Date.now() - 30 * 86400000).toISOString().slice(0, 10);
   const recentJournal = allJournal.filter((e) => e.entryDate >= cutoff);
   const teensWithRecentJournal = new Set(recentJournal.map((e) => e.teenId));
@@ -41,12 +42,31 @@ export default function PastoralStats({ teens, allJournal, followUps }: Props) {
   return (
     <div className="space-y-5">
       <div className="grid grid-cols-3 gap-3">
-        <KpiCard
-          label="Cobertura (30d)"
-          value={`${coveragePct}%`}
-          sub={`${teensWithRecentJournal.size}/${teens.length} jóvenes`}
-          color="teal"
-        />
+        <div className="bg-card rounded-card shadow-soft p-4">
+          <div className="flex items-start justify-between">
+            <p className="text-2xl font-bold font-display text-teal-700">{coveragePct}%</p>
+            <span className="text-[11px] font-semibold bg-ink/5 text-ink/50 rounded-full px-2 py-0.5">
+              Meta: {pastoralTargetCoverage}%
+            </span>
+          </div>
+          <p className="text-xs font-semibold text-ink/60 mt-0.5">Cobertura (30d)</p>
+          <div className="mt-3 h-2 bg-ink/5 rounded-full overflow-hidden">
+            <div
+              className={`h-full rounded-full transition-all ${coveragePct >= pastoralTargetCoverage ? "bg-teal-600" : "bg-amber-500"}`}
+              style={{ width: `${Math.min(100, coveragePct)}%` }}
+            />
+          </div>
+          <div className="flex items-center justify-between mt-1">
+            <p className="text-[11px] text-ink/40">
+              {teensWithRecentJournal.size}/{teens.length} jóvenes
+            </p>
+            <p className={`text-[11px] font-semibold ${coveragePct >= pastoralTargetCoverage ? "text-teal-600" : "text-amber-600"}`}>
+              {coveragePct >= pastoralTargetCoverage
+                ? "¡Meta alcanzada! 🎉"
+                : `Falta ${pastoralTargetCoverage - coveragePct}% para cumplir la meta`}
+            </p>
+          </div>
+        </div>
         <KpiCard
           label="Registros totales"
           value={allJournal.length}

@@ -6,6 +6,7 @@ import type { AttendanceMap, Leader, MessageTemplate } from "../lib/types";
 import { downloadFile, fmtDate } from "../lib/utils";
 import { useLeaderContext } from "../hooks/useLeaders";
 import { useTemplates } from "../hooks/useTemplates";
+import { usePastoralTarget } from "../hooks/usePastoralTarget";
 import Modal from "./Modal";
 
 interface AjustesProps {
@@ -33,6 +34,8 @@ export default function Ajustes({ teens, attendanceMap, dark, setDark }: Ajustes
   const [tplText, setTplText] = useState("");
   const [tplEmoji, setTplEmoji] = useState("💬");
   const [showTplForm, setShowTplForm] = useState(false);
+
+  const { pastoralTargetCoverage, setPastoralTargetCoverage } = usePastoralTarget();
 
   const createTeen = useMutation(api.teens.create);
 
@@ -136,6 +139,37 @@ export default function Ajustes({ teens, attendanceMap, dark, setDark }: Ajustes
         >
           <div className={`w-5 h-5 bg-card rounded-full absolute top-0.5 shadow transition-transform ${dark ? "left-[22px]" : "left-0.5"}`} />
         </button>
+      </div>
+
+      <div className="bg-card rounded-card shadow-soft p-5 space-y-4">
+        <div>
+          <p className="text-xs font-semibold text-ink/40 uppercase tracking-wide">
+            Meta Pastoral de Cobertura
+          </p>
+          <p className="text-sm text-ink/60 mt-0.5">
+            Define el porcentaje ideal de jóvenes que deben recibir al menos un contacto pastoral cada mes.
+          </p>
+        </div>
+        <div className="flex items-center gap-4">
+          <span className="text-2xl font-display font-bold text-teal-700 w-14">
+            {pastoralTargetCoverage}%
+          </span>
+          <input
+            type="range"
+            min={50}
+            max={100}
+            step={5}
+            value={pastoralTargetCoverage}
+            onChange={(e) => setPastoralTargetCoverage(Number(e.target.value))}
+            className="flex-1 h-2 rounded-full appearance-none bg-ink/10 cursor-pointer accent-teal-600
+              [&::-webkit-slider-thumb]:appearance-none [&::-webkit-slider-thumb]:w-5 [&::-webkit-slider-thumb]:h-5 [&::-webkit-slider-thumb]:rounded-full [&::-webkit-slider-thumb]:bg-teal-600 [&::-webkit-slider-thumb]:shadow"
+          />
+        </div>
+        <div className="flex items-center justify-between text-[11px] text-ink/40">
+          <span>50%</span>
+          <span className="font-semibold text-ink/60">Meta actual: {pastoralTargetCoverage}%</span>
+          <span>100%</span>
+        </div>
       </div>
 
       <div className="bg-card rounded-card shadow-soft p-5 space-y-4">
