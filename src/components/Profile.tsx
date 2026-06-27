@@ -2,10 +2,10 @@ import { useState } from "react";
 import { useMutation } from "convex/react";
 import { api } from "../../convex/_generated/api";
 import type { Doc } from "../../convex/_generated/dataModel";
-import type { AttendanceMap } from "../lib/types";
+import type { AttendanceMap, RiskInfo } from "../lib/types";
 import {
   statsFor,
-  alertLevel,
+  riskScore,
   ageFromDOB,
   fmtDate,
   esc,
@@ -41,7 +41,7 @@ export default function Profile({
   const deleteTeen = useMutation(api.teens.remove);
 
   const s = statsFor(teen._id, attendanceMap);
-  const alert = alertLevel(s.consecutiveAbsences);
+  const risk = riskScore(s);
   const age = ageFromDOB(teen.nacimiento);
   const history = [...s.history].reverse().slice(0, 12);
   const game = getGamification(s);
@@ -69,10 +69,12 @@ export default function Profile({
     excused: { label: "Justificado", cls: "bg-amber-50 text-amber-600" },
   };
 
-  const alertColorMap: Record<string, string> = {
-    coral: "bg-coral-50 border-coral-100 text-coral-700",
-    amber: "bg-amber-50 border-amber-100 text-amber-700",
+  const riskColorMap: Record<string, string> = {
+    gray: "bg-slate-50 border-slate-200 text-slate-600",
     teal: "bg-teal-50 border-teal-100 text-teal-700",
+    amber: "bg-amber-50 border-amber-100 text-amber-700",
+    coral: "bg-coral-50 border-coral-100 text-coral-700",
+    red: "bg-red-50 border-red-200 text-red-700",
   };
 
   return (
@@ -150,34 +152,24 @@ export default function Profile({
           </div>
         </div>
 
-        {alert && (
-          <div
-            className={`mt-4 p-3.5 rounded-xl border flex items-center gap-3 ${
-              alertColorMap[alert.color]
-            }`}
-          >
-            <svg
-              className="w-5 h-5 shrink-0"
-              viewBox="0 0 24 24"
-              fill="none"
-              stroke="currentColor"
-              strokeWidth="1.8"
-              strokeLinecap="round"
-              strokeLinejoin="round"
-            >
-              <path d="M12 9v4" />
-              <path d="M12 17h.01" />
-              <path d="M10.3 3.9L2.7 17a2 2 0 001.7 3h15.2a2 2 0 001.7-3L13.7 3.9a2 2 0 00-3.4 0z" />
-            </svg>
-            <div className="text-sm flex-1">
-              <p className="font-semibold">
-                {alert.label}: {s.consecutiveAbsences} falta
-                {s.consecutiveAbsences === 1 ? "" : "s"} consecutiva
-                {s.consecutiveAbsences === 1 ? "" : "s"}
-              </p>
-              <p className="text-xs opacity-80">{alert.action}</p>
+        <div
+          className={`mt-4 p-3.5 rounded-xl border ${riskColorMap[risk.color]} ${risk.score === 0 ? "opacity-50" : ""}`}
+        >
+          <div className="flex items-start gap-3">
+            <div className="shrink-0 w-10 h-10 rounded-full flex items-center justify-center font-bold text-sm text-white" style={{ background: ({ gray: "#6B7280", teal: "#0B7285", amber: "#F0A33C", coral: "#E8590C", red: "#DC2626" } as Record<string, string>)[risk.color] }}>
+              {risk.score}
             </div>
-            {(teen.telefonoPadre || teen.telefono) && (
+            <div className="text-sm flex-1 min-w-0">
+              <p className="font-semibold">
+                Score de riesgo: {risk.score} — {risk.label}
+              </p>
+              <p className="text-xs opacity-80 mt-0.5">{risk.action}</p>
+              <div className="flex flex-wrap gap-3 mt-2 text-[11px]">
+                <span>Faltas consecutivas: <strong>{risk.factors.consecutiveAbsences}</strong></span>
+                <span>Asistencia: <strong>{s.pct}%</strong></span>
+              </div>
+            </div>
+            {risk.score >= 1 && (teen.telefonoPadre || teen.telefono) && (
               <button
                 onClick={() => setShowWhatsApp(true)}
                 className="shrink-0 w-9 h-9 rounded-full bg-white/70 flex items-center justify-center hover:bg-white/90 transition"
@@ -186,7 +178,7 @@ export default function Profile({
               </button>
             )}
           </div>
-        )}
+        </div>
       </div>
 
       <div className="grid grid-cols-3 gap-3">
@@ -326,7 +318,7 @@ export default function Profile({
         </Modal>
       )}
 
-      {showWhatsApp && alert && (
+      {showWhatsApp && risk.score >= 1 && (
         <WhatsAppModal
           nombre={teen.nombre}
           telefono={teen.telefono}

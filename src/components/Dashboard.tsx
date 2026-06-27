@@ -2,12 +2,12 @@ import { useState } from "react";
 import { useQuery } from "convex/react";
 import { api } from "../../convex/_generated/api";
 import type { Doc } from "../../convex/_generated/dataModel";
-import type { AttendanceMap } from "../lib/types";
+import type { AttendanceMap, RiskInfo } from "../lib/types";
 import {
   greeting,
   fmtDateShort,
   statsFor,
-  alertLevel,
+  riskScore,
   esc,
   streakTier,
   fmtDate,
@@ -44,9 +44,9 @@ export default function Dashboard({
     : 0;
 
   const alerts = all
-    .map((x) => ({ ...x, alert: alertLevel(x.s.consecutiveAbsences) }))
-    .filter((x) => x.alert)
-    .sort((a, b) => b.s.consecutiveAbsences - a.s.consecutiveAbsences);
+    .map((x) => ({ ...x, risk: riskScore(x.s) }))
+    .filter((x) => x.risk.score >= 1)
+    .sort((a, b) => b.risk.score - a.risk.score);
 
   const allFollowUps = useQuery(api.journal.listFollowUps) ?? [];
   const latestFollowUps = teens
@@ -159,7 +159,7 @@ export default function Dashboard({
                   <AlertRow
                     key={a.t._id}
                     teen={a.t}
-                    alert={a.alert!}
+                    risk={a.risk}
                     stats={a.s}
                     onOpenProfile={onOpenProfile}
                   />
@@ -208,6 +208,35 @@ export default function Dashboard({
               ))}
             </div>
           )}
+        </div>
+
+        <div className="bg-card rounded-card shadow-soft p-5">
+          <h2 className="font-display font-semibold text-base mb-4">
+            Distribución de riesgo pastoral
+          </h2>
+          {(() => {
+            const dist = all.map((x) => riskScore(x.s));
+            const distCounts = [0, 1, 2, 3, 4, 5].map((s) => dist.filter((r) => r.score === s).length);
+            const labels = ["Sin riesgo", "Seguimiento", "Atención", "Urgente", "Crítico", "Crisis"];
+            const colors = ["#6B7280", "#0B7285", "#F0A33C", "#E8590C", "#DC2626", "#DC2626"];
+            const barColors = ["bg-slate-400", "bg-teal-600", "bg-amber-500", "bg-coral-500", "bg-red-600", "bg-red-700"];
+            return (
+              <div className="space-y-2">
+                {[0, 1, 2, 3, 4, 5].map((s) => (
+                  <div key={s} className="flex items-center gap-3">
+                    <span className="w-24 text-xs text-ink/60 shrink-0">{labels[s]}</span>
+                    <div className="flex-1 h-5 bg-ink/5 rounded-full overflow-hidden">
+                      <div
+                        className={`h-full ${barColors[s]} rounded-full transition-all`}
+                        style={{ width: `${all.length ? (distCounts[s] / all.length) * 100 : 0}%` }}
+                      />
+                    </div>
+                    <span className="w-6 text-right text-xs font-semibold text-ink/70">{distCounts[s]}</span>
+                  </div>
+                ))}
+              </div>
+            );
+          })()}
         </div>
       </div>
 
@@ -293,12 +322,12 @@ function StatCard({
 
 function AlertRow({
   teen,
-  alert: al,
+  risk: r,
   stats: s,
   onOpenProfile,
 }: {
   teen: Doc<"teens">;
-  alert: NonNullable<ReturnType<typeof alertLevel>>;
+  risk: RiskInfo;
   stats: ReturnType<typeof statsFor>;
   onOpenProfile: (id: string) => void;
 }) {
@@ -315,9 +344,11 @@ function AlertRow({
     .filter((t) => t.category === "absence")
     .map((t) => ({ ...t, text: fill(t.text, vars) }));
   const colorMap: Record<string, string> = {
+    gray: "bg-slate-50 text-slate-600 border-slate-200",
     teal: "bg-teal-50 text-teal-700 border-teal-100",
     amber: "bg-amber-50 text-amber-600 border-amber-100",
     coral: "bg-coral-50 text-coral-600 border-coral-100",
+    red: "bg-red-50 text-red-700 border-red-200",
   };
 
   const hasPhone = !!(teen.telefono || teen.telefonoPadre);
@@ -325,7 +356,7 @@ function AlertRow({
   return (
     <>
       <div
-        className={`flex items-center gap-3 p-3 rounded-xl border ${colorMap[al.color]} ${hasPhone ? "" : "cursor-pointer"}`}
+        className={`flex items-center gap-3 p-3 rounded-xl border ${colorMap[r.color]} ${hasPhone ? "" : "cursor-pointer"}`}
         onClick={() => !hasPhone && onOpenProfile(teen._id)}
       >
         <Avatar teen={teen} />
@@ -336,7 +367,7 @@ function AlertRow({
           <p className="text-sm font-semibold truncate">
             {esc(teen.nombre)} {esc(teen.apellido)}
           </p>
-          <p className="text-xs opacity-80">{al.action}</p>
+          <p className="text-xs opacity-80">{r.action}</p>
         </div>
         <div className="flex items-center gap-2 shrink-0">
           {hasPhone && (
@@ -351,11 +382,10 @@ function AlertRow({
           )}
           <div className="text-right">
             <span className="text-[11px] font-bold uppercase tracking-wide">
-              {al.label}
+              {r.label}
             </span>
-            <p className="text-[11px] opacity-70">
-              {s.consecutiveAbsences} falta
-              {s.consecutiveAbsences === 1 ? "" : "s"}
+            <p className="text-[11px] opacity-70 flex items-center gap-1 justify-end">
+              <span className="inline-flex items-center justify-center w-5 h-5 rounded-full text-[10px] font-bold text-white" style={{ background: ({ gray: "#6B7280", teal: "#0B7285", amber: "#F0A33C", coral: "#E8590C", red: "#DC2626" } as Record<string, string>)[r.color] }}>{r.score}</span>
             </p>
           </div>
         </div>

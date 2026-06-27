@@ -1,7 +1,7 @@
 import type {
   AttendanceMap,
   StatsResult,
-  AlertInfo,
+  RiskInfo,
   BadgeId,
   BadgeMeta,
   BadgeResult,
@@ -86,29 +86,28 @@ export function statsFor(
   return { total, present, excused, pct, consecutiveAbsences, presentStreak, history: lastStatuses };
 }
 
-export function alertLevel(consecutiveAbsences: number): AlertInfo | null {
-  if (consecutiveAbsences >= 3)
-    return {
-      level: "critical",
-      label: "Alerta crítica",
-      action: "Visita o seguimiento pastoral",
-      color: "coral",
-    };
-  if (consecutiveAbsences === 2)
-    return {
-      level: "urgent",
-      label: "Urgente",
-      action: "Contactar / escribir con urgencia",
-      color: "amber",
-    };
-  if (consecutiveAbsences === 1)
-    return {
-      level: "check",
-      label: "Seguimiento",
-      action: "Llamar para preguntar cómo está",
-      color: "teal",
-    };
-  return null;
+export function riskScore(stats: StatsResult): RiskInfo {
+  if (stats.total === 0)
+    return { score: 0, label: "Sin datos", action: "—", color: "gray", factors: { consecutiveAbsences: 0, maturityScore: 0 } };
+  const I = Math.min(stats.consecutiveAbsences, 4);
+  let M = 0;
+  if (stats.pct >= 80) M = 0;
+  else if (stats.pct >= 60) M = 1;
+  else if (stats.pct >= 40) M = 2;
+  else if (stats.pct >= 20) M = 3;
+  else M = 4;
+  const raw = I + M;
+  const score = Math.min(5, Math.max(0, raw)) as 0 | 1 | 2 | 3 | 4 | 5;
+  const levels: Record<number, { label: string; action: string; color: RiskInfo["color"] }> = {
+    0: { label: "Sin riesgo", action: "—", color: "gray" },
+    1: { label: "Seguimiento preventivo", action: "Llamada de contacto amistosa", color: "teal" },
+    2: { label: "Atención moderada", action: "Conversación personal", color: "amber" },
+    3: { label: "Urgente", action: "Contactar con los padres", color: "coral" },
+    4: { label: "Crítico", action: "Visita domiciliaria pastoral", color: "red" },
+    5: { label: "Crisis", action: "Intervención inmediata: visita + equipo pastoral", color: "red" },
+  };
+  const l = levels[score];
+  return { score, label: l.label, action: l.action, color: l.color, factors: { consecutiveAbsences: stats.consecutiveAbsences, maturityScore: M } };
 }
 
 export function stringHue(s: string): number {

@@ -2,8 +2,8 @@ import { useState, useCallback, useMemo } from "react";
 import { useQuery, useMutation } from "convex/react";
 import { api } from "../../convex/_generated/api";
 import type { Doc } from "../../convex/_generated/dataModel";
-import type { AttendanceMap } from "../lib/types";
-import { statsFor, alertLevel, ageFromDOB, daysToNextBirthday, esc, getGamification } from "../lib/utils";
+import type { AttendanceMap, RiskInfo } from "../lib/types";
+import { statsFor, riskScore, ageFromDOB, daysToNextBirthday, esc, getGamification } from "../lib/utils";
 import { Avatar } from "./Layout";
 import TeenForm from "./TeenForm";
 import Modal from "./Modal";
@@ -25,7 +25,7 @@ export default function Jovenes({
   const [deletingTeen, setDeletingTeen] = useState<Doc<"teens"> | null>(null);
 
   type FilterFidelidad = "all" | 1 | 2 | 3 | 4;
-  type FilterPastoral = "all" | "no_alert" | "check" | "urgent" | "critical";
+  type FilterPastoral = "all" | 0 | 1 | 2 | 3 | 4 | 5;
   type FilterEdad = "all" | "12-13" | "14-15" | "16-17" | "18+";
 
   const [showFilters, setShowFilters] = useState(false);
@@ -46,20 +46,17 @@ export default function Jovenes({
   const teenData = teens
     .map((t) => {
       const s = statsFor(t._id, attendanceMap);
-      const alert = alertLevel(s.consecutiveAbsences);
-      return { t, s, alert, age: ageFromDOB(t.nacimiento), game: getGamification(s), rc: ringColor(alert), hasFollowUp: followUpTeenIds.has(t._id) };
+      const risk = riskScore(s);
+      return { t, s, risk, age: ageFromDOB(t.nacimiento), game: getGamification(s), rc: ringColor(risk), hasFollowUp: followUpTeenIds.has(t._id) };
     })
     .filter(({ t }) => {
       const q = query.toLowerCase();
       return !q || (t.nombre + " " + t.apellido).toLowerCase().includes(q);
     })
-    .filter(({ t, s, alert, age, game, hasFollowUp }) => {
+    .filter(({ t, s, risk, age, game, hasFollowUp }) => {
       if (activeFilterCount === 0) return true;
       if (filtroFidelidad !== "all" && game.level.level !== filtroFidelidad) return false;
-      if (filtroPastoral !== "all") {
-        if (filtroPastoral === "no_alert" && alert !== null) return false;
-        if (filtroPastoral !== "no_alert" && (!alert || alert.level !== filtroPastoral)) return false;
-      }
+      if (filtroPastoral !== "all" && risk.score !== filtroPastoral) return false;
       if (filtroEdad !== "all") {
         if (age === null) return false;
         const [min, max] = filtroEdad.split("-").map(Number);
@@ -79,14 +76,16 @@ export default function Jovenes({
     setDeletingTeen(null);
   }, [deletingTeen, deleteTeen]);
 
-  const ringColor = (alert: ReturnType<typeof alertLevel>) =>
-    alert
-      ? alert.color === "coral"
-        ? "#E8590C"
-        : alert.color === "amber"
-        ? "#F0A33C"
-        : "#0B7285"
-      : "#2F9E73";
+  const ringColor = (risk: RiskInfo) => {
+    const colors: Record<RiskInfo["color"], string> = {
+      gray: "#6B7280",
+      teal: "#0B7285",
+      amber: "#F0A33C",
+      coral: "#E8590C",
+      red: "#DC2626",
+    };
+    return colors[risk.color];
+  };
 
   return (
     <div className="space-y-5">
@@ -158,7 +157,7 @@ export default function Jovenes({
         <div className="flex flex-wrap items-center gap-1.5">
           {[
             { val: filtroFidelidad, label: filtroFidelidad !== "all" ? `Nivel: ${["", "Iniciado", "Fiel", "Líder", "Mentor"][filtroFidelidad as number]}` : null, onClear: () => setFiltroFidelidad("all") },
-            { val: filtroPastoral, label: filtroPastoral !== "all" ? ({ no_alert: "Sin alerta", check: "Seguimiento", urgent: "Urgente", critical: "Crítica" } as const)[filtroPastoral] : null, onClear: () => setFiltroPastoral("all") },
+            { val: filtroPastoral, label: filtroPastoral !== "all" ? ({ 0: "Sin riesgo", 1: "Seguimiento", 2: "Atención", 3: "Urgente", 4: "Crítico", 5: "Crisis" } as Record<number, string>)[filtroPastoral] : null, onClear: () => setFiltroPastoral("all") },
             { val: filtroEdad, label: filtroEdad !== "all" ? `Edad: ${filtroEdad}` : null, onClear: () => setFiltroEdad("all") },
           ]
             .filter((x) => x.label)
@@ -204,9 +203,9 @@ export default function Jovenes({
           <div>
             <p className="text-[11px] font-semibold text-ink/40 uppercase tracking-wide mb-2">Estado Pastoral</p>
             <div className="flex flex-wrap gap-1.5">
-              {(["all", "no_alert", "check", "urgent", "critical"] as const).map((v) => (
+              {(["all", 0, 1, 2, 3, 4, 5] as const).map((v) => (
                 <button
-                  key={v}
+                  key={String(v)}
                   onClick={() => setFiltroPastoral(v)}
                   className={`text-xs font-semibold rounded-full px-3 py-1.5 transition ${
                     filtroPastoral === v
@@ -214,7 +213,7 @@ export default function Jovenes({
                       : "bg-ink/5 text-ink/60 hover:bg-ink/10"
                   }`}
                 >
-                  {({ all: "Todos", no_alert: "Sin alerta", check: "Seguimiento", urgent: "Urgente", critical: "Crítica" } as const)[v]}
+                  {v === "all" ? "Todos" : ({ 0: "Sin riesgo", 1: "Seguimiento", 2: "Atención", 3: "Urgente", 4: "Crítico", 5: "Crisis" } as Record<number, string>)[v]}
                 </button>
               ))}
             </div>
@@ -301,7 +300,7 @@ export default function Jovenes({
         </div>
       ) : (
         <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-3">
-          {teenData.map(({ t, s, alert, age, game, rc, hasFollowUp }) => (
+          {teenData.map(({ t, s, risk, age, game, rc, hasFollowUp }) => (
               <div
                 key={t._id}
                 onClick={() => onOpenProfile(t._id)}
@@ -317,7 +316,7 @@ export default function Jovenes({
                         <Avatar teen={t} />
                       </div>
                     </div>
-                    {alert && (
+                    {risk.score >= 1 && (
                       <span
                         className="absolute -bottom-0.5 -right-0.5 w-3.5 h-3.5 rounded-full border-2 border-white"
                         style={{ background: rc }}
@@ -328,7 +327,7 @@ export default function Jovenes({
                     <p className="text-sm font-semibold truncate">
                       {esc(t.nombre)} {esc(t.apellido)}
                     </p>
-                    {(s.presentStreak > 2 || s.consecutiveAbsences >= 2 || hasFollowUp) && (
+                    {(s.presentStreak > 2 || risk.score >= 2 || hasFollowUp) && (
                       <div className="flex flex-wrap items-center gap-1 mt-1">
                         {s.presentStreak > 2 && (
                           <span className="inline-flex items-center gap-0.5 text-[11px] font-semibold bg-orange-50 text-orange-600 border border-orange-200/60 rounded-full px-1.5 py-0.5 dark:bg-orange-950/20 dark:text-orange-400 dark:border-orange-900/40">
@@ -339,24 +338,34 @@ export default function Jovenes({
                             Racha {s.presentStreak}
                           </span>
                         )}
-                        {s.consecutiveAbsences === 2 && (
+                        {risk.score === 2 && (
                           <span className="inline-flex items-center gap-0.5 text-[11px] font-semibold bg-amber-50 text-amber-700 border border-amber-200 rounded-full px-1.5 py-0.5 dark:bg-amber-950/30 dark:text-amber-400 dark:border-amber-900/40">
                             <svg className="w-3 h-3" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
                               <path d="M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z" />
                               <line x1="12" y1="9" x2="12" y2="13" />
                               <line x1="12" y1="17" x2="12.01" y2="17" />
                             </svg>
-                            2 faltas
+                            Atención
                           </span>
                         )}
-                        {s.consecutiveAbsences >= 3 && (
+                        {risk.score === 3 && (
+                          <span className="inline-flex items-center gap-0.5 text-[11px] font-semibold bg-coral-50 text-coral-700 border border-coral-200 rounded-full px-1.5 py-0.5 dark:bg-orange-950/30 dark:text-coral-400 dark:border-coral-900/40">
+                            <svg className="w-3 h-3" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+                              <path d="M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z" />
+                              <line x1="12" y1="9" x2="12" y2="13" />
+                              <line x1="12" y1="17" x2="12.01" y2="17" />
+                            </svg>
+                            Urgente
+                          </span>
+                        )}
+                        {risk.score >= 4 && (
                           <span className="inline-flex items-center gap-0.5 text-[11px] font-semibold bg-red-50 text-red-700 border border-red-200 rounded-full px-1.5 py-0.5 dark:bg-red-950/30 dark:text-red-400 dark:border-red-900/40">
                             <svg className="w-3 h-3" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
                               <path d="M7.86 2h8.28L22 7.86v8.28L16.14 22H7.86L2 16.14V7.86L7.86 2z" />
                               <line x1="12" y1="8" x2="12" y2="12" />
                               <line x1="12" y1="16" x2="12.01" y2="16" />
                             </svg>
-                            Crítico
+                            {risk.score === 4 ? "Crítico" : "Crisis"}
                           </span>
                         )}
                         {hasFollowUp && (

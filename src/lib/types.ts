@@ -11,11 +11,15 @@ export interface StatsResult {
   history: { date: string; status: string }[];
 }
 
-export interface AlertInfo {
-  level: "critical" | "urgent" | "check";
+export interface RiskInfo {
+  score: 0 | 1 | 2 | 3 | 4 | 5;
   label: string;
   action: string;
-  color: "coral" | "amber" | "teal";
+  color: "gray" | "teal" | "amber" | "coral" | "red";
+  factors: {
+    consecutiveAbsences: number;
+    maturityScore: number;
+  };
 }
 
 export type BadgeId =
