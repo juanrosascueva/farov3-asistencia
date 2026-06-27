@@ -1,4 +1,5 @@
 import { useEffect, useRef } from "react";
+import { createPortal } from "react-dom";
 
 interface ModalProps {
   title: string;
@@ -18,7 +19,7 @@ export default function Modal({ title, onClose, children, panelClassName }: Moda
     return () => document.removeEventListener("keydown", handler);
   }, [onClose]);
 
-  return (
+  const modalContent = (
     <div
       className="fixed inset-0 bg-ink/40 backdrop-blur-sm flex items-end sm:items-center justify-center z-50 p-0 sm:p-4"
       onClick={(e) => {
@@ -52,4 +53,6 @@ export default function Modal({ title, onClose, children, panelClassName }: Moda
       </div>
     </div>
   );
+
+  return createPortal(modalContent, document.body);
 }
