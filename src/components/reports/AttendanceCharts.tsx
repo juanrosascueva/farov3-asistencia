@@ -1,7 +1,7 @@
 import {
   LineChart, Line, XAxis, YAxis, Tooltip, ResponsiveContainer,
 } from "recharts";
-import type { Doc } from "../../convex/_generated/dataModel";
+import type { Doc } from "../../../convex/_generated/dataModel";
 import type { AttendanceMap } from "../../lib/types";
 import { fmtDateShort } from "../../lib/utils";
 
@@ -73,7 +73,7 @@ export default function AttendanceCharts({ teens, filteredDates, attendanceMap }
                 <YAxis domain={[0, 100]} tick={{ fontSize: 11 }} axisLine={false} tickLine={false} />
                 <Tooltip
                   contentStyle={{ fontSize: 13, borderRadius: 12, border: "1px solid #e2e8f0" }}
-                  formatter={(v: number) => [`${v}%`, "Asistencia"]}
+                  formatter={(v: number | string) => [`${v}%`, "Asistencia"]}
                 />
                 <Line
                   type="monotone"

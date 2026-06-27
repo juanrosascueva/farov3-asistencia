@@ -2,6 +2,7 @@ import { useState, useCallback } from "react";
 import { useQuery } from "convex/react";
 import { api } from "../convex/_generated/api";
 import { useAttendanceMap } from "./hooks/useAttendanceMap";
+import { useLeaders, LeaderContext } from "./hooks/useLeaders";
 import Layout from "./components/Layout";
 import Dashboard from "./components/Dashboard";
 import Asistencia from "./components/Asistencia";
@@ -16,6 +17,7 @@ export default function App() {
 
   const teens = useQuery(api.teens.list);
   const attendanceMap = useAttendanceMap();
+  const leaderState = useLeaders();
 
   const navigate = useCallback((route: string, profileId?: string | null) => {
     setCurrentRoute(route);
@@ -88,8 +90,10 @@ export default function App() {
   };
 
   return (
-    <Layout currentRoute={currentRoute} onNavigate={navigate}>
-      {renderView()}
-    </Layout>
+    <LeaderContext.Provider value={leaderState}>
+      <Layout currentRoute={currentRoute} onNavigate={navigate}>
+        {renderView()}
+      </Layout>
+    </LeaderContext.Provider>
   );
 }

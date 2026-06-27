@@ -61,3 +61,9 @@ export interface GamificationResult {
   badges: BadgeResult[];
   streakTier: StreakTier | null;
 }
+
+export interface Leader {
+  id: string;
+  name: string;
+  role: "pastor" | "teacher" | "leader" | "helper";
+}

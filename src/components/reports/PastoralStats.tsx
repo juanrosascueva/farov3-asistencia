@@ -1,5 +1,5 @@
 import { PieChart, Pie, Cell, Tooltip, ResponsiveContainer } from "recharts";
-import type { Doc } from "../../convex/_generated/dataModel";
+import type { Doc } from "../../../convex/_generated/dataModel";
 
 interface Props {
   teens: Doc<"teens">[];

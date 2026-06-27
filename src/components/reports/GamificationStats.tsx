@@ -1,5 +1,5 @@
 import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer } from "recharts";
-import type { Doc } from "../../convex/_generated/dataModel";
+import type { Doc } from "../../../convex/_generated/dataModel";
 import type { AttendanceMap } from "../../lib/types";
 import { statsFor, getGamification } from "../../lib/utils";
 
