@@ -13,7 +13,7 @@ export default function BadgeGrid({ badges }: BadgeGridProps) {
       <h2 className="font-display font-semibold text-base mb-4">
         Insignias {unlocked.length > 0 && <span className="text-ink/40 font-normal">· {unlocked.length}/{badges.length}</span>}
       </h2>
-      <div className="grid grid-cols-3 sm:grid-cols-6 gap-3">
+      <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3">
         {badges.map((b) => (
           <div
             key={b.meta.id}

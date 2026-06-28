@@ -55,13 +55,13 @@ export default function ReportsPanel({ teens, attendanceMap }: ReportsPanelProps
         <h1 className="font-display text-2xl font-bold mt-0.5">Reportes</h1>
       </div>
 
-      <div className="flex items-center justify-between gap-3 flex-wrap">
-        <div className="flex gap-1.5 bg-ink/5 rounded-xl p-1">
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+        <div className="flex gap-1.5 bg-ink/5 rounded-xl p-1 overflow-x-auto w-full sm:w-auto">
           {tabs.map((t) => (
             <button
               key={t.id}
               onClick={() => setTab(t.id)}
-              className={`text-xs font-semibold px-3.5 py-2 rounded-xl transition ${
+              className={`text-xs font-semibold px-3.5 py-2 rounded-xl transition whitespace-nowrap shrink-0 ${
                 tab === t.id ? "bg-card shadow-sm text-ink" : "text-ink/50 hover:text-ink"
               }`}
             >
@@ -69,7 +69,7 @@ export default function ReportsPanel({ teens, attendanceMap }: ReportsPanelProps
             </button>
           ))}
         </div>
-        <div className="flex gap-1.5 bg-ink/5 rounded-xl p-1">
+        <div className="flex gap-1.5 bg-ink/5 rounded-xl p-1 overflow-x-auto w-full sm:w-auto">
           {([
             { id: "30d" as Range, label: "30 días" },
             { id: "3m" as Range, label: "3 meses" },
@@ -78,7 +78,7 @@ export default function ReportsPanel({ teens, attendanceMap }: ReportsPanelProps
             <button
               key={r.id}
               onClick={() => setRange(r.id)}
-              className={`text-xs font-semibold px-3 py-1.5 rounded-xl transition ${
+              className={`text-xs font-semibold px-3 py-1.5 rounded-xl transition whitespace-nowrap shrink-0 ${
                 range === r.id ? "bg-card shadow-sm text-ink" : "text-ink/50 hover:text-ink"
               }`}
             >

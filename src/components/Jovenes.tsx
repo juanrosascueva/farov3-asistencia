@@ -256,7 +256,7 @@ export default function Jovenes({
 
       {/* Panel lateral de filtros (Drawer) */}
       <div
-        className={`fixed right-0 top-0 h-full w-80 bg-card/95 dark:bg-card/98 shadow-2xl border-l border-ink/10 dark:border-white/5 z-50 p-5 flex flex-col justify-between transition-transform duration-300 ease-out transform ${
+        className={`fixed right-0 top-0 h-full w-full max-w-sm bg-card/95 dark:bg-card/98 shadow-2xl border-l border-ink/10 dark:border-white/5 z-50 p-4 sm:p-5 flex flex-col justify-between transition-transform duration-300 ease-out transform ${
           showFilters ? "translate-x-0" : "translate-x-full"
         }`}
       >

@@ -56,7 +56,7 @@ export default function GamificationStats({ teens, attendanceMap }: Props) {
 
   return (
     <div className="space-y-5">
-      <div className="grid grid-cols-3 gap-3">
+      <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-3">
         <KpiCard label="XP total del grupo" value={totalXp.toLocaleString()} sub={`promedio ${avgXp} por joven`} color="teal" />
         <KpiCard label="Nivel 3+ (Líderes)" value={highLevel} sub={`de ${teens.length} adolescentes`} color="amber" />
         <KpiCard label="Total insignias" value={badgeData.reduce((a, x) => a + x.value, 0)} sub="desbloqueadas" color="sage" />
@@ -73,7 +73,7 @@ export default function GamificationStats({ teens, attendanceMap }: Props) {
             <div className="h-56">
               <ResponsiveContainer width="100%" height="100%">
                 <BarChart data={levelData}>
-                  <XAxis dataKey="name" tick={{ fontSize: 10 }} axisLine={false} tickLine={false} />
+                  <XAxis dataKey="name" tick={{ fontSize: 10 }} interval={0} axisLine={false} tickLine={false} />
                   <YAxis allowDecimals={false} tick={{ fontSize: 11 }} axisLine={false} tickLine={false} />
                   <Tooltip />
                   <Bar dataKey="value" radius={[6, 6, 0, 0]} fill="#0B7285" />

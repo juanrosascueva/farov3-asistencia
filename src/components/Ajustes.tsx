@@ -199,7 +199,7 @@ export default function Ajustes({ teens, attendanceMap, dark, setDark }: Ajustes
         {showTplForm ? (
           <div className="bg-ink/[0.02] border border-ink/10 rounded-xl p-4 space-y-3">
             <p className="text-sm font-semibold">{editTpl ? "Editar plantilla" : "Nueva plantilla"}</p>
-            <div className="grid grid-cols-2 gap-3">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
               <div>
                 <label className="text-xs font-semibold text-ink/50 mb-1 block">Nombre</label>
                 <input
@@ -222,7 +222,7 @@ export default function Ajustes({ teens, attendanceMap, dark, setDark }: Ajustes
                 />
               </div>
             </div>
-            <div className="grid grid-cols-2 gap-3">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
               <div>
                 <label className="text-xs font-semibold text-ink/50 mb-1 block">Categoría</label>
                 <select

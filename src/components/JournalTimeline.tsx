@@ -128,7 +128,7 @@ export default function JournalTimeline({ teenId }: JournalProps) {
           onSubmit={handleSubmit}
           className="mb-5 p-4 rounded-xl border border-ink/10 bg-ink/[0.02] space-y-3"
         >
-          <div className="grid grid-cols-2 gap-3">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
             <div>
               <label className="text-xs font-semibold text-ink/50 mb-1 block">
                 Fecha

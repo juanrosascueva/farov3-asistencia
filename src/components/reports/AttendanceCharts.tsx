@@ -55,7 +55,7 @@ export default function AttendanceCharts({ teens, filteredDates, attendanceMap }
 
   return (
     <div className="space-y-5">
-      <div className="grid grid-cols-3 gap-3">
+      <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-3">
         <KpiCard label="Promedio semanal" value={avgPresent} sub={`de ${numTeens} adolescentes`} color="teal" />
         <KpiCard label="Retención (4 sem)" value={`${retentionRate}%`} sub={`${retained}/${numTeens} jóvenes`} color="sage" />
         <KpiCard label="Justificaciones" value={`${excusedPct}%`} sub={`${totalExcused} de ${totalMarks} faltas`} color="amber" />

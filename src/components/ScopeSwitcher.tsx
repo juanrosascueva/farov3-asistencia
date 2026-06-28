@@ -93,10 +93,10 @@ export default function ScopeSwitcher({ fullWidth = false }: { fullWidth?: boole
   };
 
   return (
-    <div className="relative" ref={ref}>
+    <div className={`relative ${fullWidth ? "w-full" : "max-w-full"}`} ref={ref}>
       <button
         onClick={() => { setOpen(!open); setStep("campus"); }}
-        className={`flex items-center gap-1.5 text-xs font-medium rounded-2xl px-3 py-2.5 bg-ink/5 text-ink/70 hover:bg-ink/10 transition ${
+        className={`flex items-center gap-1.5 text-xs font-medium rounded-2xl px-3 py-2.5 bg-ink/5 text-ink/70 hover:bg-ink/10 transition min-w-0 ${
           fullWidth ? "w-full justify-between" : ""
         }`}
       >
@@ -104,14 +104,14 @@ export default function ScopeSwitcher({ fullWidth = false }: { fullWidth?: boole
           <path d="M3 9l9-7 9 7v11a2 2 0 01-2 2H5a2 2 0 01-2-2z" />
           <polyline points="9 22 9 12 15 12 15 22" />
         </svg>
-        <span className="truncate max-w-[140px]">{scopeLabel}</span>
+        <span className={`truncate min-w-0 ${fullWidth ? "flex-1 text-left" : "max-w-[110px] sm:max-w-[140px]"}`}>{scopeLabel}</span>
         <svg className="w-3 h-3 shrink-0 opacity-50" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M6 9l6 6 6-6" /></svg>
       </button>
 
       {open && (
-        <div className={`absolute left-0 top-full mt-2 w-64 bg-card border border-ink/10 rounded-2xl shadow-soft py-1 z-50 ${
-          fullWidth ? "lg:left-full lg:top-0 lg:mt-0 lg:ml-3" : ""
-        }`}>
+          <div className={`absolute left-0 top-full mt-2 w-full min-w-[240px] max-w-[min(16rem,calc(100vw-2rem))] bg-card border border-ink/10 rounded-2xl shadow-soft py-1 z-50 ${
+            fullWidth ? "lg:left-full lg:top-0 lg:mt-0 lg:ml-3" : ""
+          }`}>
           <div className="px-3 py-2 border-b border-ink/5 flex items-center justify-between">
             <p className="text-xs font-semibold text-ink/60">
               {step === "campus" ? "Seleccionar sede" : step === "ministry" ? "Seleccionar ministerio" : "Seleccionar grupo"}

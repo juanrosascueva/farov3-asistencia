@@ -41,7 +41,7 @@ export default function PastoralStats({ teens, allJournal, followUps, pastoralTa
 
   return (
     <div className="space-y-5">
-      <div className="grid grid-cols-3 gap-3">
+      <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-3">
         <div className="bg-card rounded-card shadow-soft p-4">
           <div className="flex items-start justify-between">
             <p className="text-2xl font-bold font-display text-teal-700">{coveragePct}%</p>
@@ -56,7 +56,7 @@ export default function PastoralStats({ teens, allJournal, followUps, pastoralTa
               style={{ width: `${Math.min(100, coveragePct)}%` }}
             />
           </div>
-          <div className="flex items-center justify-between mt-1">
+          <div className="flex flex-col gap-1 sm:flex-row sm:items-center sm:justify-between mt-1">
             <p className="text-[11px] text-ink/40">
               {teensWithRecentJournal.size}/{teens.length} jóvenes
             </p>
@@ -91,7 +91,7 @@ export default function PastoralStats({ teens, allJournal, followUps, pastoralTa
           </p>
         ) : (
           <div className="flex items-center gap-6 flex-wrap">
-            <div className="h-52 w-52 shrink-0">
+            <div className="h-52 w-full max-w-[13rem] mx-auto shrink-0 sm:mx-0">
               <ResponsiveContainer width="100%" height="100%">
                 <PieChart>
                   <Pie
@@ -110,7 +110,7 @@ export default function PastoralStats({ teens, allJournal, followUps, pastoralTa
                 </PieChart>
               </ResponsiveContainer>
             </div>
-            <div className="space-y-2">
+            <div className="space-y-2 w-full min-w-0 flex-1">
               {channelData.map((e) => (
                 <div key={e.name} className="flex items-center gap-2 text-sm">
                   <span className="w-3 h-3 rounded-sm shrink-0" style={{ background: e.color }} />

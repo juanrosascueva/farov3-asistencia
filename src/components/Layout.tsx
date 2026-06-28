@@ -85,33 +85,35 @@ export default function Layout({
         )}
       </aside>
 
-      <main className="flex-1 px-4 sm:px-6 lg:px-0 pt-5 lg:pt-0 pb-24 lg:pb-6">
-        <header className="flex items-center justify-between mb-5 lg:hidden">
-          <div className="flex items-center gap-2">
+      <main className="flex-1 px-4 sm:px-6 lg:px-0 pt-5 lg:pt-0 pb-28 sm:pb-24 lg:pb-6">
+        <header className="mb-5 space-y-3 lg:hidden">
+          <div className="flex items-center gap-2 min-w-0">
             <LogoIcon />
-            <p className="font-display font-bold text-lg">Congregación Cristo Vive</p>
+            <p className="font-display font-bold text-base sm:text-lg truncate">Congregación Cristo Vive</p>
           </div>
-          <div className="flex items-center gap-1">
+          <div className="flex items-center justify-between gap-2 flex-wrap">
             <ScopeSwitcher />
-            {setDark && (
-              <button
-                onClick={() => setDark(!dark)}
-                className="w-8 h-8 rounded-lg flex items-center justify-center text-ink/40 hover:text-ink transition"
-              >
-                {dark ? (
-                  <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="5"/><path d="M12 1v2M12 21v2M4.2 4.2l1.4 1.4M18.4 18.4l1.4 1.4M1 12h2M21 12h2M4.2 19.8l1.4-1.4M18.4 5.6l1.4-1.4"/></svg>
-                ) : (
-                  <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><path d="M21 12.8A9 9 0 1111.2 3a7 7 0 109.8 9.8z"/></svg>
-                )}
-              </button>
-            )}
-            <LeaderBadge />
+            <div className="flex items-center gap-1 ml-auto">
+              {setDark && (
+                <button
+                  onClick={() => setDark(!dark)}
+                  className="w-8 h-8 rounded-lg flex items-center justify-center text-ink/40 hover:text-ink transition"
+                >
+                  {dark ? (
+                    <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="5"/><path d="M12 1v2M12 21v2M4.2 4.2l1.4 1.4M18.4 18.4l1.4 1.4M1 12h2M21 12h2M4.2 19.8l1.4-1.4M18.4 5.6l1.4-1.4"/></svg>
+                  ) : (
+                    <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><path d="M21 12.8A9 9 0 1111.2 3a7 7 0 109.8 9.8z"/></svg>
+                  )}
+                </button>
+              )}
+              <LeaderBadge />
+            </div>
           </div>
         </header>
         <div className="fade-in">{children}</div>
       </main>
 
-      <nav className="fixed bottom-0 left-0 right-0 bg-card border-t border-ink/10 flex lg:hidden z-40">
+      <nav className="fixed bottom-0 left-0 right-0 bg-card border-t border-ink/10 flex lg:hidden z-40 pb-[env(safe-area-inset-bottom)]">
         {[
           { id: "dashboard", label: "Resumen", icon: "home" },
           { id: "asistencia", label: "Asistencia", icon: "check" },
@@ -223,7 +225,7 @@ export default function Layout({
 
       <button
         onClick={() => setChatOpen(!chatOpen)}
-        className={`fixed bottom-4 right-4 z-50 w-14 h-14 rounded-full shadow-xl flex items-center justify-center transition ${
+        className={`fixed bottom-[calc(5.5rem+env(safe-area-inset-bottom))] right-4 lg:bottom-4 z-50 w-14 h-14 rounded-full shadow-xl flex items-center justify-center transition ${
           chatOpen ? "bg-ink/80 scale-0" : "bg-teal-600 hover:bg-teal-700 scale-100"
         }`}
       >
