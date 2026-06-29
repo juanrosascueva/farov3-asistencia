@@ -114,7 +114,7 @@ export default function Campana({ teens, onOpenProfile }: CampanaProps) {
 
       <div className="bg-card rounded-card shadow-soft p-4">
         <div className="flex items-center justify-between gap-3">
-          <button onClick={goPrevWeek} className="w-9 h-9 flex items-center justify-center rounded-xl border border-ink/10 text-ink/50 hover:text-ink hover:bg-ink/5 transition">
+          <button onClick={goPrevWeek} className="w-10 h-10 flex items-center justify-center rounded-xl border border-ink/10 text-ink/50 hover:text-ink hover:bg-ink/5 transition">
             <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M15 18l-6-6 6-6" /></svg>
           </button>
           <div className="text-center">
@@ -125,7 +125,7 @@ export default function Campana({ teens, onOpenProfile }: CampanaProps) {
               </button>
             )}
           </div>
-          <button onClick={goNextWeek} className="w-9 h-9 flex items-center justify-center rounded-xl border border-ink/10 text-ink/50 hover:text-ink hover:bg-ink/5 transition">
+          <button onClick={goNextWeek} className="w-10 h-10 flex items-center justify-center rounded-xl border border-ink/10 text-ink/50 hover:text-ink hover:bg-ink/5 transition">
             <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M9 18l6-6-6-6" /></svg>
           </button>
         </div>
@@ -228,14 +228,14 @@ export default function Campana({ teens, onOpenProfile }: CampanaProps) {
                       <>
                         <button
                           onClick={() => setContactingTeenId(teen._id)}
-                          className="w-8 h-8 flex items-center justify-center rounded-lg bg-teal-50 text-teal-700 hover:bg-teal-100 transition"
-                          title="Marcar como contactado"
+              className="w-10 h-10 flex items-center justify-center rounded-lg bg-teal-50 text-teal-700 hover:bg-teal-100 transition"
+                              title="Marcar como contactado"
                         >
                           <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12" /></svg>
                         </button>
                         <button
                           onClick={() => handleSkipped(teen._id)}
-                          className="w-8 h-8 flex items-center justify-center rounded-lg bg-ink/5 text-ink/40 hover:text-amber-600 hover:bg-amber-50 transition"
+                          className="w-10 h-10 flex items-center justify-center rounded-lg bg-ink/5 text-ink/40 hover:text-amber-600 hover:bg-amber-50 transition"
                           title="Saltar esta semana"
                         >
                           <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="18" y1="6" x2="6" y2="18" /><line x1="6" y1="6" x2="18" y2="18" /></svg>
@@ -245,7 +245,7 @@ export default function Campana({ teens, onOpenProfile }: CampanaProps) {
                     {(status === "contacted" || status === "skipped") && (
                       <button
                         onClick={() => handleReset(teen._id)}
-                        className="w-8 h-8 flex items-center justify-center rounded-lg bg-ink/5 text-ink/40 hover:text-teal-600 hover:bg-teal-50 transition"
+                        className="w-10 h-10 flex items-center justify-center rounded-lg bg-ink/5 text-ink/40 hover:text-teal-600 hover:bg-teal-50 transition"
                         title="Reabrir"
                       >
                         <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="1 4 1 10 7 10" /><path d="M3.51 15a9 9 0 102.13-9.36L1 10" /></svg>

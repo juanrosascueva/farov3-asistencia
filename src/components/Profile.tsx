@@ -248,7 +248,7 @@ export default function Profile({
             {risk.score >= 1 && (teen.telefonoPadre || teen.telefono) && (
               <button
                 onClick={() => setShowWhatsApp(true)}
-                className="shrink-0 w-9 h-9 rounded-full bg-white/70 flex items-center justify-center hover:bg-white/90 transition"
+                className="shrink-0 w-10 h-10 rounded-full bg-white/70 flex items-center justify-center hover:bg-white/90 transition"
               >
                 <WhatsAppIcon />
               </button>
