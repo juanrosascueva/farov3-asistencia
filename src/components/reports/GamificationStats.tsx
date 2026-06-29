@@ -63,27 +63,29 @@ export default function GamificationStats({ teens, attendanceMap }: Props) {
       </div>
 
       <div className="grid md:grid-cols-2 gap-5">
-        <div className="bg-card rounded-card shadow-soft p-5">
+        <div className="bg-card rounded-card shadow-soft p-4 sm:p-5">
           <h2 className="font-display font-semibold text-base mb-4">
             Distribución de niveles
           </h2>
           {all.length === 0 ? (
             <p className="text-sm text-ink/40 text-center py-8">Sin datos</p>
           ) : (
-            <div className="h-56">
-              <ResponsiveContainer width="100%" height="100%">
-                <BarChart data={levelData}>
+            <div className="overflow-x-auto -mx-1 px-1">
+              <div className="h-56 min-w-[28rem] sm:min-w-0">
+                <ResponsiveContainer width="100%" height="100%">
+                  <BarChart data={levelData}>
                   <XAxis dataKey="name" tick={{ fontSize: 10 }} interval={0} axisLine={false} tickLine={false} />
                   <YAxis allowDecimals={false} tick={{ fontSize: 11 }} axisLine={false} tickLine={false} />
                   <Tooltip />
                   <Bar dataKey="value" radius={[6, 6, 0, 0]} fill="#0B7285" />
-                </BarChart>
-              </ResponsiveContainer>
+                  </BarChart>
+                </ResponsiveContainer>
+              </div>
             </div>
           )}
         </div>
 
-        <div className="bg-card rounded-card shadow-soft p-5">
+        <div className="bg-card rounded-card shadow-soft p-4 sm:p-5">
           <h2 className="font-display font-semibold text-base mb-4">
             Insignias más desbloqueadas
           </h2>
@@ -93,10 +95,10 @@ export default function GamificationStats({ teens, attendanceMap }: Props) {
             <div className="space-y-3">
               {badgeData.map((b) => (
                 <div key={b.name} className="flex items-center gap-3">
-                  <span className="text-sm w-6 text-center">{b.name.slice(0, 2)}</span>
-                  <div className="flex-1">
-                    <div className="flex items-center justify-between text-sm mb-0.5">
-                      <span className="text-ink/70 text-xs">{b.name}</span>
+                  <span className="text-sm w-6 text-center shrink-0">{b.name.slice(0, 2)}</span>
+                  <div className="flex-1 min-w-0">
+                    <div className="flex items-center justify-between gap-3 text-sm mb-0.5">
+                      <span className="text-ink/70 text-xs truncate">{b.name}</span>
                       <span className="font-semibold text-xs">{b.value}</span>
                     </div>
                     <div className="w-full h-1.5 bg-ink/5 rounded-full overflow-hidden">

@@ -81,7 +81,7 @@ export default function PastoralStats({ teens, allJournal, followUps, pastoralTa
         />
       </div>
 
-      <div className="bg-card rounded-card shadow-soft p-5">
+      <div className="bg-card rounded-card shadow-soft p-4 sm:p-5">
         <h2 className="font-display font-semibold text-base mb-4">
           Distribución por canal de contacto
         </h2>
@@ -112,9 +112,9 @@ export default function PastoralStats({ teens, allJournal, followUps, pastoralTa
             </div>
             <div className="space-y-2 w-full min-w-0 flex-1">
               {channelData.map((e) => (
-                <div key={e.name} className="flex items-center gap-2 text-sm">
+                <div key={e.name} className="flex items-center gap-2 text-sm min-w-0">
                   <span className="w-3 h-3 rounded-sm shrink-0" style={{ background: e.color }} />
-                  <span className="text-ink/70">{e.name}</span>
+                  <span className="text-ink/70 truncate">{e.name}</span>
                   <span className="font-semibold ml-auto">{e.value}</span>
                 </div>
               ))}

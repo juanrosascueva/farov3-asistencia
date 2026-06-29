@@ -61,14 +61,15 @@ export default function AttendanceCharts({ teens, filteredDates, attendanceMap }
         <KpiCard label="Justificaciones" value={`${excusedPct}%`} sub={`${totalExcused} de ${totalMarks} faltas`} color="amber" />
       </div>
 
-      <div className="bg-card rounded-card shadow-soft p-5">
+      <div className="bg-card rounded-card shadow-soft p-4 sm:p-5">
         <h2 className="font-display font-semibold text-base mb-4">Tendencia de asistencia</h2>
         {trendData.length === 0 ? (
           <p className="text-sm text-ink/40 text-center py-8">Sin datos en este período</p>
         ) : (
-          <div className="h-64">
-            <ResponsiveContainer width="100%" height="100%">
-              <LineChart data={trendData}>
+          <div className="overflow-x-auto -mx-1 px-1">
+            <div className="h-64 min-w-[32rem] sm:min-w-0">
+              <ResponsiveContainer width="100%" height="100%">
+                <LineChart data={trendData}>
                 <XAxis dataKey="date" tick={{ fontSize: 11 }} axisLine={false} tickLine={false} />
                 <YAxis domain={[0, 100]} tick={{ fontSize: 11 }} axisLine={false} tickLine={false} />
                 <Tooltip
@@ -83,8 +84,9 @@ export default function AttendanceCharts({ teens, filteredDates, attendanceMap }
                   dot={{ r: 3, fill: "#0B7285" }}
                   activeDot={{ r: 5 }}
                 />
-              </LineChart>
-            </ResponsiveContainer>
+                </LineChart>
+              </ResponsiveContainer>
+            </div>
           </div>
         )}
       </div>

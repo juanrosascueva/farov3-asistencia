@@ -25,8 +25,9 @@ export const register = mutation({
     token: v.optional(v.string()),
   },
   handler: async (ctx, args) => {
-    // Only existing pastors can create new users
     const requester = await getUserFromToken(ctx, args.token);
+    const isSelfRegistration = !requester;
+
     if (requester && requester.role !== "pastor") {
       throw new Error("Solo el pastor puede registrar nuevos usuarios");
     }
@@ -48,7 +49,7 @@ export const register = mutation({
       role: args.role,
       hashedPassword,
       salt,
-      isActive: true,
+      isActive: !isSelfRegistration,
       createdAt: new Date().toISOString(),
     });
 
@@ -68,7 +69,9 @@ export const login = mutation({
       .withIndex("by_email", q => q.eq("email", emailNormalized))
       .first();
     if (!user) throw new Error("Credenciales inválidas");
-    if (!user.isActive) throw new Error("Usuario desactivado");
+    if (!user.isActive) {
+      throw new Error("Tu cuenta está pendiente de aprobación por el Pastor.");
+    }
 
     const hashed = await hashPassword(args.password, user.salt);
     if (hashed !== user.hashedPassword) throw new Error("Credenciales inválidas");

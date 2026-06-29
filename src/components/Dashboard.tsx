@@ -120,7 +120,7 @@ export default function Dashboard({
             {crisisTeens.map((c) => (
               <div
                 key={c.teen._id}
-                className="flex items-center gap-3 p-2.5 rounded-xl bg-white/60 border border-red-100"
+                className="flex flex-col items-stretch gap-3 p-3 rounded-xl bg-white/60 border border-red-100 sm:flex-row sm:items-center"
               >
                 <div className="cursor-pointer flex items-center gap-3 flex-1 min-w-0" onClick={() => onOpenProfile(c.teen._id)}>
                   <Avatar teen={c.teen} />
@@ -131,7 +131,7 @@ export default function Dashboard({
                     <p className="text-xs text-red-600/80 truncate">{c.alert.summary}</p>
                   </div>
                 </div>
-                <div className="flex items-center gap-2 shrink-0">
+                <div className="flex flex-wrap items-center gap-2 shrink-0 sm:justify-end">
                   <span className="text-[11px] font-bold text-red-700 bg-red-100 px-2 py-1 rounded-full">
                     Atención inmediata
                   </span>
@@ -170,7 +170,7 @@ export default function Dashboard({
                   </p>
                   <p className="text-xs text-amber-700/80 truncate">{c.prediction.primaryFactor}</p>
                 </div>
-                <div className="text-right shrink-0">
+                 <div className="text-right shrink-0 self-start sm:self-center">
                   <span className="text-sm font-bold text-amber-800">{c.prediction.probability}%</span>
                   <p className="text-[10px] text-amber-600">probabilidad</p>
                 </div>
@@ -212,8 +212,8 @@ export default function Dashboard({
       </div>
 
       <div className="grid lg:grid-cols-3 gap-5">
-        <div className="lg:col-span-2 bg-card rounded-card shadow-soft p-5">
-          <div className="flex items-center justify-between mb-4">
+        <div className="lg:col-span-2 bg-card rounded-card shadow-soft p-4 sm:p-5">
+          <div className="flex flex-col gap-1 sm:flex-row sm:items-center sm:justify-between mb-4">
             <h2 className="font-display font-semibold text-base">
               Seguimiento pastoral
             </h2>
@@ -269,7 +269,7 @@ export default function Dashboard({
           )}
         </div>
 
-        <div className="bg-card rounded-card shadow-soft p-5">
+        <div className="bg-card rounded-card shadow-soft p-4 sm:p-5">
           <h2 className="font-display font-semibold text-base mb-4">
             Rachas activas
           </h2>
@@ -303,7 +303,7 @@ export default function Dashboard({
           )}
         </div>
 
-        <div className="bg-card rounded-card shadow-soft p-5">
+        <div className="bg-card rounded-card shadow-soft p-4 sm:p-5">
           <h2 className="font-display font-semibold text-base mb-4">
             Distribución de riesgo pastoral
           </h2>
@@ -316,15 +316,15 @@ export default function Dashboard({
             return (
               <div className="space-y-2">
                 {[0, 1, 2, 3, 4, 5].map((s) => (
-                  <div key={s} className="flex items-center gap-3">
-                    <span className="w-24 text-xs text-ink/60 shrink-0">{labels[s]}</span>
+                  <div key={s} className="grid grid-cols-1 gap-1 sm:grid-cols-[6rem_minmax(0,1fr)_1.5rem] sm:items-center sm:gap-3">
+                    <span className="text-xs text-ink/60 shrink-0">{labels[s]}</span>
                     <div className="flex-1 h-5 bg-ink/5 rounded-full overflow-hidden">
                       <div
                         className={`h-full ${barColors[s]} rounded-full transition-all`}
                         style={{ width: `${all.length ? (distCounts[s] / all.length) * 100 : 0}%` }}
                       />
                     </div>
-                    <span className="w-6 text-right text-xs font-semibold text-ink/70">{distCounts[s]}</span>
+                    <span className="text-right text-xs font-semibold text-ink/70">{distCounts[s]}</span>
                   </div>
                 ))}
               </div>
@@ -333,8 +333,8 @@ export default function Dashboard({
         </div>
       </div>
 
-      <div className="bg-card rounded-card shadow-soft p-5">
-        <div className="flex items-center justify-between mb-5">
+      <div className="bg-card rounded-card shadow-soft p-4 sm:p-5">
+        <div className="flex flex-col gap-1 sm:flex-row sm:items-center sm:justify-between mb-5">
           <h2 className="font-display font-semibold text-base">
             Tendencia de asistencia
           </h2>
@@ -348,23 +348,25 @@ export default function Dashboard({
             sub="Marca la primera asistencia para ver la tendencia aquí."
           />
         ) : (
-          <div className="flex items-end gap-2 h-36">
-            {trend.map((p, i) => (
-              <div
-                key={i}
-                className="flex-1 flex flex-col items-center gap-2 group"
-              >
-                <div className="w-full flex items-end h-28 rounded-md bg-ink/[0.04] overflow-hidden relative">
-                  <div
-                    className="w-full bg-gradient-to-t from-teal-600/60 to-teal-500 group-hover:from-teal-600 group-hover:to-teal-400 transition-all rounded-t-md"
-                    style={{ height: `${p.pct}%` }}
-                  />
+          <div className="overflow-x-auto -mx-1 px-1">
+            <div className="flex items-end gap-2 h-36 min-w-[28rem] sm:min-w-0">
+              {trend.map((p, i) => (
+                <div
+                  key={i}
+                  className="flex-1 flex flex-col items-center gap-2 group"
+                >
+                  <div className="w-full flex items-end h-28 rounded-md bg-ink/[0.04] overflow-hidden relative">
+                    <div
+                      className="w-full bg-gradient-to-t from-teal-600/60 to-teal-500 group-hover:from-teal-600 group-hover:to-teal-400 transition-all rounded-t-md"
+                      style={{ height: `${p.pct}%` }}
+                    />
+                  </div>
+                  <span className="text-[10px] text-ink/40">
+                    {fmtDateShort(p.d)}
+                  </span>
                 </div>
-                <span className="text-[10px] text-ink/40">
-                  {fmtDateShort(p.d)}
-                </span>
-              </div>
-            ))}
+              ))}
+            </div>
           </div>
         )}
       </div>
@@ -449,7 +451,7 @@ function AlertRow({
   return (
     <>
       <div
-        className={`flex items-center gap-3 p-3 rounded-xl border ${colorMap[r.color]} ${hasPhone ? "" : "cursor-pointer"}`}
+        className={`flex items-start sm:items-center gap-3 p-3 rounded-xl border ${colorMap[r.color]} ${hasPhone ? "" : "cursor-pointer"}`}
         onClick={() => !hasPhone && onOpenProfile(teen._id)}
       >
         <Avatar teen={teen} />
@@ -462,7 +464,7 @@ function AlertRow({
           </p>
           <p className="text-xs opacity-80">{r.action}</p>
         </div>
-        <div className="flex items-center gap-2 shrink-0">
+        <div className="flex flex-col items-end sm:flex-row sm:items-center gap-2 shrink-0">
           {hasPhone && (
             <button
               onClick={(e) => { e.stopPropagation(); setShowWA(true); }}

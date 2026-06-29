@@ -26,7 +26,7 @@ export default function OrgManager() {
 }
 
 function UserManager() {
-  const { token } = useAuth();
+  const { token, user } = useAuth();
   const [showForm, setShowForm] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   const [email, setEmail] = useState("");
@@ -38,6 +38,7 @@ function UserManager() {
   const users = useQuery(api.users.listUsers, token ? { token } : "skip");
   const register = useMutation(api.users.register);
   const migrateEmails = useMutation(api.users.migrateEmailsToLowerCase);
+  const updateUser = useMutation(api.users.updateUser);
   const [migrating, setMigrating] = useState(false);
 
   const handleCreate = async () => {
@@ -66,6 +67,19 @@ function UserManager() {
       alert(`Error al normalizar correos: ${err.message}`);
     } finally {
       setMigrating(false);
+    }
+  };
+
+  const handleToggleActive = async (userId: string, currentActive: boolean) => {
+    if (!token) return;
+    try {
+      await updateUser({
+        token,
+        userId: userId as any,
+        isActive: !currentActive,
+      });
+    } catch (err: any) {
+      alert(err.message);
     }
   };
 
@@ -147,6 +161,27 @@ function UserManager() {
             <span className={`w-2 h-2 rounded-full shrink-0 ${u.isActive ? "bg-green-500" : "bg-red-400"}`} />
             <span className="flex-1 text-sm font-medium min-w-0 truncate">{u.name}</span>
             <span className="text-[10px] capitalize text-ink/40 mr-1">{u.role}</span>
+            
+            {/* Botón de Aprobar / Desactivar */}
+            {!u.isActive && (
+              <button
+                onClick={() => handleToggleActive(u._id, u.isActive)}
+                className="px-2 py-0.5 text-[10px] font-semibold bg-green-50 dark:bg-green-950/20 text-green-700 dark:text-green-400 border border-green-200 dark:border-green-900/40 rounded-lg hover:bg-green-100 transition shrink-0 pressable"
+                title="Aprobar acceso del usuario"
+              >
+                Aprobar
+              </button>
+            )}
+            {u.isActive && u._id !== user?._id && u.role !== "pastor" && (
+              <button
+                onClick={() => handleToggleActive(u._id, u.isActive)}
+                className="px-2 py-0.5 text-[10px] font-semibold bg-red-50 dark:bg-red-950/20 text-red-700 dark:text-red-400 border border-red-200 dark:border-red-900/40 rounded-lg hover:bg-red-100 transition shrink-0 pressable"
+                title="Desactivar acceso del usuario"
+              >
+                Desactivar
+              </button>
+            )}
+
             {u.role !== "pastor" && (
               <button
                 onClick={() => setScopesUser(u)}

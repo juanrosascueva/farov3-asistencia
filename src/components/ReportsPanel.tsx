@@ -57,21 +57,21 @@ export default function ReportsPanel({ teens, attendanceMap }: ReportsPanelProps
         <h1 className="font-display text-2xl font-bold mt-0.5">Reportes</h1>
       </div>
 
-      <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-        <div className="flex gap-1.5 bg-ink/5 rounded-xl p-1 overflow-x-auto w-full sm:w-auto">
+      <div className="space-y-3">
+        <div className="grid grid-cols-2 gap-2 sm:flex sm:flex-wrap sm:gap-1.5 sm:bg-ink/5 sm:rounded-xl sm:p-1">
           {tabs.map((t) => (
             <button
               key={t.id}
               onClick={() => setTab(t.id)}
-              className={`text-xs font-semibold px-3.5 py-2 rounded-xl transition whitespace-nowrap shrink-0 ${
-                tab === t.id ? "bg-card shadow-sm text-ink" : "text-ink/50 hover:text-ink"
+              className={`text-xs font-semibold px-3.5 py-2 rounded-xl transition whitespace-nowrap min-w-0 ${
+                tab === t.id ? "bg-card shadow-sm text-ink border border-ink/5 sm:border-transparent" : "bg-ink/[0.03] text-ink/50 hover:text-ink sm:bg-transparent"
               }`}
             >
               {t.icon} {t.label}
             </button>
           ))}
         </div>
-        <div className="flex gap-1.5 bg-ink/5 rounded-xl p-1 overflow-x-auto w-full sm:w-auto">
+        <div className="grid grid-cols-3 gap-2 sm:flex sm:flex-wrap sm:gap-1.5 sm:bg-ink/5 sm:rounded-xl sm:p-1">
           {([
             { id: "30d" as Range, label: "30 días" },
             { id: "3m" as Range, label: "3 meses" },
@@ -80,8 +80,8 @@ export default function ReportsPanel({ teens, attendanceMap }: ReportsPanelProps
             <button
               key={r.id}
               onClick={() => setRange(r.id)}
-              className={`text-xs font-semibold px-3 py-1.5 rounded-xl transition whitespace-nowrap shrink-0 ${
-                range === r.id ? "bg-card shadow-sm text-ink" : "text-ink/50 hover:text-ink"
+              className={`text-xs font-semibold px-3 py-2 rounded-xl transition whitespace-nowrap min-w-0 ${
+                range === r.id ? "bg-card shadow-sm text-ink border border-ink/5 sm:border-transparent" : "bg-ink/[0.03] text-ink/50 hover:text-ink sm:bg-transparent"
               }`}
             >
               {r.label}
