@@ -86,28 +86,14 @@ export default function Layout({
       </aside>
 
       <main className="flex-1 px-4 sm:px-6 lg:px-0 pt-5 lg:pt-0 pb-28 sm:pb-24 lg:pb-6">
-        <header className="mb-5 space-y-3 lg:hidden">
+        <header className="flex items-center justify-between mb-5 lg:hidden gap-2">
           <div className="flex items-center gap-2 min-w-0">
             <LogoIcon />
-            <p className="font-display font-bold text-base sm:text-lg truncate">Congregación Cristo Vive</p>
+            <p className="font-display font-bold text-base sm:text-lg truncate">Cristo Vive</p>
           </div>
-          <div className="flex items-center justify-between gap-2 flex-wrap">
+          <div className="flex items-center gap-2 shrink-0">
             <ScopeSwitcher />
-            <div className="flex items-center gap-1 ml-auto">
-              {setDark && (
-                <button
-                  onClick={() => setDark(!dark)}
-                  className="w-8 h-8 rounded-lg flex items-center justify-center text-ink/40 hover:text-ink transition"
-                >
-                  {dark ? (
-                    <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="5"/><path d="M12 1v2M12 21v2M4.2 4.2l1.4 1.4M18.4 18.4l1.4 1.4M1 12h2M21 12h2M4.2 19.8l1.4-1.4M18.4 5.6l1.4-1.4"/></svg>
-                  ) : (
-                    <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><path d="M21 12.8A9 9 0 1111.2 3a7 7 0 109.8 9.8z"/></svg>
-                  )}
-                </button>
-              )}
-              <LeaderBadge />
-            </div>
+            <LeaderBadge onlyAvatar />
           </div>
         </header>
         <div className="fade-in">{children}</div>
@@ -275,7 +261,7 @@ function LogoIcon() {
   );
 }
 
-function LeaderBadge() {
+function LeaderBadge({ onlyAvatar = false }: { onlyAvatar?: boolean }) {
   const { user, logout } = useAuth();
   const [open, setOpen] = useState(false);
   const ref = useRef<HTMLDivElement>(null);
@@ -290,6 +276,44 @@ function LeaderBadge() {
   }, [open]);
 
   if (!user) return null;
+
+  const initials = ((user.name?.[0] || "") + (user.name?.split(" ")[1]?.[0] || "")).toUpperCase();
+
+  if (onlyAvatar) {
+    return (
+      <div className="relative shrink-0" ref={ref}>
+        <button
+          onClick={() => setOpen(!open)}
+          className="w-9 h-9 rounded-full bg-teal-600/10 text-teal-700 dark:bg-teal-950/30 dark:text-teal-400 font-bold text-xs flex items-center justify-center pressable border border-teal-600/20"
+          title={user.name}
+        >
+          {initials || (
+            <svg className="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+              <path d="M20 21v-2a4 4 0 00-4-4H8a4 4 0 00-4 4v2" />
+              <circle cx="12" cy="7" r="4" />
+            </svg>
+          )}
+        </button>
+        {open && (
+          <div className="absolute right-0 top-full mt-2 w-56 bg-card border border-ink/10 rounded-2xl shadow-soft py-1 z-50">
+            <div className="px-3 py-2 border-b border-ink/5 mb-1">
+              <p className="text-sm font-semibold truncate">{user.name}</p>
+              <p className="text-[11px] text-ink/40 capitalize">{user.role} · {user.email}</p>
+            </div>
+            <div className="border-t border-ink/5 mt-1 pt-1">
+              <button
+                onClick={() => { logout(); setOpen(false); }}
+                className="w-full text-left px-3 py-2 text-xs text-ink/40 hover:text-coral-600 hover:bg-coral-50 transition flex items-center gap-2"
+              >
+                <svg className="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><path d="M18 6L6 18M6 6l12 12" /></svg>
+                Cerrar sesión
+              </button>
+            </div>
+          </div>
+        )}
+      </div>
+    );
+  }
 
   return (
     <div className="relative" ref={ref}>
