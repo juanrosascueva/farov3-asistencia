@@ -332,7 +332,7 @@ function AttBtn({
   return (
     <button
       onClick={onClick}
-      className={`w-8 h-8 rounded-lg border text-sm font-bold flex items-center justify-center transition ${
+      className={`w-10 h-10 min-w-[44px] rounded-lg border text-sm font-bold flex items-center justify-center transition ${
         isActive
           ? activeClass
           : "bg-card border-ink/10 text-ink/30"

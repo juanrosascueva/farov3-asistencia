@@ -228,8 +228,18 @@ export default function TeenForm({ teen, onClose, onSuccess }: TeenFormProps) {
         <span className="font-semibold text-ink">Paso {step + 1} de {STEPS.length}</span>
         <span className="text-ink/50 truncate">{STEPS[step].label}</span>
       </div>
-      <div className="mt-2 h-2 rounded-full bg-ink/5 overflow-hidden">
-        <div className="h-full rounded-full bg-teal-600 transition-all" style={{ width: `${((step + 1) / STEPS.length) * 100}%` }} />
+      <div className="mt-2 flex gap-1">
+        {STEPS.map((item, index) => (
+          <button
+            key={item.id}
+            type="button"
+            onClick={() => setStep(index)}
+            className={`flex-1 h-2 rounded-full transition ${
+              index <= step ? "bg-teal-600" : "bg-ink/10"
+            }`}
+            aria-label={`Ir a paso ${item.label}`}
+          />
+        ))}
       </div>
     </div>
   );
@@ -364,8 +374,8 @@ export default function TeenForm({ teen, onClose, onSuccess }: TeenFormProps) {
               ]} />
             </div>
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-              <Field label="Teléfono del adolescente" type="tel" value={form.telefono} onChange={(v) => set("telefono")(normalizePhoneInput(v))} />
-              <Field label="Teléfono secundario" type="tel" value={form.telefonoSecundario} onChange={(v) => set("telefonoSecundario")(normalizePhoneInput(v))} />
+              <Field label="Teléfono del adolescente" type="tel" inputMode="tel" value={form.telefono} onChange={(v) => set("telefono")(normalizePhoneInput(v))} />
+              <Field label="Teléfono secundario" type="tel" inputMode="tel" value={form.telefonoSecundario} onChange={(v) => set("telefonoSecundario")(normalizePhoneInput(v))} />
             </div>
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
               <Field label="Colegio" value={form.colegio} onChange={set("colegio")} />
@@ -386,11 +396,11 @@ export default function TeenForm({ teen, onClose, onSuccess }: TeenFormProps) {
               <Field label="Parentesco" value={form.parentescoEncargado} onChange={set("parentescoEncargado")} placeholder="Ej: madre, padre, tía" required />
             </div>
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-              <Field label="Teléfono del encargado" type="tel" value={form.telefonoPadre} onChange={(v) => set("telefonoPadre")(normalizePhoneInput(v))} required />
+              <Field label="Teléfono del encargado" type="tel" inputMode="tel" value={form.telefonoPadre} onChange={(v) => set("telefonoPadre")(normalizePhoneInput(v))} required />
               <Field label="Contacto de emergencia" value={form.contactoEmergenciaNombre} onChange={set("contactoEmergenciaNombre")} />
             </div>
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-              <Field label="Teléfono de emergencia" type="tel" value={form.contactoEmergenciaTelefono} onChange={(v) => set("contactoEmergenciaTelefono")(normalizePhoneInput(v))} />
+              <Field label="Teléfono de emergencia" type="tel" inputMode="tel" value={form.contactoEmergenciaTelefono} onChange={(v) => set("contactoEmergenciaTelefono")(normalizePhoneInput(v))} />
               <ToggleField label="Permite mensajes por WhatsApp" checked={form.permiteMensajes} onChange={(v) => set("permiteMensajes")(v)} />
             </div>
           </section>
@@ -501,6 +511,7 @@ function Field({
   type = "text",
   required,
   placeholder,
+  inputMode,
 }: {
   label: string;
   value: string;
@@ -508,6 +519,7 @@ function Field({
   type?: string;
   required?: boolean;
   placeholder?: string;
+  inputMode?: "text" | "tel" | "url" | "email" | "numeric" | "decimal" | "search";
 }) {
   return (
     <div>
@@ -517,8 +529,9 @@ function Field({
         value={value}
         placeholder={placeholder}
         required={required}
+        inputMode={inputMode}
         onChange={(e) => onChange(e.target.value)}
-        className="w-full bg-card border border-ink/10 rounded-xl px-3.5 py-2.5 text-sm"
+        className="w-full bg-card border border-ink/10 rounded-xl px-3.5 py-2.5 text-base"
       />
     </div>
   );
@@ -541,7 +554,7 @@ function SelectField({
       <select
         value={value}
         onChange={(e) => onChange(e.target.value)}
-        className="w-full bg-card border border-ink/10 rounded-xl px-3.5 py-2.5 text-sm"
+        className="w-full bg-card border border-ink/10 rounded-xl px-3.5 py-2.5 text-base"
       >
         {options.map((option) => (
           <option key={option.value} value={option.value}>{option.label}</option>
@@ -586,7 +599,7 @@ function TextArea({
         value={value}
         onChange={(e) => onChange(e.target.value)}
         rows={rows}
-        className="w-full bg-card border border-ink/10 rounded-xl px-3.5 py-2.5 text-sm resize-none"
+        className="w-full bg-card border border-ink/10 rounded-xl px-3.5 py-2.5 text-base resize-none"
       />
       {helper && <p className="text-[11px] text-ink/40 mt-1">{helper}</p>}
     </div>

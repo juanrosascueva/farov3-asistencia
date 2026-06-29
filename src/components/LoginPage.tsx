@@ -56,6 +56,13 @@ export default function LoginPage() {
     }
   };
 
+  const scrollIntoView = (e: React.FocusEvent<HTMLFormElement>) => {
+    const target = e.target as HTMLElement;
+    if (target.tagName === "INPUT" || target.tagName === "SELECT" || target.tagName === "TEXTAREA") {
+      setTimeout(() => target.scrollIntoView({ behavior: "smooth", block: "center" }), 300);
+    }
+  };
+
   const handleSetup = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!setupEmail.trim() || !setupPassword.trim() || !setupName.trim()) return;
@@ -144,7 +151,7 @@ export default function LoginPage() {
         </div>
 
         {showRequestAccess ? (
-          <form onSubmit={handleRequestAccess} className="space-y-4">
+          <form onSubmit={handleRequestAccess} className="space-y-4" onFocus={scrollIntoView}>
             <p className="text-sm font-semibold text-center text-teal-700">Solicitud de Acceso / Registro</p>
             <p className="text-xs text-ink/40 text-center">Registra tus datos. Tu cuenta estará inactiva hasta que sea aprobada por el Pastor.</p>
             <div>
@@ -155,7 +162,7 @@ export default function LoginPage() {
                 onChange={e => setRequestName(e.target.value)}
                 placeholder="Ej: Juan Rosas"
                 required
-                className="w-full bg-card border border-ink/10 rounded-xl px-3.5 py-2.5 text-sm"
+                className="w-full bg-card border border-ink/10 rounded-xl px-3.5 py-2.5 text-base"
               />
             </div>
             <div>
@@ -166,7 +173,7 @@ export default function LoginPage() {
                 onChange={e => setRequestEmail(e.target.value)}
                 placeholder="correo@iglesia.com"
                 required
-                className="w-full bg-card border border-ink/10 rounded-xl px-3.5 py-2.5 text-sm"
+                className="w-full bg-card border border-ink/10 rounded-xl px-3.5 py-2.5 text-base"
               />
             </div>
             <div>
@@ -177,7 +184,7 @@ export default function LoginPage() {
                 onChange={e => setRequestPassword(e.target.value)}
                 placeholder="••••••••"
                 required
-                className="w-full bg-card border border-ink/10 rounded-xl px-3.5 py-2.5 text-sm"
+                className="w-full bg-card border border-ink/10 rounded-xl px-3.5 py-2.5 text-base"
               />
             </div>
             <div>
@@ -185,7 +192,7 @@ export default function LoginPage() {
               <select
                 value={requestRole}
                 onChange={e => setRequestRole(e.target.value as any)}
-                className="w-full bg-card border border-ink/10 rounded-xl px-3.5 py-2.5 text-sm"
+                className="w-full bg-card border border-ink/10 rounded-xl px-3.5 py-2.5 text-base"
               >
                 <option value="leader">Líder</option>
                 <option value="helper">Ayudante</option>
@@ -212,7 +219,7 @@ export default function LoginPage() {
             </button>
           </form>
         ) : !showSetup ? (
-          <form onSubmit={handleLogin} className="space-y-4">
+          <form onSubmit={handleLogin} className="space-y-4" onFocus={scrollIntoView}>
             <div>
               <label className="text-xs font-semibold text-ink/50 mb-1 block">
                 Correo electrónico
@@ -222,7 +229,7 @@ export default function LoginPage() {
                 value={email}
                 onChange={e => setEmail(e.target.value)}
                 placeholder="correo@iglesia.com"
-                className="w-full bg-card border border-ink/10 rounded-xl px-3.5 py-2.5 text-sm"
+                className="w-full bg-card border border-ink/10 rounded-xl px-3.5 py-2.5 text-base"
                 autoFocus
               />
             </div>
@@ -235,7 +242,7 @@ export default function LoginPage() {
                 value={password}
                 onChange={e => setPassword(e.target.value)}
                 placeholder="••••••••"
-                className="w-full bg-card border border-ink/10 rounded-xl px-3.5 py-2.5 text-sm"
+                className="w-full bg-card border border-ink/10 rounded-xl px-3.5 py-2.5 text-base"
               />
             </div>
             {error && (
@@ -267,7 +274,7 @@ export default function LoginPage() {
             </div>
           </form>
         ) : (
-          <form onSubmit={handleSetup} className="space-y-4">
+          <form onSubmit={handleSetup} className="space-y-4" onFocus={scrollIntoView}>
             <p className="text-sm font-semibold">Configurar primer usuario (Pastor)</p>
             <p className="text-xs text-ink/40">Esto solo funciona si no hay usuarios registrados.</p>
             <div>
@@ -277,7 +284,7 @@ export default function LoginPage() {
                 value={setupName}
                 onChange={e => setSetupName(e.target.value)}
                 placeholder="Ej: Juan Rosas"
-                className="w-full bg-card border border-ink/10 rounded-xl px-3.5 py-2.5 text-sm"
+                className="w-full bg-card border border-ink/10 rounded-xl px-3.5 py-2.5 text-base"
               />
             </div>
             <div>
@@ -287,7 +294,7 @@ export default function LoginPage() {
                 value={setupEmail}
                 onChange={e => setSetupEmail(e.target.value)}
                 placeholder="pastor@iglesia.com"
-                className="w-full bg-card border border-ink/10 rounded-xl px-3.5 py-2.5 text-sm"
+                className="w-full bg-card border border-ink/10 rounded-xl px-3.5 py-2.5 text-base"
               />
             </div>
             <div>
@@ -297,7 +304,7 @@ export default function LoginPage() {
                 value={setupPassword}
                 onChange={e => setSetupPassword(e.target.value)}
                 placeholder="••••••••"
-                className="w-full bg-card border border-ink/10 rounded-xl px-3.5 py-2.5 text-sm"
+                className="w-full bg-card border border-ink/10 rounded-xl px-3.5 py-2.5 text-base"
               />
             </div>
             {setupError && (

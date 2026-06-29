@@ -213,8 +213,8 @@ export default function Jovenes({
             className="w-full bg-card border border-ink/10 rounded-xl pl-10 pr-4 py-2.5 text-sm"
           />
         </div>
-        <div className="grid grid-cols-[minmax(0,1fr)_auto_auto] gap-2 sm:flex sm:flex-wrap sm:items-center">
-          <div className="relative min-w-0 flex items-center bg-card border border-ink/10 rounded-xl px-2.5 h-10 hover:border-ink/20 transition cursor-pointer">
+        <div className="flex flex-wrap items-center gap-2">
+          <div className="relative min-w-0 flex-1 basis-[200px] flex items-center bg-card border border-ink/10 rounded-xl px-2.5 h-10 hover:border-ink/20 transition cursor-pointer">
             <svg className="w-3.5 h-3.5 text-ink/40 mr-1.5 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
               <line x1="21" y1="10" x2="3" y2="10" /><line x1="21" y1="6" x2="3" y2="6" /><line x1="21" y1="14" x2="3" y2="14" /><line x1="21" y1="18" x2="3" y2="18" />
             </svg>
@@ -462,7 +462,7 @@ export default function Jovenes({
           </p>
         </div>
       ) : (
-        <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-3">
+        <div className="grid sm:grid-cols-2 lg:grid-cols-3 2xl:grid-cols-4 gap-3">
           {teenData.map(({ t, s, risk, age, game, rc, hasFollowUp, ppp, status, completeness, warnings }) => (
               <div
                 key={t._id}

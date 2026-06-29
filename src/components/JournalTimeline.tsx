@@ -138,7 +138,7 @@ export default function JournalTimeline({ teenId }: JournalProps) {
                 value={entryDate}
                 onChange={(e) => setEntryDate(e.target.value)}
                 required
-                className="w-full bg-card border border-ink/10 rounded-xl px-3.5 py-2 text-sm"
+                className="w-full bg-card border border-ink/10 rounded-xl px-3.5 py-2 text-base"
               />
             </div>
             <div>
@@ -148,7 +148,7 @@ export default function JournalTimeline({ teenId }: JournalProps) {
               <select
                 value={category}
                 onChange={(e) => setCategory(e.target.value)}
-                className="w-full bg-card border border-ink/10 rounded-xl px-3.5 py-2 text-sm"
+                className="w-full bg-card border border-ink/10 rounded-xl px-3.5 py-2 text-base"
               >
                 <option value="call">📞 Llamada</option>
                 <option value="visit">🏠 Visita</option>
@@ -169,7 +169,7 @@ export default function JournalTimeline({ teenId }: JournalProps) {
               onChange={(e) => setLeaderName(e.target.value)}
               placeholder="Nombre del líder"
               required
-              className="w-full bg-card border border-ink/10 rounded-xl px-3.5 py-2 text-sm"
+              className="w-full bg-card border border-ink/10 rounded-xl px-3.5 py-2 text-base"
             />
           </div>
           <div>
@@ -183,7 +183,7 @@ export default function JournalTimeline({ teenId }: JournalProps) {
                 rows={3}
                 placeholder="Describe la llamada, visita o conversación..."
                 required
-                className="w-full bg-card border border-ink/10 rounded-xl px-3.5 py-2.5 text-sm resize-none pr-10"
+                className="w-full bg-card border border-ink/10 rounded-xl px-3.5 py-2.5 text-base resize-none pr-10"
               />
               <button
                 type="button"
@@ -373,7 +373,7 @@ export default function JournalTimeline({ teenId }: JournalProps) {
                     </div>
                     <button
                       onClick={() => deleteEntry({ id: entry._id })}
-                      className="shrink-0 w-6 h-6 rounded-full bg-ink/5 flex items-center justify-center text-ink/30 hover:text-coral-600 hover:bg-coral-50 transition mt-1"
+                      className="shrink-0 w-8 h-8 rounded-full bg-ink/5 flex items-center justify-center text-ink/30 hover:text-coral-600 hover:bg-coral-50 transition mt-1"
                       title="Eliminar"
                     >
                       <svg

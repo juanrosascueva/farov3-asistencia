@@ -207,7 +207,7 @@ export default function Ajustes({ teens, attendanceMap, dark, setDark }: Ajustes
                   value={tplName}
                   onChange={(e) => setTplName(e.target.value)}
                   placeholder="Ej: Una falta (cálido)"
-                  className="w-full bg-card border border-ink/10 rounded-xl px-3.5 py-2 text-sm"
+                  className="w-full bg-card border border-ink/10 rounded-xl px-3.5 py-2 text-base"
                 />
               </div>
               <div>
@@ -218,7 +218,7 @@ export default function Ajustes({ teens, attendanceMap, dark, setDark }: Ajustes
                   onChange={(e) => setTplEmoji(e.target.value)}
                   placeholder="🟡"
                   maxLength={3}
-                  className="w-full bg-card border border-ink/10 rounded-xl px-3.5 py-2 text-sm"
+                  className="w-full bg-card border border-ink/10 rounded-xl px-3.5 py-2 text-base"
                 />
               </div>
             </div>
@@ -228,7 +228,7 @@ export default function Ajustes({ teens, attendanceMap, dark, setDark }: Ajustes
                 <select
                   value={tplCategory}
                   onChange={(e) => setTplCategory(e.target.value as MessageTemplate["category"])}
-                  className="w-full bg-card border border-ink/10 rounded-xl px-3.5 py-2 text-sm"
+                  className="w-full bg-card border border-ink/10 rounded-xl px-3.5 py-2 text-base"
                 >
                   <option value="absence">Ausencias</option>
                   <option value="streak">Racha / Incentivo</option>
@@ -241,7 +241,7 @@ export default function Ajustes({ teens, attendanceMap, dark, setDark }: Ajustes
                 <select
                   value={tplRecipient}
                   onChange={(e) => setTplRecipient(e.target.value as MessageTemplate["recipient"])}
-                  className="w-full bg-card border border-ink/10 rounded-xl px-3.5 py-2 text-sm"
+                  className="w-full bg-card border border-ink/10 rounded-xl px-3.5 py-2 text-base"
                 >
                   <option value="teen">Adolescente</option>
                   <option value="parent">Tutor / Encargado</option>
@@ -256,7 +256,7 @@ export default function Ajustes({ teens, attendanceMap, dark, setDark }: Ajustes
                 value={tplText}
                 onChange={(e) => setTplText(e.target.value)}
                 rows={4}
-                className="w-full bg-card border border-ink/10 rounded-xl px-3.5 py-2.5 text-sm resize-none"
+                className="w-full bg-card border border-ink/10 rounded-xl px-3.5 py-2.5 text-base resize-none"
               />
               <div className="flex flex-wrap gap-1.5 mt-1.5">
                 {["{nombre}", "{apellido}", "{racha}", "{faltas}", "{telefono_padre}"].map((v) => (
