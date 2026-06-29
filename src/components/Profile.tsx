@@ -26,6 +26,7 @@ import XpBar from "./XpBar";
 import { Avatar } from "./Layout";
 import TeenForm from "./TeenForm";
 import Modal from "./Modal";
+import ResponsiveSheet from "./ResponsiveSheet";
 
 function sanitizeAiText(text: string): string {
   return text
@@ -555,9 +556,9 @@ export default function Profile({
       )}
 
       {showAIMsg && (
-        <Modal title="Mensaje generado por IA" onClose={() => setShowAIMsg(false)}>
-          <div className="p-5 space-y-4">
-            <div className="flex gap-2">
+        <ResponsiveSheet title="Mensaje generado por IA" onClose={() => setShowAIMsg(false)} desktopMaxWidthClass="sm:max-w-2xl">
+          <div className="space-y-4">
+            <div className="grid grid-cols-1 gap-2 sm:grid-cols-[minmax(0,1fr)_auto]">
               <select
                 value={aiMsgTone}
                 onChange={async (e) => {
@@ -614,7 +615,7 @@ export default function Profile({
               </button>
             </div>
           </div>
-        </Modal>
+        </ResponsiveSheet>
       )}
     </div>
   );

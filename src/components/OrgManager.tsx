@@ -2,7 +2,7 @@ import { useState } from "react";
 import { useMutation, useQuery } from "convex/react";
 import { api } from "../../convex/_generated/api";
 import { useAuth } from "../hooks/useAuth";
-import Modal from "./Modal";
+import ResponsiveSheet from "./ResponsiveSheet";
 
 export default function OrgManager() {
   const { user, token } = useAuth();
@@ -167,9 +167,9 @@ function UserManager() {
       </div>
 
       {scopesUser && (
-        <Modal title={`Gestionar accesos: ${scopesUser.name}`} onClose={() => setScopesUser(null)}>
+        <ResponsiveSheet title={`Gestionar accesos: ${scopesUser.name}`} onClose={() => setScopesUser(null)} desktopMaxWidthClass="sm:max-w-2xl">
           <UserScopesManager userId={scopesUser._id} />
-        </Modal>
+        </ResponsiveSheet>
       )}
     </div>
   );
