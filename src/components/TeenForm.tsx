@@ -10,9 +10,10 @@ import {
   SPIRITUAL_STAGE_LABELS,
 } from "../lib/utils";
 import { useAuth } from "../hooks/useAuth";
-import Modal from "./Modal";
+import ResponsiveSheet from "./ResponsiveSheet";
 
 const DRAFT_KEY = "teen_form_draft_v2";
+const FORM_ID = "teen-pastoral-form";
 
 const empty = {
   nombre: "",
@@ -221,26 +222,82 @@ export default function TeenForm({ teen, onClose, onSuccess }: TeenFormProps) {
   };
 
   const canGoNext = stepErrors.length === 0;
+  const mobileProgress = (
+    <div className="rounded-2xl border border-ink/10 bg-ink/[0.02] p-3.5 sm:hidden">
+      <div className="flex items-center justify-between gap-3 text-sm">
+        <span className="font-semibold text-ink">Paso {step + 1} de {STEPS.length}</span>
+        <span className="text-ink/50 truncate">{STEPS[step].label}</span>
+      </div>
+      <div className="mt-2 h-2 rounded-full bg-ink/5 overflow-hidden">
+        <div className="h-full rounded-full bg-teal-600 transition-all" style={{ width: `${((step + 1) / STEPS.length) * 100}%` }} />
+      </div>
+    </div>
+  );
+
+  const footer = (
+    <div className="grid grid-cols-1 gap-2 sm:flex sm:flex-wrap sm:items-center sm:justify-between">
+      <button type="button" onClick={closeAndReset} className="rounded-xl border border-ink/10 px-4 py-2.5 text-sm font-semibold text-ink/60 w-full sm:w-auto order-3 sm:order-none">
+        Cancelar
+      </button>
+      {!teen && (
+        <button
+          type="button"
+          onClick={() => {
+            localStorage.removeItem(DRAFT_KEY);
+            setForm({ ...empty });
+            setCampusId("");
+            setMinistryId("");
+            setGroupId("");
+            setStep(0);
+          }}
+          className="rounded-xl border border-ink/10 px-4 py-2.5 text-sm font-semibold text-ink/45 w-full sm:w-auto order-4 sm:order-none"
+        >
+          Limpiar borrador
+        </button>
+      )}
+      {step > 0 && (
+        <button type="button" onClick={() => setStep((s) => s - 1)} className="rounded-xl border border-ink/10 px-4 py-2.5 text-sm font-semibold text-ink/60 w-full sm:w-auto order-2 sm:order-none">
+          Atrás
+        </button>
+      )}
+      {step < STEPS.length - 1 ? (
+        <button
+          type="button"
+          disabled={!canGoNext}
+          onClick={() => setStep((s) => s + 1)}
+          className="rounded-xl bg-ink text-white px-4 py-2.5 text-sm font-semibold disabled:opacity-40 w-full sm:w-auto order-1 sm:order-none"
+        >
+          Siguiente
+        </button>
+      ) : (
+        <button
+          type="submit"
+          form={FORM_ID}
+          disabled={submitting || stepErrors.length > 0}
+          className="rounded-xl bg-ink text-white px-4 py-2.5 text-sm font-semibold disabled:opacity-40 flex items-center justify-center gap-2 w-full sm:w-auto order-1 sm:order-none"
+        >
+          {submitting && (
+            <svg className="animate-spin h-4 w-4 text-white" viewBox="0 0 24 24" fill="none">
+              <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+              <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
+            </svg>
+          )}
+          {submitting ? "Guardando..." : teen ? "Guardar ficha" : "Registrar adolescente"}
+        </button>
+      )}
+    </div>
+  );
 
   return (
-    <Modal
+    <ResponsiveSheet
       title={teen ? "Editar ficha pastoral" : "Registrar adolescente"}
       onClose={closeAndReset}
-      panelClassName="mt-auto min-h-[calc(100vh-0.75rem-env(safe-area-inset-bottom))] rounded-b-none sm:min-h-0 sm:mt-0 sm:max-w-4xl sm:rounded-b-card"
+      desktopMaxWidthClass="sm:max-w-4xl"
+      progress={mobileProgress}
+      footer={footer}
     >
-      <form onSubmit={handleSubmit} className="p-4 sm:p-5 space-y-4 sm:space-y-5">
-        <div className="space-y-3">
-          <div className="sm:hidden rounded-2xl border border-ink/10 bg-ink/[0.02] p-3.5">
-            <div className="flex items-center justify-between gap-3 text-sm">
-              <span className="font-semibold text-ink">Paso {step + 1} de {STEPS.length}</span>
-              <span className="text-ink/50">{STEPS[step].label}</span>
-            </div>
-            <div className="mt-2 h-2 rounded-full bg-ink/5 overflow-hidden">
-              <div className="h-full rounded-full bg-teal-600 transition-all" style={{ width: `${((step + 1) / STEPS.length) * 100}%` }} />
-            </div>
-          </div>
-
-          <div className="hidden sm:flex sm:flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
+      <form id={FORM_ID} onSubmit={handleSubmit} className="space-y-4 sm:space-y-5 h-full">
+        <div className="hidden sm:flex sm:flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
             <div className="flex flex-wrap gap-2">
               {STEPS.map((item, index) => (
                 <button
@@ -265,7 +322,6 @@ export default function TeenForm({ teen, onClose, onSuccess }: TeenFormProps) {
             <div className="text-sm text-ink/55">
               Perfil completo: <span className="font-semibold text-ink">{completeness.percent}%</span>
             </div>
-          </div>
         </div>
 
         {duplicateMatches && duplicateMatches.length > 0 && !teen && (
@@ -419,61 +475,8 @@ export default function TeenForm({ teen, onClose, onSuccess }: TeenFormProps) {
             </div>
           </section>
         )}
-
-        <div className="border-t border-ink/5 pt-4 space-y-3 sticky bottom-0 bg-paper/95 backdrop-blur supports-[backdrop-filter]:bg-paper/80 -mx-4 px-4 pb-[max(1rem,env(safe-area-inset-bottom))] sm:static sm:bg-transparent sm:backdrop-blur-0 sm:mx-0 sm:px-0 sm:pb-0">
-          <div className="grid grid-cols-1 gap-2 sm:flex sm:flex-wrap sm:items-center sm:justify-between">
-            <button type="button" onClick={closeAndReset} className="rounded-xl border border-ink/10 px-4 py-2.5 text-sm font-semibold text-ink/60 w-full sm:w-auto order-3 sm:order-none">
-              Cancelar
-            </button>
-            {!teen && (
-              <button
-                type="button"
-                onClick={() => {
-                  localStorage.removeItem(DRAFT_KEY);
-                  setForm({ ...empty });
-                  setCampusId("");
-                  setMinistryId("");
-                  setGroupId("");
-                  setStep(0);
-                }}
-                className="rounded-xl border border-ink/10 px-4 py-2.5 text-sm font-semibold text-ink/45 w-full sm:w-auto order-4 sm:order-none"
-              >
-                Limpiar borrador
-              </button>
-            )}
-            {step > 0 && (
-              <button type="button" onClick={() => setStep((s) => s - 1)} className="rounded-xl border border-ink/10 px-4 py-2.5 text-sm font-semibold text-ink/60 w-full sm:w-auto order-2 sm:order-none">
-                Atrás
-              </button>
-            )}
-            {step < STEPS.length - 1 ? (
-              <button
-                type="button"
-                disabled={!canGoNext}
-                onClick={() => setStep((s) => s + 1)}
-                className="rounded-xl bg-ink text-white px-4 py-2.5 text-sm font-semibold disabled:opacity-40 w-full sm:w-auto order-1 sm:order-none"
-              >
-                Siguiente
-              </button>
-            ) : (
-              <button
-                type="submit"
-                disabled={submitting || stepErrors.length > 0}
-                className="rounded-xl bg-ink text-white px-4 py-2.5 text-sm font-semibold disabled:opacity-40 flex items-center justify-center gap-2 w-full sm:w-auto order-1 sm:order-none"
-              >
-                {submitting && (
-                  <svg className="animate-spin h-4 w-4 text-white" viewBox="0 0 24 24" fill="none">
-                    <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
-                    <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
-                  </svg>
-                )}
-                {submitting ? "Guardando..." : teen ? "Guardar ficha" : "Registrar adolescente"}
-              </button>
-            )}
-          </div>
-        </div>
       </form>
-    </Modal>
+    </ResponsiveSheet>
   );
 }
 

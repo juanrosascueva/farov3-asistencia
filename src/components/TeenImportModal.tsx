@@ -2,7 +2,7 @@ import { useMemo, useState } from "react";
 import { useMutation } from "convex/react";
 import { api } from "../../convex/_generated/api";
 import { createTeenCsvTemplate, downloadFile } from "../lib/utils";
-import Modal from "./Modal";
+import ResponsiveSheet from "./ResponsiveSheet";
 
 interface TeenImportModalProps {
   onClose: () => void;
@@ -104,9 +104,24 @@ export default function TeenImportModal({ onClose, onSuccess }: TeenImportModalP
     }
   };
 
+  const footer = (
+    <div className="grid grid-cols-1 gap-2 sm:flex sm:items-center sm:justify-end sm:gap-3">
+      <button onClick={onClose} className="rounded-xl border border-ink/10 px-4 py-2.5 text-sm font-semibold text-ink/60 w-full sm:w-auto order-2 sm:order-none">
+        Cerrar
+      </button>
+      <button
+        onClick={handleImport}
+        disabled={submitting || validRows.length === 0}
+        className="rounded-xl bg-ink px-4 py-2.5 text-sm font-semibold text-white disabled:opacity-40 w-full sm:w-auto order-1 sm:order-none"
+      >
+        {submitting ? "Importando..." : `Importar ${validRows.length} registros`}
+      </button>
+    </div>
+  );
+
   return (
-    <Modal title="Importar adolescentes" onClose={onClose} panelClassName="mt-auto min-h-[calc(100vh-0.75rem-env(safe-area-inset-bottom))] rounded-b-none sm:min-h-0 sm:mt-0 sm:max-w-4xl sm:rounded-b-card">
-      <div className="p-4 sm:p-5 space-y-4">
+    <ResponsiveSheet title="Importar adolescentes" onClose={onClose} desktopMaxWidthClass="sm:max-w-4xl" footer={footer}>
+      <div className="space-y-4">
         <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
           <div>
             <p className="text-sm font-semibold text-ink">Carga masiva compatible con Excel</p>
@@ -206,20 +221,8 @@ export default function TeenImportModal({ onClose, onSuccess }: TeenImportModalP
           </>
         )}
 
-        <div className="grid grid-cols-1 gap-2 border-t border-ink/5 pt-4 sm:flex sm:items-center sm:justify-end sm:gap-3 sticky bottom-0 bg-paper/95 backdrop-blur supports-[backdrop-filter]:bg-paper/80 -mx-4 px-4 pb-[max(1rem,env(safe-area-inset-bottom))] sm:static sm:bg-transparent sm:backdrop-blur-0 sm:mx-0 sm:px-0 sm:pb-0">
-          <button onClick={onClose} className="rounded-xl border border-ink/10 px-4 py-2.5 text-sm font-semibold text-ink/60 w-full sm:w-auto order-2 sm:order-none">
-            Cerrar
-          </button>
-          <button
-            onClick={handleImport}
-            disabled={submitting || validRows.length === 0}
-            className="rounded-xl bg-ink px-4 py-2.5 text-sm font-semibold text-white disabled:opacity-40 w-full sm:w-auto order-1 sm:order-none"
-          >
-            {submitting ? "Importando..." : `Importar ${validRows.length} registros`}
-          </button>
-        </div>
       </div>
-    </Modal>
+    </ResponsiveSheet>
   );
 }
 
