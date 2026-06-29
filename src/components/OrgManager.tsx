@@ -89,7 +89,7 @@ function UserManager() {
         <p className="text-xs font-semibold text-ink/40 uppercase tracking-wide">
           Usuarios ({users?.length || 0})
         </p>
-        <div className="flex items-center gap-3">
+        <div className="flex items-center gap-2 flex-wrap justify-end">
           <button
             onClick={handleMigrate}
             disabled={migrating}

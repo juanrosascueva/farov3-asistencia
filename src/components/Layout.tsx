@@ -317,10 +317,10 @@ function LeaderBadge({ onlyAvatar = false }: { onlyAvatar?: boolean }) {
           )}
         </button>
         {open && (
-          <div className="absolute right-0 top-full mt-2 w-56 bg-card border border-ink/10 rounded-2xl shadow-soft py-1 z-50">
+          <div className="absolute right-0 top-full mt-2 w-56 max-w-[calc(100vw-1.5rem)] bg-card border border-ink/10 rounded-2xl shadow-soft py-1 z-50">
             <div className="px-3 py-2 border-b border-ink/5 mb-1">
               <p className="text-sm font-semibold truncate">{user.name}</p>
-              <p className="text-[11px] text-ink/40 capitalize">{user.role} · {user.email}</p>
+              <p className="text-[11px] text-ink/40 capitalize truncate">{user.role} · {user.email}</p>
             </div>
             <div className="border-t border-ink/5 mt-1 pt-1">
               <button
@@ -348,10 +348,10 @@ function LeaderBadge({ onlyAvatar = false }: { onlyAvatar?: boolean }) {
         <svg className="w-3 h-3 shrink-0 opacity-50" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M6 9l6 6 6-6" /></svg>
       </button>
       {open && (
-        <div className="absolute right-0 top-full mt-2 w-56 bg-card border border-ink/10 rounded-2xl shadow-soft py-1 z-50 xl:right-auto xl:left-full xl:top-0 xl:mt-0 xl:ml-3">
+        <div className="absolute right-0 top-full mt-2 w-56 max-w-[calc(100vw-1.5rem)] bg-card border border-ink/10 rounded-2xl shadow-soft py-1 z-50 xl:right-auto xl:left-full xl:top-0 xl:mt-0 xl:ml-3">
           <div className="px-3 py-2 border-b border-ink/5 mb-1">
             <p className="text-sm font-semibold truncate">{user.name}</p>
-            <p className="text-[11px] text-ink/40 capitalize">{user.role} · {user.email}</p>
+            <p className="text-[11px] text-ink/40 capitalize truncate">{user.role} · {user.email}</p>
           </div>
           <div className="border-t border-ink/5 mt-1 pt-1">
             <button

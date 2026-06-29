@@ -162,7 +162,7 @@ export default function Profile({
                 </span>
               )}
             </div>
-            <div className="flex gap-2 mt-3">
+            <div className="flex flex-wrap gap-2 mt-3">
               <button
                 onClick={() => setShowEdit(true)}
                 className="text-xs font-semibold bg-ink/5 hover:bg-ink/10 rounded-full px-3 py-1.5 flex items-center gap-1.5"
@@ -355,13 +355,13 @@ export default function Profile({
         {teen.observacionInicial && (
           <div>
             <p className="text-xs font-semibold text-ink/40 uppercase tracking-wide mb-1">Observación inicial</p>
-            <p className="text-sm whitespace-pre-line">{esc(teen.observacionInicial)}</p>
+            <p className="text-sm whitespace-pre-line break-words overflow-wrap-anywhere">{esc(teen.observacionInicial)}</p>
           </div>
         )}
         {teen.motivoInactividad && (
           <div>
             <p className="text-xs font-semibold text-ink/40 uppercase tracking-wide mb-1">Motivo del estado actual</p>
-            <p className="text-sm whitespace-pre-line">{esc(teen.motivoInactividad)}</p>
+            <p className="text-sm whitespace-pre-line break-words overflow-wrap-anywhere">{esc(teen.motivoInactividad)}</p>
           </div>
         )}
       </div>

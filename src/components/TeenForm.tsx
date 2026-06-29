@@ -573,7 +573,7 @@ function ToggleField({ label, checked, onChange }: { label: string; checked: boo
         onClick={() => onChange(!checked)}
         className={`relative h-6 w-11 rounded-full transition shrink-0 ${checked ? "bg-teal-600" : "bg-ink/15"}`}
       >
-        <span className={`absolute top-0.5 h-5 w-5 rounded-full bg-white shadow transition ${checked ? "left-5.5" : "left-0.5"}`} />
+        <span className={`absolute top-0.5 h-5 w-5 rounded-full bg-white shadow transition ${checked ? "left-[22px]" : "left-0.5"}`} />
       </button>
     </label>
   );

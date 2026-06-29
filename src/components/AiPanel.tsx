@@ -153,7 +153,7 @@ export default function AiPanel({ teens, attendanceMap, onOpenProfile }: AiPanel
       </div>
 
       <div className="bg-card rounded-card shadow-soft p-5">
-        <div className="flex items-center justify-between mb-4">
+        <div className="flex items-start sm:items-center justify-between mb-4 gap-2 flex-wrap">
           <h2 className="font-display font-semibold text-base">
             Adolescentes en alto riesgo
           </h2>
@@ -186,7 +186,7 @@ export default function AiPanel({ teens, attendanceMap, onOpenProfile }: AiPanel
       </div>
 
       <div className="bg-card rounded-card shadow-soft p-5">
-        <div className="flex items-center justify-between mb-4">
+        <div className="flex items-start sm:items-center justify-between mb-4 gap-2 flex-wrap">
           <h2 className="font-display font-semibold text-base">
             Resumen ejecutivo semanal
           </h2>
@@ -248,7 +248,7 @@ export default function AiPanel({ teens, attendanceMap, onOpenProfile }: AiPanel
       </div>
 
       <div className="bg-card rounded-card shadow-soft p-5">
-        <div className="flex items-center justify-between mb-4">
+        <div className="flex items-start sm:items-center justify-between mb-4 gap-2 flex-wrap">
           <h2 className="font-display font-semibold text-base">
             Recomendaciones de actividades
           </h2>

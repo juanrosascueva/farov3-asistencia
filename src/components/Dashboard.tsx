@@ -364,7 +364,7 @@ export default function Dashboard({
           />
         ) : (
           <div className="overflow-x-auto -mx-1 px-1">
-            <div className="flex items-end gap-2 h-36 min-w-[28rem] sm:min-w-0">
+            <div className="flex items-end gap-2 h-36 min-w-[20rem] sm:min-w-0">
               {trend.map((p, i) => (
                 <div
                   key={i}
