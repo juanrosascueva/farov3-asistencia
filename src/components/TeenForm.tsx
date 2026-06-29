@@ -226,7 +226,7 @@ export default function TeenForm({ teen, onClose, onSuccess }: TeenFormProps) {
     <Modal
       title={teen ? "Editar ficha pastoral" : "Registrar adolescente"}
       onClose={closeAndReset}
-      panelClassName="sm:max-w-4xl"
+      panelClassName="mt-auto min-h-[calc(100vh-0.75rem-env(safe-area-inset-bottom))] rounded-b-none sm:min-h-0 sm:mt-0 sm:max-w-4xl sm:rounded-b-card"
     >
       <form onSubmit={handleSubmit} className="p-4 sm:p-5 space-y-4 sm:space-y-5">
         <div className="space-y-3">
