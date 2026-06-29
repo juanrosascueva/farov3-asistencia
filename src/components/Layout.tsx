@@ -230,13 +230,16 @@ export default function Layout({
 
       <button
         onClick={() => setChatOpen(!chatOpen)}
-        className={`fixed bottom-[calc(5.5rem+env(safe-area-inset-bottom))] right-3 sm:right-4 lg:bottom-4 z-50 w-12 h-12 sm:w-14 sm:h-14 rounded-full shadow-xl flex items-center justify-center transition ${
+        className={`fixed bottom-[calc(5.5rem+env(safe-area-inset-bottom))] right-3 sm:right-4 lg:bottom-4 z-50 w-14 h-14 sm:w-16 sm:h-16 rounded-full shadow-xl flex items-center justify-center transition overflow-hidden ${
           chatOpen ? "bg-ink/80 scale-0" : "bg-teal-600 hover:bg-teal-700 scale-100"
         }`}
+        title="Asistente de IA Pastoral"
       >
-        <svg className="w-5 h-5 sm:w-6 sm:h-6 text-white" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
-          <path d="M21 15a2 2 0 01-2 2H7l-4 4V5a2 2 0 012-2h14a2 2 0 012 2z" />
-        </svg>
+        <img
+          src="/ai-bot.png"
+          alt="Asistente IA"
+          className="w-full h-full object-cover"
+        />
       </button>
     </div>
   );
