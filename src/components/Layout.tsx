@@ -4,7 +4,7 @@ import { stringHue } from "../lib/utils";
 import { useAuth } from "../hooks/useAuth";
 import ScopeSwitcher from "./ScopeSwitcher";
 import ChatPanel from "./ChatPanel";
-import Modal from "./Modal";
+import ResponsiveSheet from "./ResponsiveSheet";
 
 const ROUTES = [
   { id: "dashboard", label: "Resumen", icon: "home" },
@@ -134,14 +134,14 @@ export default function Layout({
         </button>
       </nav>
 
-      {/* Modal de navegación "Más" */}
+      {/* Hoja de navegación "Más" */}
       {moreOpen && (
-        <Modal
+        <ResponsiveSheet
           title="Menú de Navegación"
           onClose={() => setMoreOpen(false)}
-          panelClassName="sm:max-w-xs"
+          desktopMaxWidthClass="sm:max-w-xs"
         >
-          <div className="p-4 space-y-4">
+          <div className="space-y-4">
             <p className="text-[11px] font-semibold text-ink/40 uppercase tracking-wide px-1">
               Herramientas y Ajustes
             </p>
@@ -204,7 +204,7 @@ export default function Layout({
               </button>
             </div>
           </div>
-        </Modal>
+        </ResponsiveSheet>
       )}
 
       {chatOpen && <ChatPanel onClose={() => setChatOpen(false)} />}

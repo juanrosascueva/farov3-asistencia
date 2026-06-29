@@ -1,7 +1,7 @@
 import { useState } from "react";
 import type { MessageTemplate } from "../lib/types";
 import { whatsAppUrl } from "../lib/templates";
-import Modal from "./Modal";
+import ResponsiveSheet from "./ResponsiveSheet";
 
 interface WhatsAppModalProps {
   nombre: string;
@@ -25,12 +25,27 @@ export default function WhatsAppModal({
 
   const phone = target === "teen" ? telefono : telefonoPadre;
   const url = phone ? whatsAppUrl(phone, selected.text) : "#";
+  const footer = phone ? (
+    <a
+      href={url}
+      target="_blank"
+      rel="noopener noreferrer"
+      className="block w-full text-center bg-green-600 text-white rounded-xl py-3 text-sm font-semibold hover:bg-green-700 transition"
+    >
+      <span className="flex items-center justify-center gap-2">
+        <WhatsAppIcon />
+        Abrir WhatsApp
+      </span>
+    </a>
+  ) : (
+    <p className="text-xs text-ink/40 text-center">No hay numero disponible</p>
+  );
 
   return (
-    <Modal title={`Contactar a ${nombre}`} onClose={onClose}>
-      <div className="p-5 space-y-4">
+    <ResponsiveSheet title={`Contactar a ${nombre}`} onClose={onClose} desktopMaxWidthClass="sm:max-w-xl" footer={footer}>
+      <div className="space-y-4">
         {telefono && telefonoPadre && (
-          <div className="flex gap-2">
+          <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
             <button
               onClick={() => setTarget("teen")}
               className={`flex-1 text-xs font-semibold rounded-xl py-2 border transition ${
@@ -84,26 +99,8 @@ export default function WhatsAppModal({
         <div className="bg-ink/5 rounded-xl p-3.5 text-sm text-ink/80 whitespace-pre-line leading-relaxed">
           {selected.text}
         </div>
-
-        {phone ? (
-          <a
-            href={url}
-            target="_blank"
-            rel="noopener noreferrer"
-            className="block w-full text-center bg-green-600 text-white rounded-xl py-3 text-sm font-semibold hover:bg-green-700 transition"
-          >
-            <span className="flex items-center justify-center gap-2">
-              <WhatsAppIcon />
-              Abrir WhatsApp
-            </span>
-          </a>
-        ) : (
-          <p className="text-xs text-ink/40 text-center">
-            No hay número disponible
-          </p>
-        )}
       </div>
-    </Modal>
+    </ResponsiveSheet>
   );
 }
 
