@@ -8,7 +8,7 @@ import { useAuth } from "../hooks/useAuth";
 import { useTemplates } from "../hooks/useTemplates";
 import { usePastoralTarget } from "../hooks/usePastoralTarget";
 import Modal from "./Modal";
-import OrgManager from "./OrgManager";
+
 
 interface AjustesProps {
   teens: Doc<"teens">[];
@@ -180,8 +180,6 @@ export default function Ajustes({ teens, attendanceMap, dark, setDark }: Ajustes
           <span>100%</span>
         </div>
       </div>
-
-      <OrgManager />
 
 
 

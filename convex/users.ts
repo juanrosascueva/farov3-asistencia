@@ -28,8 +28,9 @@ export const register = mutation({
     const requester = await getUserFromToken(ctx, args.token);
     const isSelfRegistration = !requester;
 
-    if (requester && requester.role !== "pastor") {
-      throw new Error("Solo el pastor puede registrar nuevos usuarios");
+    const canManageUsers = requester && (requester.role === "pastor" || (requester.permissions && requester.permissions.includes("manage_users")));
+    if (requester && !canManageUsers) {
+      throw new Error("No tienes permisos para registrar usuarios");
     }
 
     const emailNormalized = args.email.trim().toLowerCase();
@@ -103,6 +104,7 @@ export const login = mutation({
         email: user.email,
         name: user.name,
         role: user.role,
+        permissions: user.permissions || (user.role === "pastor" ? ["manage_users", "manage_settings", "write_teens", "delete_teens", "view_reports", "use_ai"] : []),
       },
     };
   },
@@ -132,6 +134,7 @@ export const getMe = query({
       email: user.email,
       name: user.name,
       role: user.role,
+      permissions: user.permissions || (user.role === "pastor" ? ["manage_users", "manage_settings", "write_teens", "delete_teens", "view_reports", "use_ai"] : []),
     };
   },
 });
@@ -140,7 +143,8 @@ export const listUsers = query({
   args: { token: v.string() },
   handler: async (ctx, args) => {
     const user = await getUserFromToken(ctx, args.token);
-    if (!user || user.role !== "pastor") {
+    const canManageUsers = user && (user.role === "pastor" || (user.permissions && user.permissions.includes("manage_users")));
+    if (!canManageUsers) {
       throw new Error("No autorizado");
     }
     const users = await ctx.db.query("users").collect();
@@ -150,6 +154,7 @@ export const listUsers = query({
       name: u.name,
       role: u.role,
       isActive: u.isActive,
+      permissions: u.permissions || (u.role === "pastor" ? ["manage_users", "manage_settings", "write_teens", "delete_teens", "view_reports", "use_ai"] : []),
     }));
   },
 });
@@ -168,10 +173,12 @@ export const updateUser = mutation({
     )),
     isActive: v.optional(v.boolean()),
     password: v.optional(v.string()),
+    permissions: v.optional(v.array(v.string())),
   },
   handler: async (ctx, args) => {
     const requester = await getUserFromToken(ctx, args.token);
-    if (!requester || requester.role !== "pastor") {
+    const canManageUsers = requester && (requester.role === "pastor" || (requester.permissions && requester.permissions.includes("manage_users")));
+    if (!canManageUsers) {
       throw new Error("No autorizado");
     }
 
@@ -179,6 +186,7 @@ export const updateUser = mutation({
     if (args.name !== undefined) patch.name = args.name;
     if (args.role !== undefined) patch.role = args.role;
     if (args.isActive !== undefined) patch.isActive = args.isActive;
+    if (args.permissions !== undefined) patch.permissions = args.permissions;
     if (args.password) {
       const salt = generateSalt();
       patch.salt = salt;
@@ -193,7 +201,8 @@ export const deleteUser = mutation({
   args: { token: v.string(), userId: v.id("users") },
   handler: async (ctx, args) => {
     const requester = await getUserFromToken(ctx, args.token);
-    if (!requester || requester.role !== "pastor") {
+    const canManageUsers = requester && (requester.role === "pastor" || (requester.permissions && requester.permissions.includes("manage_users")));
+    if (!canManageUsers) {
       throw new Error("No autorizado");
     }
 

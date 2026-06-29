@@ -10,6 +10,7 @@ interface AuthUser {
   email: string;
   name: string;
   role: "pastor" | "director" | "coordinador" | "leader" | "helper";
+  permissions: string[];
 }
 
 interface AuthContextValue {
@@ -20,9 +21,12 @@ interface AuthContextValue {
   register: (email: string, password: string, name: string, role: AuthUser["role"]) => Promise<void>;
   logout: () => Promise<void>;
   isPastor: boolean;
-  isDirector: boolean;
-  isCoordinador: boolean;
-  isLeader: boolean;
+  canManageUsers: boolean;
+  canManageSettings: boolean;
+  canViewReports: boolean;
+  canUseAi: boolean;
+  canDeleteTeens: boolean;
+  canWriteTeens: boolean;
 }
 
 const AuthContext = createContext<AuthContextValue>(null!);
@@ -122,9 +126,12 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     register,
     logout,
     isPastor: user?.role === "pastor",
-    isDirector: user?.role === "director",
-    isCoordinador: user?.role === "coordinador",
-    isLeader: user?.role === "leader" || user?.role === "helper",
+    canManageUsers: user?.permissions?.includes("manage_users") ?? false,
+    canManageSettings: user?.permissions?.includes("manage_settings") ?? false,
+    canViewReports: user?.permissions?.includes("view_reports") ?? false,
+    canUseAi: user?.permissions?.includes("use_ai") ?? false,
+    canDeleteTeens: user?.permissions?.includes("delete_teens") ?? false,
+    canWriteTeens: user?.permissions?.includes("write_teens") ?? false,
   };
 
   return (

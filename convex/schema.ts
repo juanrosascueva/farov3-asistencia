@@ -15,6 +15,7 @@ export default defineSchema({
     hashedPassword: v.string(),
     salt: v.string(),
     isActive: v.boolean(),
+    permissions: v.optional(v.array(v.string())),
     createdAt: v.string(),
   })
     .index("by_email", ["email"]),

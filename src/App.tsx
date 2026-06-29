@@ -14,6 +14,7 @@ import ReportsPanel from "./components/ReportsPanel";
 import Campana from "./components/Campana";
 import AiPanel from "./components/AiPanel";
 import LoginPage from "./components/LoginPage";
+import AccessControl from "./components/AccessControl";
 
 const DARK_KEY = "cristovive_dark_mode";
 
@@ -116,6 +117,8 @@ function AppContent() {
         );
       case "ajustes":
         return <Ajustes teens={teens} attendanceMap={attendanceMap} dark={dark} setDark={setDark} />;
+      case "accesos":
+        return <AccessControl />;
       default:
         return null;
     }

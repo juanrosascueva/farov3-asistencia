@@ -11,9 +11,10 @@ const ROUTES = [
   { id: "asistencia", label: "Asistencia", icon: "check" },
   { id: "jovenes", label: "Adolescentes", icon: "users" },
   { id: "campana", label: "Campaña", icon: "clipboard" },
-  { id: "ia", label: "IA Pastoral", icon: "sparkles" },
-  { id: "reportes", label: "Reportes", icon: "chart" },
-  { id: "ajustes", label: "Ajustes", icon: "settings" },
+  { id: "ia", label: "IA Pastoral", icon: "sparkles", perm: "canUseAi" },
+  { id: "reportes", label: "Reportes", icon: "chart", perm: "canViewReports" },
+  { id: "ajustes", label: "Ajustes", icon: "settings", perm: "canManageSettings" },
+  { id: "accesos", label: "Accesos", icon: "lock", perm: "canManageUsers" },
 ];
 
 interface LayoutProps {
@@ -33,7 +34,14 @@ export default function Layout({
 }: LayoutProps) {
   const [chatOpen, setChatOpen] = useState(false);
   const [moreOpen, setMoreOpen] = useState(false);
-  const { logout } = useAuth();
+  const auth = useAuth();
+  const { logout } = auth;
+  
+  const visibleRoutes = ROUTES.filter((r) => {
+    if (!r.perm) return true;
+    return (auth as any)[r.perm] === true;
+  });
+
   return (
     <div className="max-w-7xl mx-auto lg:flex lg:gap-8 lg:px-6 lg:pt-6">
       <aside className="hidden lg:flex lg:flex-col w-72 shrink-0 sticky top-6 self-start z-20">
@@ -55,7 +63,7 @@ export default function Layout({
           </div>
         </div>
         <nav className="flex flex-col gap-1 rounded-[28px] border border-amber-100/60 bg-card/88 shadow-soft backdrop-blur-sm p-3 dark:border-amber-900/30 dark:bg-card/92">
-          {ROUTES.map((r) => (
+          {visibleRoutes.map((r) => (
             <button
               key={r.id}
               onClick={() => onNavigate(r.id)}
@@ -142,14 +150,14 @@ export default function Layout({
         <button
           onClick={() => setMoreOpen(true)}
           className={`flex-1 flex flex-col items-center justify-center gap-0.5 py-2.5 pressable ${
-            ["campana", "ia", "reportes", "ajustes"].includes(currentRoute)
+            ["campana", "ia", "reportes", "ajustes", "accesos"].includes(currentRoute)
               ? "tab-active text-teal-700 font-semibold"
               : "text-ink/45"
           }`}
         >
           <Icon name="menu" cls="w-5 h-5" />
           <span className="text-[10.5px] font-medium">Más</span>
-          <span className={`tab-dot w-1 h-1 rounded-full bg-teal-600 transition ${["campana", "ia", "reportes", "ajustes"].includes(currentRoute) ? "opacity-100 scale-100" : "opacity-0 scale-0"}`} />
+          <span className={`tab-dot w-1 h-1 rounded-full bg-teal-600 transition ${["campana", "ia", "reportes", "ajustes", "accesos"].includes(currentRoute) ? "opacity-100 scale-100" : "opacity-0 scale-0"}`} />
         </button>
       </nav>
 
@@ -165,12 +173,7 @@ export default function Layout({
               Herramientas y Ajustes
             </p>
             <nav className="flex flex-col gap-1">
-              {[
-                { id: "campana", label: "Campaña", icon: "clipboard" },
-                { id: "ia", label: "IA Pastoral", icon: "sparkles" },
-                { id: "reportes", label: "Reportes", icon: "chart" },
-                { id: "ajustes", label: "Ajustes", icon: "settings" },
-              ].map((r) => (
+              {visibleRoutes.filter(r => ["campana", "ia", "reportes", "ajustes", "accesos"].includes(r.id)).map((r) => (
                 <button
                   key={r.id}
                   onClick={() => {
@@ -254,6 +257,7 @@ const icons: Record<string, string> = {
   clipboard: `<path d="M16 4h2a2 2 0 012 2v14a2 2 0 01-2 2H6a2 2 0 01-2-2V6a2 2 0 012-2h2" /><rect x="8" y="2" width="8" height="4" rx="1" /><path d="M9 14l2 2 4-4" />`,
   sparkles: `<path d="M12 2l1.5 4.5L18 8l-4.5 1.5L12 14l-1.5-4.5L6 8l4.5-1.5L12 2z" /><path d="M18 14l.8 2.2L21 17l-2.2.8L18 20l-.8-2.2L15 17l2.2-.8L18 14z" /><path d="M6 14l.8 2.2L9 17l-2.2.8L6 20l-.8-2.2L3 17l2.2-.8L6 14z" />`,
   menu: `<line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="18" x2="21" y2="18"/>`,
+  lock: `<rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect><path d="M7 11V7a5 5 0 0 1 10 0v4"></path>`,
 };
 
 function Icon({ name, cls = "w-5 h-5" }: { name: string; cls?: string }) {

@@ -4,23 +4,26 @@ import { api } from "../../convex/_generated/api";
 import { useAuth } from "../hooks/useAuth";
 import ResponsiveSheet from "./ResponsiveSheet";
 
-export default function OrgManager() {
-  const { user, token } = useAuth();
-  if (!user || (user.role !== "pastor" && user.role !== "director")) return null;
+export default function AccessControl() {
+  const { user, token, canManageUsers } = useAuth();
+  if (!user || !canManageUsers) return null;
 
   return (
-    <div className="bg-card rounded-card shadow-soft p-5 space-y-4">
+    <div className="space-y-5 max-w-2xl mx-auto pb-10">
       <div>
         <p className="text-xs font-semibold text-teal-700 tracking-wide uppercase">
           Administración
         </p>
-        <p className="text-sm text-ink/60 mt-0.5">
-          Gestiona la estructura organizacional de la iglesia.
+        <h1 className="font-display text-2xl font-bold mt-0.5">Accesos y Roles</h1>
+        <p className="text-sm text-ink/60 mt-1">
+          Gestiona permisos, usuarios y la estructura organizacional.
         </p>
       </div>
-
+      
+      <div className="bg-card rounded-card shadow-soft p-5 space-y-4">
       <UserManager />
       <CampusManager />
+    </div>
     </div>
   );
 }
@@ -33,7 +36,7 @@ function UserManager() {
   const [password, setPassword] = useState("");
   const [name, setName] = useState("");
   const [role, setRole] = useState<string>("leader");
-  const [scopesUser, setScopesUser] = useState<any | null>(null);
+  const [editingUser, setEditingUser] = useState<any | null>(null);
 
   const users = useQuery(api.users.listUsers, token ? { token } : "skip");
   const register = useMutation(api.users.register);
@@ -184,13 +187,12 @@ function UserManager() {
 
             {u.role !== "pastor" && (
               <button
-                onClick={() => setScopesUser(u)}
-                className="w-6 h-6 rounded-full bg-ink/5 flex items-center justify-center text-ink/30 hover:text-teal-600 hover:bg-teal-50 transition shrink-0"
-                title="Gestionar ámbitos de acceso"
+                onClick={() => setEditingUser(u)}
+                className="w-7 h-7 rounded-full bg-ink/5 flex items-center justify-center text-ink/40 hover:text-teal-600 hover:bg-teal-50 transition shrink-0"
+                title="Gestionar permisos y accesos"
               >
-                <svg className="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
-                  <rect x="3" y="11" width="18" height="11" rx="2" ry="2" />
-                  <path d="M7 11V7a5 5 0 0110 0v4" />
+                <svg className="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                  <path d="M12 20h9" /><path d="M16.5 3.5a2.1 2.1 0 013 3L7 19l-4 1 1-4z" />
                 </svg>
               </button>
             )}
@@ -201,9 +203,10 @@ function UserManager() {
         )}
       </div>
 
-      {scopesUser && (
-        <ResponsiveSheet title={`Gestionar accesos: ${scopesUser.name}`} onClose={() => setScopesUser(null)} desktopMaxWidthClass="sm:max-w-2xl">
-          <UserScopesManager userId={scopesUser._id} />
+      {editingUser && (
+        <ResponsiveSheet title={`Accesos: ${editingUser.name}`} onClose={() => setEditingUser(null)} desktopMaxWidthClass="sm:max-w-2xl">
+          <UserPermissionsManager user={editingUser} />
+          <UserScopesManager userId={editingUser._id} />
         </ResponsiveSheet>
       )}
     </div>
@@ -484,6 +487,94 @@ function GroupManager({ ministryId, ministryName }: { ministryId: string; minist
 
 interface UserScopesManagerProps {
   userId: string;
+}
+
+const PERMISSION_DEFS = [
+  { id: "manage_users", label: "Administrar usuarios", desc: "Crear usuarios y modificar permisos" },
+  { id: "manage_settings", label: "Ajustes globales", desc: "Ver pestaña Ajustes y configuración" },
+  { id: "write_teens", label: "Editar adolescentes", desc: "Agregar o modificar perfiles" },
+  { id: "delete_teens", label: "Eliminar adolescentes", desc: "Permiso destructivo de borrado" },
+  { id: "view_reports", label: "Ver reportes", desc: "Acceso a las métricas del ministerio" },
+  { id: "use_ai", label: "Usar IA Pastoral", desc: "Acceso al análisis de asistencia y chats" },
+];
+
+function UserPermissionsManager({ user }: { user: any }) {
+  const { token } = useAuth();
+  const updateUser = useMutation(api.users.updateUser);
+  const userPerms = user.permissions || [];
+
+  const togglePermission = async (permId: string) => {
+    if (!token) return;
+    const hasPerm = userPerms.includes(permId);
+    const newPerms = hasPerm ? userPerms.filter((p: string) => p !== permId) : [...userPerms, permId];
+    try {
+      await updateUser({
+        token,
+        userId: user._id,
+        permissions: newPerms,
+      });
+    } catch (err: any) {
+      alert(err.message);
+    }
+  };
+
+  const handleRoleChange = async (e: React.ChangeEvent<HTMLSelectElement>) => {
+    if (!token) return;
+    try {
+      await updateUser({
+        token,
+        userId: user._id,
+        role: e.target.value as any,
+      });
+    } catch (err: any) {
+      alert(err.message);
+    }
+  };
+
+  return (
+    <div className="p-5 border-b border-ink/5">
+      <div className="mb-4 flex items-center justify-between">
+        <div>
+          <p className="text-sm font-semibold">{user.name}</p>
+          <p className="text-xs text-ink/50">{user.email}</p>
+        </div>
+        <select
+          value={user.role}
+          onChange={handleRoleChange}
+          className="bg-ink/5 border-none rounded-xl px-3 py-1.5 text-xs font-semibold capitalize"
+        >
+          <option value="leader">Líder</option>
+          <option value="helper">Ayudante</option>
+          <option value="coordinador">Coordinador</option>
+          <option value="director">Director</option>
+          <option value="pastor">Pastor</option>
+        </select>
+      </div>
+
+      <p className="text-xs font-semibold text-ink/40 uppercase tracking-wide mb-3">
+        Permisos específicos
+      </p>
+      
+      <div className="space-y-3">
+        {PERMISSION_DEFS.map(perm => (
+          <label key={perm.id} className="flex items-start gap-3 cursor-pointer group">
+            <div className="mt-0.5">
+              <input
+                type="checkbox"
+                checked={userPerms.includes(perm.id)}
+                onChange={() => togglePermission(perm.id)}
+                className="w-4 h-4 rounded border-ink/20 text-teal-600 focus:ring-teal-600/30"
+              />
+            </div>
+            <div className="flex-1">
+              <p className="text-sm font-medium group-hover:text-teal-700 transition">{perm.label}</p>
+              <p className="text-[11px] text-ink/50">{perm.desc}</p>
+            </div>
+          </label>
+        ))}
+      </div>
+    </div>
+  );
 }
 
 function UserScopesManager({ userId }: UserScopesManagerProps) {
