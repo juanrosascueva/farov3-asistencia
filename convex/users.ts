@@ -197,6 +197,29 @@ export const updateUser = mutation({
   },
 });
 
+export const updateMe = mutation({
+  args: {
+    token: v.string(),
+    name: v.optional(v.string()),
+    password: v.optional(v.string()),
+  },
+  handler: async (ctx, args) => {
+    const requester = await getUserFromToken(ctx, args.token);
+    if (!requester) throw new Error("No autorizado");
+
+    const patch: Record<string, any> = {};
+    if (args.name !== undefined) patch.name = args.name;
+    
+    if (args.password) {
+      const salt = generateSalt();
+      patch.salt = salt;
+      patch.hashedPassword = await hashPassword(args.password, salt);
+    }
+
+    await ctx.db.patch(requester._id, patch);
+  },
+});
+
 export const deleteUser = mutation({
   args: { token: v.string(), userId: v.id("users") },
   handler: async (ctx, args) => {

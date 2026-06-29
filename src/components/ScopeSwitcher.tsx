@@ -163,6 +163,20 @@ export default function ScopeSwitcher({ fullWidth = false }: { fullWidth?: boole
 
           {step === "ministry" && (
             <div>
+              <button
+                onClick={() => setOpen(false)}
+                className={`w-full text-left px-3 py-2 text-sm hover:bg-ink/5 transition flex items-center gap-2 ${
+                  !scope.ministryId ? "text-teal-700 font-semibold" : "text-ink/70"
+                }`}
+              >
+                <svg className="w-4 h-4 shrink-0 text-ink/40" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+                  <path d="M5 12h14" /><path d="M12 5l7 7-7 7" />
+                </svg>
+                Toda la sede ({scope.campusName})
+                {!scope.ministryId && (
+                  <svg className="w-3.5 h-3.5 ml-auto shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M20 6L9 17l-5-5" /></svg>
+                )}
+              </button>
               {(ministries || []).map((m) => (
                 <button
                   key={m._id}
@@ -188,6 +202,20 @@ export default function ScopeSwitcher({ fullWidth = false }: { fullWidth?: boole
 
           {step === "group" && (
             <div>
+              <button
+                onClick={() => setOpen(false)}
+                className={`w-full text-left px-3 py-2 text-sm hover:bg-ink/5 transition flex items-center gap-2 ${
+                  !scope.groupId ? "text-teal-700 font-semibold" : "text-ink/70"
+                }`}
+              >
+                <svg className="w-4 h-4 shrink-0 text-ink/40" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+                  <path d="M5 12h14" /><path d="M12 5l7 7-7 7" />
+                </svg>
+                Todo el ministerio ({scope.ministryName})
+                {!scope.groupId && (
+                  <svg className="w-3.5 h-3.5 ml-auto shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M20 6L9 17l-5-5" /></svg>
+                )}
+              </button>
               {(groups || []).map((g) => (
                 <button
                   key={g._id}
