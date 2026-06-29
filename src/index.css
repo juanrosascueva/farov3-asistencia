@@ -17,6 +17,8 @@ html, body {
   background:
     radial-gradient(circle at top left, #fff9ef 0, #f8efe3 42%, #f3ecdf 100%);
   color: rgb(var(--clr-ink));
+  overflow-x: hidden;
+  width: 100%;
 }
 
 .dark, .dark body {
