@@ -76,13 +76,14 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   }, [userData, token]);
 
   const login = useCallback(async (email: string, password: string) => {
-    setLoading(true);
     try {
-      const result = await loginMutation({ email, password });
+      const result = await loginMutation({
+        email: email.trim().toLowerCase(),
+        password,
+      });
       saveToken(result.token);
       setToken(result.token);
     } catch (err) {
-      setLoading(false);
       throw err;
     }
   }, [loginMutation]);
@@ -94,7 +95,13 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     role: AuthUser["role"]
   ) => {
     const currentToken = loadToken();
-    await registerMutation({ email, password, name, role, token: currentToken ?? undefined });
+    await registerMutation({
+      email: email.trim().toLowerCase(),
+      password,
+      name: name.trim(),
+      role,
+      token: currentToken ?? undefined,
+    });
   }, [registerMutation]);
 
   const logout = useCallback(async () => {

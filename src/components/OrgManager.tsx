@@ -37,12 +37,14 @@ function UserManager() {
 
   const users = useQuery(api.users.listUsers, token ? { token } : "skip");
   const register = useMutation(api.users.register);
+  const migrateEmails = useMutation(api.users.migrateEmailsToLowerCase);
+  const [migrating, setMigrating] = useState(false);
 
   const handleCreate = async () => {
     if (!email.trim() || !password.trim() || !name.trim()) return;
     setSubmitting(true);
     try {
-      await register({ email: email.trim(), password, name: name.trim(), role: role as any, token: token ?? undefined });
+      await register({ email: email.trim().toLowerCase(), password, name: name.trim(), role: role as any, token: token ?? undefined });
       setEmail("");
       setPassword("");
       setName("");
@@ -55,19 +57,41 @@ function UserManager() {
     }
   };
 
+  const handleMigrate = async () => {
+    setMigrating(true);
+    try {
+      const res = await migrateEmails();
+      alert(`Correos normalizados con éxito. Usuarios actualizados: ${res.migratedCount}`);
+    } catch (err: any) {
+      alert(`Error al normalizar correos: ${err.message}`);
+    } finally {
+      setMigrating(false);
+    }
+  };
+
   return (
     <div className="space-y-3 pt-3 border-t border-ink/5">
       <div className="flex items-center justify-between">
         <p className="text-xs font-semibold text-ink/40 uppercase tracking-wide">
           Usuarios ({users?.length || 0})
         </p>
-        <button
-          onClick={() => setShowForm(!showForm)}
-          className="text-xs font-semibold text-teal-700 hover:text-teal-600 transition flex items-center gap-1"
-        >
-          <svg className="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><path d="M12 5v14M5 12h14" /></svg>
-          {showForm ? "Cancelar" : "Nuevo usuario"}
-        </button>
+        <div className="flex items-center gap-3">
+          <button
+            onClick={handleMigrate}
+            disabled={migrating}
+            className="text-[11px] font-semibold text-teal-700 hover:text-teal-600 transition flex items-center gap-1 bg-teal-50 dark:bg-teal-950/20 px-2.5 py-1 rounded-lg border border-teal-200/50 dark:border-teal-900/40 disabled:opacity-50 pressable"
+            title="Convierte todos los correos registrados a minúsculas para evitar problemas de inicio de sesión"
+          >
+            {migrating ? "Normalizando..." : "Normalizar correos"}
+          </button>
+          <button
+            onClick={() => setShowForm(!showForm)}
+            className="text-xs font-semibold text-teal-700 hover:text-teal-600 transition flex items-center gap-1 pressable"
+          >
+            <svg className="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><path d="M12 5v14M5 12h14" /></svg>
+            {showForm ? "Cancelar" : "Nuevo usuario"}
+          </button>
+        </div>
       </div>
 
       {showForm && (
