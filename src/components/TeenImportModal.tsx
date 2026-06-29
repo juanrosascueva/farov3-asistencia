@@ -106,7 +106,7 @@ export default function TeenImportModal({ onClose, onSuccess }: TeenImportModalP
 
   return (
     <Modal title="Importar adolescentes" onClose={onClose} panelClassName="sm:max-w-4xl">
-      <div className="p-5 space-y-4">
+      <div className="p-4 sm:p-5 space-y-4">
         <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
           <div>
             <p className="text-sm font-semibold text-ink">Carga masiva compatible con Excel</p>
@@ -143,7 +143,7 @@ export default function TeenImportModal({ onClose, onSuccess }: TeenImportModalP
               <StatCard label="Filas válidas" value={validRows.length} />
               <StatCard label="Con errores" value={rows.length - validRows.length} />
             </div>
-            <div className="max-h-[26rem] overflow-auto rounded-2xl border border-ink/10">
+            <div className="hidden md:block max-h-[26rem] overflow-auto rounded-2xl border border-ink/10">
               <table className="w-full text-sm">
                 <thead className="bg-ink/[0.03] sticky top-0">
                   <tr className="text-left text-ink/55">
@@ -177,17 +177,43 @@ export default function TeenImportModal({ onClose, onSuccess }: TeenImportModalP
                 </tbody>
               </table>
             </div>
+
+            <div className="space-y-2 md:hidden">
+              {rows.map((row) => (
+                <div key={row.row} className="rounded-2xl border border-ink/10 p-3">
+                  <div className="flex items-start justify-between gap-3">
+                    <div className="min-w-0">
+                      <p className="text-sm font-semibold truncate">Fila {row.row} · {row.data.nombre} {row.data.apellido}</p>
+                      <p className="text-xs text-ink/45 mt-1">Tutor: {row.data.nombreEncargado || row.data.telefonoPadre || "—"}</p>
+                      <p className="text-xs text-ink/45">Estado: {row.data.estado || "activo"}</p>
+                    </div>
+                    {row.errors.length === 0 ? (
+                      <span className="rounded-full bg-green-50 px-2 py-1 text-[11px] font-semibold text-green-700 shrink-0">Lista</span>
+                    ) : (
+                      <span className="rounded-full bg-red-50 px-2 py-1 text-[11px] font-semibold text-red-700 shrink-0">Error</span>
+                    )}
+                  </div>
+                  {row.errors.length > 0 && (
+                    <div className="mt-2 space-y-1">
+                      {row.errors.map((item) => (
+                        <p key={item} className="text-xs text-red-600">{item}</p>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              ))}
+            </div>
           </>
         )}
 
-        <div className="flex items-center justify-end gap-3 border-t border-ink/5 pt-4">
-          <button onClick={onClose} className="rounded-xl border border-ink/10 px-4 py-2.5 text-sm font-semibold text-ink/60">
+        <div className="grid grid-cols-1 gap-2 border-t border-ink/5 pt-4 sm:flex sm:items-center sm:justify-end sm:gap-3 sticky bottom-0 bg-paper/95 backdrop-blur supports-[backdrop-filter]:bg-paper/80 -mx-4 px-4 pb-[max(1rem,env(safe-area-inset-bottom))] sm:static sm:bg-transparent sm:backdrop-blur-0 sm:mx-0 sm:px-0 sm:pb-0">
+          <button onClick={onClose} className="rounded-xl border border-ink/10 px-4 py-2.5 text-sm font-semibold text-ink/60 w-full sm:w-auto order-2 sm:order-none">
             Cerrar
           </button>
           <button
             onClick={handleImport}
             disabled={submitting || validRows.length === 0}
-            className="rounded-xl bg-ink px-4 py-2.5 text-sm font-semibold text-white disabled:opacity-40"
+            className="rounded-xl bg-ink px-4 py-2.5 text-sm font-semibold text-white disabled:opacity-40 w-full sm:w-auto order-1 sm:order-none"
           >
             {submitting ? "Importando..." : `Importar ${validRows.length} registros`}
           </button>
@@ -250,7 +276,7 @@ function parseDelimited(input: string): string[][] {
 
 function StatCard({ label, value }: { label: string; value: number }) {
   return (
-    <div className="rounded-2xl border border-ink/10 bg-card p-4">
+    <div className="rounded-2xl border border-ink/10 bg-card p-4 text-center sm:text-left">
       <p className="text-2xl font-bold font-display text-ink">{value}</p>
       <p className="text-xs font-semibold text-ink/50">{label}</p>
     </div>
