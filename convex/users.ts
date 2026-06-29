@@ -240,6 +240,14 @@ export const setupFirstUser = mutation({
   },
 });
 
+export const hasAnyUser = query({
+  args: {},
+  handler: async (ctx) => {
+    const user = await ctx.db.query("users").first();
+    return user !== null;
+  },
+});
+
 export const migrateEmailsToLowerCase = mutation({
   handler: async (ctx) => {
     const users = await ctx.db.query("users").collect();

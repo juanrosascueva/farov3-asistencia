@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { useMutation } from "convex/react";
+import { useMutation, useQuery } from "convex/react";
 import { api } from "../../convex/_generated/api";
 import { useAuth } from "../hooks/useAuth";
 
@@ -26,6 +26,7 @@ export default function LoginPage() {
   const [requestSuccess, setRequestSuccess] = useState(false);
 
   const setupFirstUser = useMutation(api.users.setupFirstUser);
+  const hasUsers = useQuery(api.users.hasAnyUser);
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -264,13 +265,15 @@ export default function LoginPage() {
               >
                 ¿No tienes cuenta? Solicitar acceso
               </button>
-              <button
-                type="button"
-                onClick={() => { setShowSetup(true); setError(""); }}
-                className="w-full text-[11px] text-ink/30 hover:text-ink/50"
-              >
-                ¿Primer acceso? Configurar pastor inicial
-              </button>
+              {hasUsers === false && (
+                <button
+                  type="button"
+                  onClick={() => { setShowSetup(true); setError(""); }}
+                  className="w-full text-[11px] text-ink/30 hover:text-ink/50"
+                >
+                  ¿Primer acceso? Configurar pastor inicial
+                </button>
+              )}
             </div>
           </form>
         ) : (
