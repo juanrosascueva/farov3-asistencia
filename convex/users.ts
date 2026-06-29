@@ -31,9 +31,11 @@ export const register = mutation({
       throw new Error("Solo el pastor puede registrar nuevos usuarios");
     }
 
+    const emailNormalized = args.email.trim().toLowerCase();
+
     const existing = await ctx.db
       .query("users")
-      .withIndex("by_email", q => q.eq("email", args.email))
+      .withIndex("by_email", q => q.eq("email", emailNormalized))
       .first();
     if (existing) throw new Error("El email ya está registrado");
 
@@ -41,7 +43,7 @@ export const register = mutation({
     const hashedPassword = await hashPassword(args.password, salt);
 
     await ctx.db.insert("users", {
-      email: args.email,
+      email: emailNormalized,
       name: args.name,
       role: args.role,
       hashedPassword,
@@ -60,9 +62,10 @@ export const login = mutation({
     password: v.string(),
   },
   handler: async (ctx, args) => {
+    const emailNormalized = args.email.trim().toLowerCase();
     const user = await ctx.db
       .query("users")
-      .withIndex("by_email", q => q.eq("email", args.email))
+      .withIndex("by_email", q => q.eq("email", emailNormalized))
       .first();
     if (!user) throw new Error("Credenciales inválidas");
     if (!user.isActive) throw new Error("Usuario desactivado");
@@ -216,11 +219,12 @@ export const setupFirstUser = mutation({
       throw new Error("Ya existe un usuario. Use register en su lugar.");
     }
 
+    const emailNormalized = args.email.trim().toLowerCase();
     const salt = generateSalt();
     const hashedPassword = await hashPassword(args.password, salt);
 
     await ctx.db.insert("users", {
-      email: args.email,
+      email: emailNormalized,
       name: args.name,
       role: "pastor",
       hashedPassword,
@@ -230,5 +234,20 @@ export const setupFirstUser = mutation({
     });
 
     return { success: true };
+  },
+});
+
+export const migrateEmailsToLowerCase = mutation({
+  handler: async (ctx) => {
+    const users = await ctx.db.query("users").collect();
+    let migratedCount = 0;
+    for (const u of users) {
+      const lowerEmail = u.email.trim().toLowerCase();
+      if (u.email !== lowerEmail) {
+        await ctx.db.patch(u._id, { email: lowerEmail });
+        migratedCount++;
+      }
+    }
+    return { migratedCount };
   },
 });
