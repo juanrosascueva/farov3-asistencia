@@ -29,7 +29,7 @@ export default function RegistryStats({ teens }: { teens: Doc<"teens">[] }) {
         <KpiCard label="Inactivos" value={inactives} sub="requieren revisión" />
       </div>
 
-      <div className="bg-card rounded-card shadow-soft p-5 space-y-4">
+      <div className="bg-card rounded-card shadow-soft p-4 sm:p-5 space-y-4">
         <h2 className="font-display font-semibold text-base">Estado del registro</h2>
         <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
           {statusBuckets.map((bucket) => (
@@ -41,8 +41,8 @@ export default function RegistryStats({ teens }: { teens: Doc<"teens">[] }) {
         </div>
       </div>
 
-      <div className="bg-card rounded-card shadow-soft p-5">
-        <div className="flex items-center justify-between gap-3 mb-4">
+      <div className="bg-card rounded-card shadow-soft p-4 sm:p-5">
+        <div className="flex flex-col gap-1 sm:flex-row sm:items-center sm:justify-between mb-4">
           <h2 className="font-display font-semibold text-base">Alertas de fichas</h2>
           <span className="text-xs text-ink/40">Top 8 prioridades</span>
         </div>

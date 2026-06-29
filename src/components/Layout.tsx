@@ -86,14 +86,33 @@ export default function Layout({
       </aside>
 
       <main className="flex-1 px-4 sm:px-6 lg:px-0 pt-5 lg:pt-0 pb-28 sm:pb-24 lg:pb-6">
-        <header className="flex items-center justify-between mb-5 lg:hidden gap-2">
-          <div className="flex items-center gap-2 min-w-0">
-            <LogoIcon />
-            <p className="font-display font-bold text-base sm:text-lg truncate">Cristo Vive</p>
-          </div>
-          <div className="flex items-center gap-2 shrink-0">
-            <ScopeSwitcher />
+        <header className="mb-5 space-y-3 lg:hidden">
+          <div className="flex items-center justify-between gap-3">
+            <div className="flex items-center gap-2 min-w-0">
+              <LogoIcon />
+              <div className="min-w-0">
+                <p className="font-display font-bold text-base truncate">Cristo Vive</p>
+                <p className="text-[11px] text-ink/45 truncate">Ministerio de Adolescentes</p>
+              </div>
+            </div>
             <LeaderBadge onlyAvatar />
+          </div>
+          <div className="flex items-center gap-2 min-w-0">
+            <div className="min-w-0 flex-1">
+              <ScopeSwitcher fullWidth />
+            </div>
+            {setDark && (
+              <button
+                onClick={() => setDark(!dark)}
+                className="w-10 h-10 rounded-xl border border-ink/10 bg-card flex items-center justify-center text-ink/45 hover:text-ink/70 transition shrink-0"
+              >
+                {dark ? (
+                  <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="5"/><path d="M12 1v2M12 21v2M4.2 4.2l1.4 1.4M18.4 18.4l1.4 1.4M1 12h2M21 12h2M4.2 19.8l1.4-1.4M18.4 5.6l1.4-1.4"/></svg>
+                ) : (
+                  <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><path d="M21 12.8A9 9 0 1111.2 3a7 7 0 109.8 9.8z"/></svg>
+                )}
+              </button>
+            )}
           </div>
         </header>
         <div className="fade-in">{children}</div>
@@ -211,11 +230,11 @@ export default function Layout({
 
       <button
         onClick={() => setChatOpen(!chatOpen)}
-        className={`fixed bottom-[calc(5.5rem+env(safe-area-inset-bottom))] right-4 lg:bottom-4 z-50 w-14 h-14 rounded-full shadow-xl flex items-center justify-center transition ${
+        className={`fixed bottom-[calc(5.5rem+env(safe-area-inset-bottom))] right-3 sm:right-4 lg:bottom-4 z-50 w-12 h-12 sm:w-14 sm:h-14 rounded-full shadow-xl flex items-center justify-center transition ${
           chatOpen ? "bg-ink/80 scale-0" : "bg-teal-600 hover:bg-teal-700 scale-100"
         }`}
       >
-        <svg className="w-6 h-6 text-white" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+        <svg className="w-5 h-5 sm:w-6 sm:h-6 text-white" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
           <path d="M21 15a2 2 0 01-2 2H7l-4 4V5a2 2 0 012-2h14a2 2 0 012 2z" />
         </svg>
       </button>
