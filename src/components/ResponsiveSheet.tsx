@@ -19,24 +19,33 @@ export default function ResponsiveSheet({
   desktopMaxWidthClass = "sm:max-w-4xl",
 }: ResponsiveSheetProps) {
   useEffect(() => {
+    const previousBodyOverflow = document.body.style.overflow;
+    const previousHtmlOverflow = document.documentElement.style.overflow;
+    document.body.style.overflow = "hidden";
+    document.documentElement.style.overflow = "hidden";
+
     const handler = (e: KeyboardEvent) => {
       if (e.key === "Escape") onClose();
     };
     document.addEventListener("keydown", handler);
-    return () => document.removeEventListener("keydown", handler);
+    return () => {
+      document.removeEventListener("keydown", handler);
+      document.body.style.overflow = previousBodyOverflow;
+      document.documentElement.style.overflow = previousHtmlOverflow;
+    };
   }, [onClose]);
 
   return createPortal(
     <div
-      className="fixed inset-0 z-50 bg-ink/40 backdrop-blur-sm sm:flex sm:items-center sm:justify-center sm:p-6"
+      className="fixed inset-0 z-50 bg-paper sm:bg-ink/40 sm:backdrop-blur-sm sm:flex sm:items-center sm:justify-center sm:p-6"
       onClick={(e) => {
         if (e.target === e.currentTarget) onClose();
       }}
     >
       <div
-        className={`fixed inset-0 bg-paper flex flex-col sm:static sm:w-full sm:max-h-[90vh] sm:rounded-card sm:shadow-soft ${desktopMaxWidthClass}`}
+        className={`w-full h-[100dvh] bg-paper flex flex-col sm:h-auto sm:max-h-[90vh] sm:rounded-card sm:shadow-soft ${desktopMaxWidthClass}`}
       >
-        <div className="shrink-0 border-b border-ink/5 bg-paper px-4 py-4 sm:px-5 sm:py-5 sm:rounded-t-card sticky top-0 z-10">
+        <div className="shrink-0 border-b border-ink/5 bg-paper px-4 pt-[max(1rem,env(safe-area-inset-top))] pb-4 sm:px-5 sm:py-5 sm:rounded-t-card sticky top-0 z-10">
           <div className="flex items-center justify-between gap-3">
             <h3 className="font-display font-bold text-base sm:text-lg min-w-0 truncate">{title}</h3>
             <button
