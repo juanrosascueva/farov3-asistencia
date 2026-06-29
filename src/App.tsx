@@ -1,9 +1,9 @@
-import { useState, useCallback, useEffect } from "react";
+import { useState, useCallback, useEffect, useMemo } from "react";
 import { useQuery } from "convex/react";
 import { api } from "../convex/_generated/api";
 import { useAttendanceMap } from "./hooks/useAttendanceMap";
 import { AuthProvider, useAuth } from "./hooks/useAuth";
-import { ScopeProvider } from "./hooks/useScope";
+import { ScopeProvider, useScope } from "./hooks/useScope";
 import Layout from "./components/Layout";
 import Dashboard from "./components/Dashboard";
 import Asistencia from "./components/Asistencia";
@@ -29,7 +29,18 @@ function AppContent() {
   }, [dark]);
 
   const { user, token, loading: authLoading } = useAuth();
-  const teens = useQuery(api.teens.list, token ? { token } : {});
+  const { scope } = useScope();
+  const allTeens = useQuery(api.teens.list, token ? { token } : {});
+  
+  const teens = useMemo(() => {
+    if (!allTeens) return undefined;
+    return allTeens.filter(t => {
+      if (scope.campusId && t.campusId !== scope.campusId) return false;
+      if (scope.ministryId && t.ministryId !== scope.ministryId) return false;
+      if (scope.groupId && t.groupId !== scope.groupId) return false;
+      return true;
+    });
+  }, [allTeens, scope]);
   const attendanceMap = useAttendanceMap();
 
   const navigate = useCallback((route: string, profileId?: string | null) => {
