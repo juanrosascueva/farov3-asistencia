@@ -105,7 +105,7 @@ export default function TeenImportModal({ onClose, onSuccess }: TeenImportModalP
   };
 
   return (
-    <Modal title="Importar adolescentes" onClose={onClose} panelClassName="sm:max-w-4xl">
+    <Modal title="Importar adolescentes" onClose={onClose} panelClassName="mt-auto min-h-[calc(100vh-0.75rem-env(safe-area-inset-bottom))] rounded-b-none sm:min-h-0 sm:mt-0 sm:max-w-4xl sm:rounded-b-card">
       <div className="p-4 sm:p-5 space-y-4">
         <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
           <div>
