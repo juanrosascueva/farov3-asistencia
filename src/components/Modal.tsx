@@ -28,7 +28,7 @@ export default function Modal({ title, onClose, children, panelClassName }: Moda
     >
       <div
         ref={ref}
-        className={`bg-paper w-full sm:max-w-md sm:rounded-card rounded-t-3xl max-h-[90vh] overflow-y-auto animate-modal-in ${panelClassName || ""}`}
+        className={`bg-paper w-full sm:max-w-md sm:rounded-card rounded-t-3xl max-h-[82dvh] sm:max-h-[90vh] overflow-y-auto animate-modal-in pb-[calc(2.5rem+env(safe-area-inset-bottom))] ${panelClassName || ""}`}
       >
         <div className="flex items-center justify-between p-5 border-b border-ink/5 sticky top-0 bg-paper">
           <h3 className="font-display font-bold text-lg">{title}</h3>
