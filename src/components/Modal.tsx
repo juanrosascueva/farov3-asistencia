@@ -21,16 +21,16 @@ export default function Modal({ title, onClose, children, panelClassName }: Moda
 
   const modalContent = (
     <div
-      className="fixed inset-0 bg-ink/40 backdrop-blur-sm flex items-end sm:items-center justify-center z-50 p-0 sm:p-4 animate-overlay-in"
+      className="fixed inset-0 bg-ink/40 backdrop-blur-sm flex items-start sm:items-center justify-center z-50 p-4 sm:p-6 animate-overlay-in overflow-y-auto"
       onClick={(e) => {
         if (e.target === e.currentTarget) onClose();
       }}
     >
       <div
         ref={ref}
-        className={`bg-paper w-full sm:max-w-md sm:rounded-card rounded-t-3xl max-h-[82dvh] sm:max-h-[90vh] overflow-y-auto animate-modal-in pb-[calc(2.5rem+env(safe-area-inset-bottom))] ${panelClassName || ""}`}
+        className={`bg-paper w-full sm:max-w-md rounded-2xl sm:rounded-card max-h-none sm:max-h-[90vh] overflow-y-visible sm:overflow-y-auto animate-modal-in my-auto pb-6 sm:pb-0 ${panelClassName || ""}`}
       >
-        <div className="flex items-center justify-between p-5 border-b border-ink/5 sticky top-0 bg-paper">
+        <div className="flex items-center justify-between p-5 border-b border-ink/5 sticky top-0 bg-paper rounded-t-2xl sm:rounded-t-card">
           <h3 className="font-display font-bold text-lg">{title}</h3>
           <button
             onClick={onClose}
