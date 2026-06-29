@@ -16,6 +16,18 @@ import { Avatar } from "./Layout";
 import { fill } from "../lib/templates";
 import { useTemplates } from "../hooks/useTemplates";
 import WhatsAppModal from "./WhatsAppModal";
+import { useAuth } from "../hooks/useAuth";
+
+function roleTitle(role: string | undefined): string {
+  switch (role) {
+    case "pastor": return "Pastor";
+    case "director": return "Director";
+    case "coordinador": return "Coordinador";
+    case "leader": return "Líder";
+    case "helper": return "Ayudante";
+    default: return "Líder";
+  }
+}
 
 interface DashboardProps {
   teens: Doc<"teens">[];
@@ -28,6 +40,9 @@ export default function Dashboard({
   attendanceMap,
   onOpenProfile,
 }: DashboardProps) {
+  const { user } = useAuth();
+  const firstName = user?.name?.split(" ")[0] ?? "";
+  const title = roleTitle(user?.role);
   const dates = Object.keys(attendanceMap).sort();
   const currentWeek = dates[dates.length - 1];
   const all = teens.map((t) => ({ t, s: statsFor(t._id, attendanceMap) }));
@@ -101,7 +116,7 @@ export default function Dashboard({
     <div className="space-y-6">
       <div>
         <p className="text-xs font-semibold text-teal-700 tracking-wide uppercase">
-          {greeting()}
+          {greeting()}{firstName ? `, ${title} ${firstName}` : ""}
         </p>
         <h1 className="font-display text-2xl sm:text-3xl font-bold mt-0.5">
           Resumen del ministerio
