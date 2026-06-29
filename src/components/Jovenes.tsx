@@ -155,7 +155,7 @@ export default function Jovenes({
 
   return (
     <div className="space-y-5">
-      <div className="flex items-center justify-between gap-3 flex-wrap">
+      <div className="space-y-3">
         <div>
           <p className="text-xs font-semibold text-teal-700 tracking-wide uppercase">
             Mi grupo
@@ -164,17 +164,17 @@ export default function Jovenes({
             Adolescentes
           </h1>
         </div>
-        <div className="flex items-center gap-2 shrink-0">
+        <div className="grid grid-cols-2 gap-2 sm:flex sm:flex-wrap sm:items-center sm:gap-2">
           <button
             onClick={() => setShowImport(true)}
-            className="text-xs font-semibold bg-card border border-ink/10 text-ink/60 rounded-full px-3.5 py-2 flex items-center gap-1.5"
+            className="text-xs font-semibold bg-card border border-ink/10 text-ink/60 rounded-full px-3.5 py-2 flex items-center justify-center gap-1.5 min-w-0"
           >
             <svg className="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4" /><polyline points="7 10 12 15 17 10" /><line x1="12" y1="15" x2="12" y2="3" /></svg>
             Importar
           </button>
           <button
             onClick={() => setShowForm(true)}
-            className="text-xs font-semibold bg-ink text-white rounded-full px-3.5 py-2 flex items-center gap-1.5 shrink-0"
+            className="text-xs font-semibold bg-ink text-white rounded-full px-3.5 py-2 flex items-center justify-center gap-1.5 min-w-0"
           >
             <svg
               className="w-3.5 h-3.5"
@@ -192,7 +192,7 @@ export default function Jovenes({
         </div>
       </div>
 
-      <div className="flex gap-2">
+      <div className="space-y-2">
         <div className="relative flex-1">
           <svg
             className="w-4 h-4 absolute left-3.5 top-1/2 -translate-y-1/2 text-ink/30"
@@ -213,55 +213,55 @@ export default function Jovenes({
             className="w-full bg-card border border-ink/10 rounded-xl pl-10 pr-4 py-2.5 text-sm"
           />
         </div>
-        {/* Selector de ordenamiento intuitivo */}
-        <div className="relative shrink-0 flex items-center bg-card border border-ink/10 rounded-xl px-2.5 h-10 hover:border-ink/20 transition cursor-pointer">
-          <svg className="w-3.5 h-3.5 text-ink/40 mr-1.5 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
-            <line x1="21" y1="10" x2="3" y2="10" /><line x1="21" y1="6" x2="3" y2="6" /><line x1="21" y1="14" x2="3" y2="14" /><line x1="21" y1="18" x2="3" y2="18" />
-          </svg>
-          <span className="text-xs text-ink/50 mr-1 hidden xs:inline">Ordenar:</span>
-          <select
-            value={sortMode}
-            onChange={(e) => setSortMode(e.target.value as SortMode)}
-            className="bg-transparent text-xs font-semibold text-ink/75 hover:text-ink focus:outline-none pr-5 cursor-pointer appearance-none"
-          >
-            <option value="prioridad">Prioridad pastoral</option>
-            <option value="riesgo">Nivel de riesgo</option>
-            <option value="nombre">Nombre (A-Z)</option>
-          </select>
-          <svg className="w-3 h-3 absolute right-2 top-1/2 -translate-y-1/2 text-ink/40 pointer-events-none" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-            <path d="M6 9l6 6 6-6" />
-          </svg>
-        </div>
+        <div className="grid grid-cols-[minmax(0,1fr)_auto_auto] gap-2 sm:flex sm:flex-wrap sm:items-center">
+          <div className="relative min-w-0 flex items-center bg-card border border-ink/10 rounded-xl px-2.5 h-10 hover:border-ink/20 transition cursor-pointer">
+            <svg className="w-3.5 h-3.5 text-ink/40 mr-1.5 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+              <line x1="21" y1="10" x2="3" y2="10" /><line x1="21" y1="6" x2="3" y2="6" /><line x1="21" y1="14" x2="3" y2="14" /><line x1="21" y1="18" x2="3" y2="18" />
+            </svg>
+            <span className="text-xs text-ink/50 mr-1 hidden sm:inline">Ordenar:</span>
+            <select
+              value={sortMode}
+              onChange={(e) => setSortMode(e.target.value as SortMode)}
+              className="bg-transparent min-w-0 w-full text-xs font-semibold text-ink/75 hover:text-ink focus:outline-none pr-5 cursor-pointer appearance-none"
+            >
+              <option value="prioridad">Prioridad pastoral</option>
+              <option value="riesgo">Nivel de riesgo</option>
+              <option value="nombre">Nombre (A-Z)</option>
+            </select>
+            <svg className="w-3 h-3 absolute right-2 top-1/2 -translate-y-1/2 text-ink/40 pointer-events-none" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              <path d="M6 9l6 6 6-6" />
+            </svg>
+          </div>
 
-        {/* Botón de recálculo intuitivo */}
-        <button
-          onClick={async () => {
-            setPppRecalculating(true);
-            await recalcPpp();
-            setPppRecalculating(false);
-          }}
-          disabled={pppRecalculating}
-          className="shrink-0 h-10 px-3 flex items-center justify-center gap-1.5 text-xs font-semibold bg-teal-50 text-teal-700 border border-teal-200 rounded-xl hover:bg-teal-100 transition disabled:opacity-50 pressable"
-          title="Actualizar y recalcular prioridades pastorales de los adolescentes"
-        >
-          <svg className={`w-3.5 h-3.5 ${pppRecalculating ? "animate-spin" : ""}`} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-            <path d="M21.5 2v6h-6M21.34 15.57a10 10 0 1 1-.57-8.38l5.67-5.67"/>
-          </svg>
-          <span className="hidden sm:inline">Actualizar</span>
-        </button>
-        <button
-          onClick={() => setShowFilters((v) => !v)}
-          className="relative shrink-0 w-10 h-10 flex items-center justify-center rounded-xl border border-ink/10 bg-card text-ink/50 hover:text-ink/70 hover:bg-ink/5 transition"
-        >
-          <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
-            <path d="M22 3H2l8 9.46V19l4 2v-8.54L22 3z" />
-          </svg>
-          {activeFilterCount > 0 && (
-            <span className="absolute -top-1.5 -right-1.5 w-4.5 h-4.5 flex items-center justify-center text-[10px] font-bold text-white bg-teal-600 rounded-full">
-              {activeFilterCount}
-            </span>
-          )}
-        </button>
+          <button
+            onClick={async () => {
+              setPppRecalculating(true);
+              await recalcPpp();
+              setPppRecalculating(false);
+            }}
+            disabled={pppRecalculating}
+            className="shrink-0 h-10 px-3 sm:px-3.5 flex items-center justify-center gap-1.5 text-xs font-semibold bg-teal-50 text-teal-700 border border-teal-200 rounded-xl hover:bg-teal-100 transition disabled:opacity-50 pressable"
+            title="Actualizar y recalcular prioridades pastorales de los adolescentes"
+          >
+            <svg className={`w-3.5 h-3.5 ${pppRecalculating ? "animate-spin" : ""}`} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              <path d="M21.5 2v6h-6M21.34 15.57a10 10 0 1 1-.57-8.38l5.67-5.67"/>
+            </svg>
+            <span className="hidden md:inline">Actualizar</span>
+          </button>
+          <button
+            onClick={() => setShowFilters((v) => !v)}
+            className="relative shrink-0 w-10 h-10 flex items-center justify-center rounded-xl border border-ink/10 bg-card text-ink/50 hover:text-ink/70 hover:bg-ink/5 transition"
+          >
+            <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+              <path d="M22 3H2l8 9.46V19l4 2v-8.54L22 3z" />
+            </svg>
+            {activeFilterCount > 0 && (
+              <span className="absolute -top-1.5 -right-1.5 w-4.5 h-4.5 flex items-center justify-center text-[10px] font-bold text-white bg-teal-600 rounded-full">
+                {activeFilterCount}
+              </span>
+            )}
+          </button>
+        </div>
       </div>
 
       {activeFilterCount > 0 && (
@@ -401,7 +401,7 @@ export default function Jovenes({
       </div>
 
       {upcoming.length > 0 && (
-        <div className="bg-amber-50 border border-amber-100 rounded-card p-3.5 flex items-start gap-3">
+          <div className="bg-amber-50 border border-amber-100 rounded-card p-3.5 flex items-start gap-3">
           <svg
             className="w-5 h-5 text-amber-600 shrink-0 mt-0.5"
             viewBox="0 0 24 24"
@@ -418,21 +418,23 @@ export default function Jovenes({
             <path d="M15 13V9" />
             <circle cx="12" cy="5" r="1.3" />
           </svg>
-          <div className="text-sm">
-            <p className="font-semibold text-amber-700">Próximos cumpleaños</p>
-            <p className="text-amber-700/80 text-xs mt-0.5">
-              {upcoming
-                .map(
-                  (u) =>
-                    `${esc(u.t.nombre)} (${
-                      u.days === 0 ? "hoy" : "en " + u.days + "d"
-                    })`
-                )
-                .join(" · ")}
-            </p>
+            <div className="text-sm min-w-0 flex-1">
+              <p className="font-semibold text-amber-700">Próximos cumpleaños</p>
+              <div className="mt-1 flex flex-wrap gap-1.5">
+                {upcoming.slice(0, 4).map((u) => (
+                  <span key={u.t._id} className="inline-flex rounded-full border border-amber-200 bg-white/70 px-2 py-1 text-[11px] font-semibold text-amber-700">
+                    {esc(u.t.nombre)} ({u.days === 0 ? "hoy" : `en ${u.days}d`})
+                  </span>
+                ))}
+                {upcoming.length > 4 && (
+                  <span className="inline-flex rounded-full border border-amber-200 bg-white/70 px-2 py-1 text-[11px] font-semibold text-amber-700">
+                    +{upcoming.length - 4} más
+                  </span>
+                )}
+              </div>
+            </div>
           </div>
-        </div>
-      )}
+        )}
 
       {teenData.length === 0 ? (
         <div className="text-center py-8 px-4">
@@ -588,11 +590,16 @@ export default function Jovenes({
                     </div>
                     {warnings.length > 0 && (
                       <div className="mt-2 flex flex-wrap gap-1">
-                        {warnings.slice(0, 2).map((warning) => (
+                        {warnings.slice(0, 1).map((warning) => (
                           <span key={warning} className="text-[10px] font-semibold bg-amber-50 text-amber-700 border border-amber-100 rounded-full px-1.5 py-0.5">
                             {warning}
                           </span>
                         ))}
+                        {warnings.length > 1 && (
+                          <span className="text-[10px] font-semibold bg-ink/[0.03] text-ink/55 border border-ink/10 rounded-full px-1.5 py-0.5">
+                            +{warnings.length - 1} alerta{warnings.length - 1 > 1 ? "s" : ""}
+                          </span>
+                        )}
                       </div>
                     )}
                   </div>
