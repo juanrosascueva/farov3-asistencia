@@ -11,6 +11,11 @@ import {
   fmtDate,
   esc,
   getGamification,
+  getTeenContactWarnings,
+  getTeenStatus,
+  teenProfileCompleteness,
+  TEEN_STATUS_META,
+  SPIRITUAL_STAGE_LABELS,
 } from "../lib/utils";
 import { fill } from "../lib/templates";
 import { useTemplates } from "../hooks/useTemplates";
@@ -73,6 +78,9 @@ export default function Profile({
   const s = statsFor(teen._id, attendanceMap);
   const risk = riskScore(s);
   const age = ageFromDOB(teen.nacimiento);
+  const status = getTeenStatus(teen);
+  const completeness = teenProfileCompleteness(teen);
+  const warnings = getTeenContactWarnings(teen);
   const history = [...s.history].reverse().slice(0, 12);
   const game = getGamification(s);
   const { templates } = useTemplates();
@@ -131,15 +139,28 @@ export default function Profile({
         <div className="flex items-start gap-4">
           <Avatar teen={teen} size="lg" />
           <div className="flex-1 min-w-0">
-            <h1 className="font-display text-xl font-bold">
-              {esc(teen.nombre)} {esc(teen.apellido)}
-            </h1>
-            <p className="text-sm text-ink/45">
+             <h1 className="font-display text-xl font-bold">
+               {esc(teen.nombre)} {esc(teen.apellido)}
+             </h1>
+             <p className="text-sm text-ink/45">
               {age !== null
                 ? age + " años"
                 : "Fecha de nacimiento no registrada"}
               {teen.nacimiento ? " · " + fmtDate(teen.nacimiento) : ""}
             </p>
+            <div className="flex flex-wrap gap-2 mt-3">
+              <span className={`inline-flex items-center gap-1 text-xs font-semibold px-2.5 py-1 rounded-full border ${TEEN_STATUS_META[status].cls}`}>
+                {TEEN_STATUS_META[status].label}
+              </span>
+              <span className="inline-flex items-center gap-1 text-xs font-semibold px-2.5 py-1 rounded-full border bg-ink/[0.03] text-ink/60 border-ink/10">
+                Ficha {completeness.percent}%
+              </span>
+              {teen.requiereSeguimientoEspecial && (
+                <span className="inline-flex items-center gap-1 text-xs font-semibold px-2.5 py-1 rounded-full border bg-red-50 text-red-700 border-red-100">
+                  Seguimiento especial
+                </span>
+              )}
+            </div>
             <div className="flex gap-2 mt-3">
               <button
                 onClick={() => setShowEdit(true)}
@@ -305,6 +326,45 @@ export default function Profile({
         <StatCardInline label="Total registrado" value={s.total} icon="users" color="ink" />
       </div>
 
+      {warnings.length > 0 && (
+        <div className="bg-amber-50 border border-amber-100 rounded-card p-4">
+          <p className="text-sm font-semibold text-amber-800">Alertas de ficha</p>
+          <div className="mt-2 flex flex-wrap gap-1.5">
+            {warnings.map((warning) => (
+              <span key={warning} className="rounded-full bg-white/80 px-2.5 py-1 text-xs font-semibold text-amber-700 border border-amber-100">
+                {warning}
+              </span>
+            ))}
+          </div>
+        </div>
+      )}
+
+      <div className="bg-card rounded-card shadow-soft p-5 space-y-4">
+        <h2 className="font-display font-semibold text-base">Ficha pastoral</h2>
+        <div className="grid sm:grid-cols-2 gap-3 text-sm">
+          <InfoRow label="Tutor principal" value={teen.nombreEncargado} />
+          <InfoRow label="Parentesco" value={teen.parentescoEncargado} />
+          <InfoRow label="Fecha de ingreso" value={teen.fechaIngreso ? fmtDate(teen.fechaIngreso) : ""} />
+          <InfoRow label="Momento espiritual" value={teen.decisionEspiritual ? SPIRITUAL_STAGE_LABELS[teen.decisionEspiritual] : ""} />
+          <InfoRow label="Colegio" value={teen.colegio} />
+          <InfoRow label="Grado escolar" value={teen.gradoEscolar} />
+          <InfoRow label="Barrio / zona" value={teen.barrio} />
+          <InfoRow label="Vive con" value={teen.viveCon} />
+        </div>
+        {teen.observacionInicial && (
+          <div>
+            <p className="text-xs font-semibold text-ink/40 uppercase tracking-wide mb-1">Observación inicial</p>
+            <p className="text-sm whitespace-pre-line">{esc(teen.observacionInicial)}</p>
+          </div>
+        )}
+        {teen.motivoInactividad && (
+          <div>
+            <p className="text-xs font-semibold text-ink/40 uppercase tracking-wide mb-1">Motivo del estado actual</p>
+            <p className="text-sm whitespace-pre-line">{esc(teen.motivoInactividad)}</p>
+          </div>
+        )}
+      </div>
+
       <div className="bg-card rounded-card shadow-soft p-5 space-y-4">
         <h2 className="font-display font-semibold text-base">
           Información de contacto
@@ -312,6 +372,12 @@ export default function Profile({
         <div className="grid sm:grid-cols-2 gap-3 text-sm">
           <InfoRow label="Teléfono del adolescente" value={teen.telefono} />
           <InfoRow label="Teléfono del encargado" value={teen.telefonoPadre} />
+          <InfoRow label="Teléfono secundario" value={teen.telefonoSecundario} />
+          <InfoRow label="Contacto de emergencia" value={teen.contactoEmergenciaNombre} />
+          <InfoRow label="Teléfono de emergencia" value={teen.contactoEmergenciaTelefono} />
+          <InfoRow label="Consentimiento de datos" value={teen.consentimientoDatos ? "Sí" : "Pendiente"} />
+          <InfoRow label="Consentimiento de foto" value={teen.consentimientoFoto ? "Sí" : "Pendiente"} />
+          <InfoRow label="Fecha de consentimiento" value={teen.fechaConsentimiento ? fmtDate(teen.fechaConsentimiento) : ""} />
         </div>
         {teen.gustos && (
           <div>

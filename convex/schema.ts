@@ -74,18 +74,62 @@ export default defineSchema({
     nombre: v.string(),
     apellido: v.string(),
     nacimiento: v.string(),
+    sexo: v.optional(
+      v.union(
+        v.literal("masculino"),
+        v.literal("femenino"),
+        v.literal("otro"),
+        v.literal("prefiero_no_decir")
+      )
+    ),
     telefono: v.string(),
     telefonoPadre: v.string(),
+    telefonoSecundario: v.optional(v.string()),
+    nombreEncargado: v.optional(v.string()),
+    parentescoEncargado: v.optional(v.string()),
+    contactoEmergenciaNombre: v.optional(v.string()),
+    contactoEmergenciaTelefono: v.optional(v.string()),
+    permiteMensajes: v.optional(v.boolean()),
     gustos: v.string(),
     notas: v.string(),
+    observacionInicial: v.optional(v.string()),
     foto: v.string(),
+    fechaIngreso: v.optional(v.string()),
+    estado: v.optional(
+      v.union(
+        v.literal("activo"),
+        v.literal("seguimiento"),
+        v.literal("inactivo"),
+        v.literal("egresado")
+      )
+    ),
+    motivoInactividad: v.optional(v.string()),
+    colegio: v.optional(v.string()),
+    gradoEscolar: v.optional(v.string()),
+    barrio: v.optional(v.string()),
+    viveCon: v.optional(v.string()),
+    decisionEspiritual: v.optional(
+      v.union(
+        v.literal("nuevo"),
+        v.literal("conociendo"),
+        v.literal("afirmando_fe"),
+        v.literal("bautizado"),
+        v.literal("sirviendo")
+      )
+    ),
+    requiereSeguimientoEspecial: v.optional(v.boolean()),
+    consentimientoDatos: v.optional(v.boolean()),
+    consentimientoFoto: v.optional(v.boolean()),
+    fechaConsentimiento: v.optional(v.string()),
     campusId: v.optional(v.id("campus")),
     ministryId: v.optional(v.id("ministry")),
     groupId: v.optional(v.id("group")),
   })
     .index("by_campusId", ["campusId"])
     .index("by_ministryId", ["ministryId"])
-    .index("by_groupId", ["groupId"]),
+    .index("by_groupId", ["groupId"])
+    .index("by_estado", ["estado"])
+    .index("by_fechaIngreso", ["fechaIngreso"]),
 
   attendance: defineTable({
     date: v.string(),

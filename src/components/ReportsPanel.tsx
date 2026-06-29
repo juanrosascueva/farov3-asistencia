@@ -7,6 +7,7 @@ import { allDatesSorted, statsFor, getGamification } from "../lib/utils";
 import AttendanceCharts from "./reports/AttendanceCharts";
 import PastoralStats from "./reports/PastoralStats";
 import GamificationStats from "./reports/GamificationStats";
+import RegistryStats from "./reports/RegistryStats";
 import { usePastoralTarget } from "../hooks/usePastoralTarget";
 
 interface ReportsPanelProps {
@@ -14,7 +15,7 @@ interface ReportsPanelProps {
   attendanceMap: AttendanceMap;
 }
 
-type Tab = "attendance" | "pastoral" | "levels";
+type Tab = "attendance" | "pastoral" | "levels" | "fichas";
 type Range = "30d" | "3m" | "all";
 
 export default function ReportsPanel({ teens, attendanceMap }: ReportsPanelProps) {
@@ -44,6 +45,7 @@ export default function ReportsPanel({ teens, attendanceMap }: ReportsPanelProps
     { id: "attendance", label: "Asistencia", icon: "📊" },
     { id: "pastoral", label: "Pastoral", icon: "📋" },
     { id: "levels", label: "Niveles", icon: "🏆" },
+    { id: "fichas", label: "Fichas", icon: "🗂️" },
   ];
 
   return (
@@ -102,6 +104,7 @@ export default function ReportsPanel({ teens, attendanceMap }: ReportsPanelProps
       {tab === "levels" && (
         <GamificationStats teens={teens} attendanceMap={attendanceMap} />
       )}
+      {tab === "fichas" && <RegistryStats teens={teens} />}
     </div>
   );
 }

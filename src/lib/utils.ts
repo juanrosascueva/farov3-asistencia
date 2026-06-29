@@ -8,7 +8,25 @@ import type {
   LevelInfo,
   StreakTier,
   GamificationResult,
+  TeenProfileCompleteness,
+  TeenStatus,
+  SpiritualStage,
 } from "./types";
+
+export const TEEN_STATUS_META: Record<TeenStatus, { label: string; cls: string }> = {
+  activo: { label: "Activo", cls: "bg-green-50 text-green-700 border-green-100" },
+  seguimiento: { label: "Seguimiento", cls: "bg-amber-50 text-amber-700 border-amber-100" },
+  inactivo: { label: "Inactivo", cls: "bg-slate-100 text-slate-700 border-slate-200" },
+  egresado: { label: "Egresado", cls: "bg-blue-50 text-blue-700 border-blue-100" },
+};
+
+export const SPIRITUAL_STAGE_LABELS: Record<SpiritualStage, string> = {
+  nuevo: "Nuevo",
+  conociendo: "Conociendo a Cristo",
+  afirmando_fe: "Afirmando su fe",
+  bautizado: "Bautizado",
+  sirviendo: "Sirviendo",
+};
 
 export function todayISO(): string {
   return new Date().toISOString().slice(0, 10);
@@ -144,6 +162,121 @@ export function greeting(): string {
   if (h < 12) return "Buenos días";
   if (h < 19) return "Buenas tardes";
   return "Buenas noches";
+}
+
+export function normalizePhoneInput(value: string): string {
+  return value.replace(/[^\d+()\-\s]/g, "").replace(/\s+/g, " ").trimStart();
+}
+
+export function phoneDigits(value: string | undefined | null): string {
+  return (value || "").replace(/\D/g, "");
+}
+
+export function getPrimaryGuardianName(teen: Record<string, any>): string {
+  return teen.nombreEncargado || teen.parentescoEncargado || "Sin encargado";
+}
+
+export function getTeenStatus(teen: Record<string, any>): TeenStatus {
+  return (teen.estado as TeenStatus | undefined) || "activo";
+}
+
+export function getTeenContactWarnings(teen: Record<string, any>): string[] {
+  const warnings: string[] = [];
+  if (!teen.nombreEncargado) warnings.push("Sin nombre de tutor");
+  if (!teen.telefonoPadre && !teen.contactoEmergenciaTelefono) warnings.push("Sin contacto familiar");
+  if (!teen.telefono && !teen.telefonoPadre) warnings.push("Sin teléfonos");
+  if (!teen.campusId) warnings.push("Sin asignación pastoral");
+  if (!teen.consentimientoDatos) warnings.push("Sin consentimiento de datos");
+  return warnings;
+}
+
+export function teenProfileCompleteness(teen: Record<string, any>): TeenProfileCompleteness {
+  const required: Array<[string, boolean]> = [
+    ["Nombre", !!teen.nombre],
+    ["Apellido", !!teen.apellido],
+    ["Fecha de nacimiento", !!teen.nacimiento],
+    ["Teléfono del adolescente", !!teen.telefono],
+    ["Nombre del encargado", !!teen.nombreEncargado],
+    ["Teléfono del encargado", !!teen.telefonoPadre],
+    ["Parentesco del encargado", !!teen.parentescoEncargado],
+    ["Fecha de ingreso", !!teen.fechaIngreso],
+    ["Estado", !!teen.estado],
+    ["Sede", !!teen.campusId],
+    ["Consentimiento de datos", teen.consentimientoDatos === true],
+  ];
+  const completed = required.filter(([, ok]) => ok).length;
+  const total = required.length;
+  return {
+    percent: Math.round((completed / total) * 100),
+    completed,
+    total,
+    missing: required.filter(([, ok]) => !ok).map(([label]) => label),
+  };
+}
+
+export function createTeenCsvTemplate(): string {
+  const headers = [
+    "nombre",
+    "apellido",
+    "nacimiento",
+    "sexo",
+    "telefono",
+    "telefonoPadre",
+    "telefonoSecundario",
+    "nombreEncargado",
+    "parentescoEncargado",
+    "contactoEmergenciaNombre",
+    "contactoEmergenciaTelefono",
+    "permiteMensajes",
+    "gustos",
+    "observacionInicial",
+    "fechaIngreso",
+    "estado",
+    "motivoInactividad",
+    "colegio",
+    "gradoEscolar",
+    "barrio",
+    "viveCon",
+    "decisionEspiritual",
+    "requiereSeguimientoEspecial",
+    "consentimientoDatos",
+    "consentimientoFoto",
+    "fechaConsentimiento",
+  ];
+  const sample = [
+    "Samuel",
+    "Perez",
+    "2010-05-14",
+    "masculino",
+    "809-555-0101",
+    "809-555-0102",
+    "",
+    "Rosa Perez",
+    "Madre",
+    "Carlos Perez",
+    "809-555-0103",
+    "si",
+    "musica; dibujo",
+    "Llega invitado por un amigo del grupo.",
+    todayISO(),
+    "activo",
+    "",
+    "Colegio Esperanza",
+    "2do secundaria",
+    "Villa Nueva",
+    "Madre y abuela",
+    "conociendo",
+    "no",
+    "si",
+    "si",
+    todayISO(),
+  ];
+  return `${headers.join(",")}\n${sample.map(csvEscape).join(",")}\n`;
+}
+
+function csvEscape(value: string): string {
+  if (/[",\n]/.test(value)) return `"${value.replace(/"/g, '""')}"`;
+  return value;
 }
 
 const BADGE_DEFS: BadgeMeta[] = [

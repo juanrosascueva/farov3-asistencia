@@ -3,10 +3,23 @@ import { useQuery, useMutation, useAction } from "convex/react";
 import { api } from "../../convex/_generated/api";
 import type { Doc } from "../../convex/_generated/dataModel";
 import type { AttendanceMap, RiskInfo } from "../lib/types";
-import { statsFor, riskScore, ageFromDOB, daysToNextBirthday, esc, getGamification } from "../lib/utils";
+import {
+  statsFor,
+  riskScore,
+  ageFromDOB,
+  daysToNextBirthday,
+  esc,
+  getGamification,
+  getPrimaryGuardianName,
+  getTeenContactWarnings,
+  getTeenStatus,
+  teenProfileCompleteness,
+  TEEN_STATUS_META,
+} from "../lib/utils";
 import { Avatar } from "./Layout";
 import TeenForm from "./TeenForm";
 import Modal from "./Modal";
+import TeenImportModal from "./TeenImportModal";
 
 interface JovenesProps {
   teens: Doc<"teens">[];
@@ -23,6 +36,7 @@ export default function Jovenes({
 }: JovenesProps) {
   const [query, setQuery] = useState("");
   const [showForm, setShowForm] = useState(false);
+  const [showImport, setShowImport] = useState(false);
   const [editingTeen, setEditingTeen] = useState<Doc<"teens"> | null>(null);
   const [deletingTeen, setDeletingTeen] = useState<Doc<"teens"> | null>(null);
   const [sortMode, setSortMode] = useState<SortMode>("prioridad");
@@ -93,7 +107,19 @@ export default function Jovenes({
       const s = statsFor(t._id, attendanceMap);
       const risk = riskScore(s);
       const ppp = computePPP(risk, s, followUpTeenIds.has(t._id), t._id);
-      return { t, s, risk, age: ageFromDOB(t.nacimiento), game: getGamification(s), rc: ringColor(risk), hasFollowUp: followUpTeenIds.has(t._id), ppp };
+      return {
+        t,
+        s,
+        risk,
+        age: ageFromDOB(t.nacimiento),
+        game: getGamification(s),
+        rc: ringColor(risk),
+        hasFollowUp: followUpTeenIds.has(t._id),
+        ppp,
+        status: getTeenStatus(t),
+        completeness: teenProfileCompleteness(t),
+        warnings: getTeenContactWarnings(t),
+      };
     })
     .filter(({ t }) => {
       const q = query.toLowerCase();
@@ -129,7 +155,7 @@ export default function Jovenes({
 
   return (
     <div className="space-y-5">
-      <div className="flex items-center justify-between gap-3">
+      <div className="flex items-center justify-between gap-3 flex-wrap">
         <div>
           <p className="text-xs font-semibold text-teal-700 tracking-wide uppercase">
             Mi grupo
@@ -138,23 +164,32 @@ export default function Jovenes({
             Adolescentes
           </h1>
         </div>
-        <button
-          onClick={() => setShowForm(true)}
-          className="text-xs font-semibold bg-ink text-white rounded-full px-3.5 py-2 flex items-center gap-1.5 shrink-0"
-        >
-          <svg
-            className="w-3.5 h-3.5"
-            viewBox="0 0 24 24"
-            fill="none"
-            stroke="currentColor"
-            strokeWidth="1.8"
-            strokeLinecap="round"
-            strokeLinejoin="round"
+        <div className="flex items-center gap-2 shrink-0">
+          <button
+            onClick={() => setShowImport(true)}
+            className="text-xs font-semibold bg-card border border-ink/10 text-ink/60 rounded-full px-3.5 py-2 flex items-center gap-1.5"
           >
-            <path d="M12 5v14M5 12h14" />
-          </svg>
-          Agregar
-        </button>
+            <svg className="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4" /><polyline points="7 10 12 15 17 10" /><line x1="12" y1="15" x2="12" y2="3" /></svg>
+            Importar
+          </button>
+          <button
+            onClick={() => setShowForm(true)}
+            className="text-xs font-semibold bg-ink text-white rounded-full px-3.5 py-2 flex items-center gap-1.5 shrink-0"
+          >
+            <svg
+              className="w-3.5 h-3.5"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="1.8"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+            >
+              <path d="M12 5v14M5 12h14" />
+            </svg>
+            Agregar
+          </button>
+        </div>
       </div>
 
       <div className="flex gap-2">
@@ -426,7 +461,7 @@ export default function Jovenes({
         </div>
       ) : (
         <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-3">
-          {teenData.map(({ t, s, risk, age, game, rc, hasFollowUp, ppp }) => (
+          {teenData.map(({ t, s, risk, age, game, rc, hasFollowUp, ppp, status, completeness, warnings }) => (
               <div
                 key={t._id}
                 onClick={() => onOpenProfile(t._id)}
@@ -453,6 +488,14 @@ export default function Jovenes({
                     <p className="text-sm font-semibold truncate">
                       {esc(t.nombre)} {esc(t.apellido)}
                     </p>
+                    <div className="flex flex-wrap items-center gap-1 mt-1">
+                      <span className={`inline-flex items-center gap-1 text-[11px] font-semibold px-1.5 py-0.5 rounded-full border ${TEEN_STATUS_META[status].cls}`}>
+                        {TEEN_STATUS_META[status].label}
+                      </span>
+                      <span className="inline-flex items-center gap-1 text-[11px] font-semibold px-1.5 py-0.5 rounded-full border bg-ink/[0.03] text-ink/60 border-ink/10">
+                        Ficha {completeness.percent}%
+                      </span>
+                    </div>
                     {(s.presentStreak > 2 || risk.score >= 2 || hasFollowUp) && (
                       <div className="flex flex-wrap items-center gap-1 mt-1">
                         {s.presentStreak > 2 && (
@@ -512,8 +555,9 @@ export default function Jovenes({
                         )}
                       </div>
                     )}
-                    <p className="text-xs text-ink/40 flex items-center gap-2 mt-1">
+                    <p className="text-xs text-ink/40 flex items-center gap-2 mt-2 flex-wrap">
                       {age !== null ? age + " años" : "—"}
+                      <span>{getPrimaryGuardianName(t)}</span>
                       {s.total > 0 && (
                         <span className="text-[10px] font-semibold text-ink/30 bg-ink/5 rounded-full px-1.5 py-0.5">
                           Niv.{game.level.level}
@@ -542,6 +586,15 @@ export default function Jovenes({
                         {s.pct}%
                       </span>
                     </div>
+                    {warnings.length > 0 && (
+                      <div className="mt-2 flex flex-wrap gap-1">
+                        {warnings.slice(0, 2).map((warning) => (
+                          <span key={warning} className="text-[10px] font-semibold bg-amber-50 text-amber-700 border border-amber-100 rounded-full px-1.5 py-0.5">
+                            {warning}
+                          </span>
+                        ))}
+                      </div>
+                    )}
                   </div>
                 </div>
                 {t.gustos && (
@@ -558,6 +611,13 @@ export default function Jovenes({
         <TeenForm
           onClose={() => setShowForm(false)}
           onSuccess={() => setShowForm(false)}
+        />
+      )}
+
+      {showImport && (
+        <TeenImportModal
+          onClose={() => setShowImport(false)}
+          onSuccess={() => setShowImport(false)}
         />
       )}
 

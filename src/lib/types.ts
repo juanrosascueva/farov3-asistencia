@@ -1,6 +1,16 @@
 export type AttendanceStatus = "present" | "absent" | "excused";
 export type AttendanceMap = Record<string, Record<string, AttendanceStatus | undefined>>;
 
+export type TeenStatus = "activo" | "seguimiento" | "inactivo" | "egresado";
+export type SpiritualStage = "nuevo" | "conociendo" | "afirmando_fe" | "bautizado" | "sirviendo";
+
+export interface TeenProfileCompleteness {
+  percent: number;
+  completed: number;
+  total: number;
+  missing: string[];
+}
+
 export interface StatsResult {
   total: number;
   present: number;
