@@ -131,7 +131,7 @@ export default function TeenForm({ teen, onClose, onSuccess }: TeenFormProps) {
       DRAFT_KEY,
       JSON.stringify({ form, campusId, ministryId, groupId, step, fotoStorageId })
     );
-  }, [teen, form, campusId, ministryId, groupId, step]);
+  }, [teen, form, campusId, ministryId, groupId, step, fotoStorageId]);
 
   const rawCampuses = useQuery(api.campus.list, user && token ? { token } : "skip");
   const rawMinistries = useQuery(
@@ -192,7 +192,11 @@ export default function TeenForm({ teen, onClose, onSuccess }: TeenFormProps) {
   const set = (key: keyof typeof form) => (value: string | boolean) =>
     setForm((prev) => ({ ...prev, [key]: value }));
 
-  const closeAndReset = () => {
+  const closePreservingDraft = () => {
+    onClose();
+  };
+
+  const cancelAndDiscardDraft = () => {
     if (!teen) localStorage.removeItem(DRAFT_KEY);
     onClose();
   };
@@ -258,7 +262,7 @@ export default function TeenForm({ teen, onClose, onSuccess }: TeenFormProps) {
 
   const footer = (
     <div className="grid grid-cols-1 gap-2 sm:flex sm:flex-wrap sm:items-center sm:justify-between">
-      <button type="button" onClick={closeAndReset} className="rounded-xl border border-ink/10 px-4 py-2.5 text-sm font-semibold text-ink/60 w-full sm:w-auto order-3 sm:order-none">
+      <button type="button" onClick={cancelAndDiscardDraft} className="rounded-xl border border-ink/10 px-4 py-2.5 text-sm font-semibold text-ink/60 w-full sm:w-auto order-3 sm:order-none">
         Cancelar
       </button>
       {!teen && (
@@ -314,7 +318,7 @@ export default function TeenForm({ teen, onClose, onSuccess }: TeenFormProps) {
   return (
     <ResponsiveSheet
       title={teen ? "Editar ficha pastoral" : "Registrar adolescente"}
-      onClose={closeAndReset}
+      onClose={closePreservingDraft}
       desktopMaxWidthClass="sm:max-w-4xl"
       progress={mobileProgress}
       footer={footer}
