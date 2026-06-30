@@ -31,7 +31,7 @@ export default function MyProfileModal({ onClose }: { onClose: () => void }) {
         name: name.trim() || undefined,
         phone: phone.trim() || undefined,
         birthDate: birthDate.trim() || undefined,
-        avatarStorageId: avatarStorageId || undefined,
+        avatarStorageId: (avatarStorageId as any) || undefined,
       });
       alert("Información personal actualizada.");
       setView("main");
@@ -105,7 +105,7 @@ export default function MyProfileModal({ onClose }: { onClose: () => void }) {
                     setAvatar(url);
                     if (token) {
                       try {
-                        await updateMe({ token, avatarStorageId: storageId });
+                        await updateMe({ token, avatarStorageId: storageId as any });
                       } catch (err: any) {
                         console.error("Error al guardar avatar inmediatamente:", err);
                       }
