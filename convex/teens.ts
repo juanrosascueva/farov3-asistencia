@@ -24,9 +24,17 @@ const teenGender = v.union(
   v.literal("prefiero_no_decir")
 );
 
+const optionalCampusId = v.optional(v.union(v.id("campus"), v.literal("")));
+const optionalMinistryId = v.optional(v.union(v.id("ministry"), v.literal("")));
+const optionalGroupId = v.optional(v.union(v.id("group"), v.literal("")));
+
 function cleanText(value: string | undefined): string | undefined {
   if (value === undefined) return undefined;
   return value.trim().replace(/\s+/g, " ");
+}
+
+function cleanOptionalId(value: string | undefined): string | undefined {
+  return value || undefined;
 }
 
 function normalizePhone(value: string | undefined): string | undefined {
@@ -91,9 +99,9 @@ async function buildTeenPayload(ctx: any, args: any, currentTeen?: any) {
   assertValidDate(fechaIngreso, "fecha de ingreso");
   assertValidDate(fechaConsentimiento, "fecha de consentimiento");
 
-  const campusId = args.campusId === undefined ? currentTeen?.campusId : args.campusId;
-  const ministryId = args.ministryId === undefined ? currentTeen?.ministryId : args.ministryId;
-  const groupId = args.groupId === undefined ? currentTeen?.groupId : args.groupId;
+  const campusId = args.campusId === undefined ? currentTeen?.campusId : cleanOptionalId(args.campusId);
+  const ministryId = args.ministryId === undefined ? currentTeen?.ministryId : cleanOptionalId(args.ministryId);
+  const groupId = args.groupId === undefined ? currentTeen?.groupId : cleanOptionalId(args.groupId);
   await validateScopeConsistency(ctx, campusId, ministryId, groupId);
 
   return {
@@ -200,9 +208,9 @@ export const create = mutation({
     consentimientoDatos: v.optional(v.boolean()),
     consentimientoFoto: v.optional(v.boolean()),
     fechaConsentimiento: v.optional(v.string()),
-    campusId: v.optional(v.id("campus")),
-    ministryId: v.optional(v.id("ministry")),
-    groupId: v.optional(v.id("group")),
+    campusId: optionalCampusId,
+    ministryId: optionalMinistryId,
+    groupId: optionalGroupId,
     token: v.optional(v.string()),
   },
   handler: async (ctx, args) => {
@@ -247,9 +255,9 @@ export const update = mutation({
     consentimientoDatos: v.optional(v.boolean()),
     consentimientoFoto: v.optional(v.boolean()),
     fechaConsentimiento: v.optional(v.string()),
-    campusId: v.optional(v.id("campus")),
-    ministryId: v.optional(v.id("ministry")),
-    groupId: v.optional(v.id("group")),
+    campusId: optionalCampusId,
+    ministryId: optionalMinistryId,
+    groupId: optionalGroupId,
     token: v.optional(v.string()),
   },
   handler: async (ctx, args) => {
