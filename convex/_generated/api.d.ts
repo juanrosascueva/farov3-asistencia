@@ -18,6 +18,7 @@ import type * as chat from "../chat.js";
 import type * as contacts from "../contacts.js";
 import type * as crisis from "../crisis.js";
 import type * as group from "../group.js";
+import type * as images from "../images.js";
 import type * as journal from "../journal.js";
 import type * as migration from "../migration.js";
 import type * as ministry from "../ministry.js";
@@ -44,6 +45,7 @@ declare const fullApi: ApiFromModules<{
   contacts: typeof contacts;
   crisis: typeof crisis;
   group: typeof group;
+  images: typeof images;
   journal: typeof journal;
   migration: typeof migration;
   ministry: typeof ministry;

@@ -3,6 +3,7 @@ import { useAuth } from "../hooks/useAuth";
 import { useMutation, useQuery } from "convex/react";
 import { api } from "../../convex/_generated/api";
 import ResponsiveSheet from "./ResponsiveSheet";
+import ImageUploader from "./ImageUploader";
 
 export default function MyProfileModal({ onClose }: { onClose: () => void }) {
   const { user, token } = useAuth();
@@ -15,10 +16,9 @@ export default function MyProfileModal({ onClose }: { onClose: () => void }) {
   const [phone, setPhone] = useState(user?.phone || "");
   const [birthDate, setBirthDate] = useState(user?.birthDate || "");
   const [avatar, setAvatar] = useState(user?.avatar || "");
+  const [avatarStorageId, setAvatarStorageId] = useState<string>("");
   const [password, setPassword] = useState("");
   const [saving, setSaving] = useState(false);
-  
-  const fileInputRef = useRef<HTMLInputElement>(null);
 
   if (!user) return null;
 
@@ -31,7 +31,7 @@ export default function MyProfileModal({ onClose }: { onClose: () => void }) {
         name: name.trim() || undefined,
         phone: phone.trim() || undefined,
         birthDate: birthDate.trim() || undefined,
-        avatar: avatar || undefined,
+        avatarStorageId: avatarStorageId || undefined,
       });
       alert("Información personal actualizada.");
       setView("main");
@@ -59,31 +59,6 @@ export default function MyProfileModal({ onClose }: { onClose: () => void }) {
     } finally {
       setSaving(false);
     }
-  };
-
-  const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (!file) return;
-
-    if (file.size > 1024 * 1024) {
-      alert("La imagen es muy grande. Máximo 1MB.");
-      return;
-    }
-
-    const reader = new FileReader();
-    reader.onload = async (ev) => {
-      if (ev.target?.result) {
-        const newAvatar = ev.target.result as string;
-        setAvatar(newAvatar);
-        // Save immediately for better UX
-        if (token) {
-          try {
-            await updateMe({ token, avatar: newAvatar });
-          } catch(e) {}
-        }
-      }
-    };
-    reader.readAsDataURL(file);
   };
 
   const initials = ((user.name?.[0] || "") + (user.name?.split(" ")[1]?.[0] || "")).toUpperCase();
@@ -123,20 +98,21 @@ export default function MyProfileModal({ onClose }: { onClose: () => void }) {
             {/* Profile Card */}
             <div className="bg-white rounded-3xl mx-4 mt-4 p-6 shadow-sm border border-ink/5 flex flex-col items-center">
               <div className="relative mb-3">
-                <div className="w-24 h-24 rounded-full bg-gradient-to-br from-teal-300 to-teal-500 text-white font-bold text-3xl flex items-center justify-center overflow-hidden ring-4 ring-teal-400/20">
-                  {displayAvatar ? (
-                    <img src={displayAvatar} alt="Avatar" className="w-full h-full object-cover" />
-                  ) : (
-                    initials
-                  )}
-                </div>
-                <button
-                  onClick={() => fileInputRef.current?.click()}
-                  className="absolute bottom-0 right-0 bg-teal-500 hover:bg-teal-600 text-white p-2 rounded-full shadow-md transition-transform hover:scale-105 active:scale-95 border-2 border-white"
-                >
-                  <svg className="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M17 3a2.828 2.828 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5L17 3z" /></svg>
-                </button>
-                <input type="file" ref={fileInputRef} className="hidden" accept="image/*" onChange={handleImageUpload} />
+                <ImageUploader 
+                  currentImageUrl={displayAvatar || undefined}
+                  onUploadComplete={async (storageId, url) => {
+                    setAvatarStorageId(storageId);
+                    setAvatar(url);
+                    if (token) {
+                      try {
+                        await updateMe({ token, avatarStorageId: storageId });
+                      } catch (err: any) {
+                        console.error("Error al guardar avatar inmediatamente:", err);
+                      }
+                    }
+                  }}
+                  label="Foto de Perfil"
+                />
               </div>
               
               <h2 className="text-xl font-bold text-ink/90">{user.name}</h2>

@@ -18,6 +18,7 @@ export default defineSchema({
     isActive: v.boolean(),
     permissions: v.optional(v.array(v.string())),
     avatar: v.optional(v.string()),
+    avatarStorageId: v.optional(v.id("_storage")),
     phone: v.optional(v.string()),
     birthDate: v.optional(v.string()),
     createdAt: v.string(),
@@ -100,6 +101,7 @@ export default defineSchema({
     notas: v.string(),
     observacionInicial: v.optional(v.string()),
     foto: v.string(),
+    fotoStorageId: v.optional(v.id("_storage")),
     fechaIngreso: v.optional(v.string()),
     estado: v.optional(
       v.union(

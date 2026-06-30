@@ -12,6 +12,7 @@ import {
 import { useAuth } from "../hooks/useAuth";
 import { useScopes } from "../hooks/useScopes";
 import ResponsiveSheet from "./ResponsiveSheet";
+import ImageUploader from "./ImageUploader";
 
 const DRAFT_KEY = "teen_form_draft_v2";
 const FORM_ID = "teen-pastoral-form";
@@ -105,6 +106,7 @@ export default function TeenForm({ teen, onClose, onSuccess }: TeenFormProps) {
   const [campusId, setCampusId] = useState<string>(teen?.campusId || "");
   const [ministryId, setMinistryId] = useState<string>(teen?.ministryId || "");
   const [groupId, setGroupId] = useState<string>(teen?.groupId || "");
+  const [fotoStorageId, setFotoStorageId] = useState<string>(teen?.fotoStorageId || "");
 
   useEffect(() => {
     if (teen) return;
@@ -116,6 +118,7 @@ export default function TeenForm({ teen, onClose, onSuccess }: TeenFormProps) {
       setCampusId(draft.campusId || "");
       setMinistryId(draft.ministryId || "");
       setGroupId(draft.groupId || "");
+      setFotoStorageId(draft.fotoStorageId || "");
       setStep(draft.step || 0);
     } catch {
       localStorage.removeItem(DRAFT_KEY);
@@ -126,7 +129,7 @@ export default function TeenForm({ teen, onClose, onSuccess }: TeenFormProps) {
     if (teen) return;
     localStorage.setItem(
       DRAFT_KEY,
-      JSON.stringify({ form, campusId, ministryId, groupId, step })
+      JSON.stringify({ form, campusId, ministryId, groupId, step, fotoStorageId })
     );
   }, [teen, form, campusId, ministryId, groupId, step]);
 
@@ -213,6 +216,7 @@ export default function TeenForm({ teen, onClose, onSuccess }: TeenFormProps) {
         campusId: campusId ? (campusId as any) : undefined,
         ministryId: ministryId ? (ministryId as any) : undefined,
         groupId: groupId ? (groupId as any) : undefined,
+        fotoStorageId: fotoStorageId ? (fotoStorageId as any) : undefined,
         token: token ?? undefined,
       };
       if (teen) {
@@ -266,6 +270,7 @@ export default function TeenForm({ teen, onClose, onSuccess }: TeenFormProps) {
             setCampusId("");
             setMinistryId("");
             setGroupId("");
+            setFotoStorageId("");
             setStep(0);
           }}
           className="rounded-xl border border-ink/10 px-4 py-2.5 text-sm font-semibold text-ink/45 w-full sm:w-auto order-4 sm:order-none"
@@ -368,19 +373,36 @@ export default function TeenForm({ teen, onClose, onSuccess }: TeenFormProps) {
         {step === 0 && (
           <section className="space-y-4">
             <SectionHeader title="Identidad del adolescente" helper="Captura los datos base y evita dejar la fecha vacía si la conoces." />
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-              <Field label="Nombre" value={form.nombre} onChange={set("nombre")} required />
-              <Field label="Apellido" value={form.apellido} onChange={set("apellido")} required />
+            
+            <div className="flex flex-col md:flex-row gap-5 items-center md:items-start bg-white/40 dark:bg-white/5 p-4 rounded-2xl border border-ink/5 shadow-sm">
+              <div className="shrink-0 mt-1">
+                <ImageUploader 
+                  currentImageUrl={form.foto} 
+                  onUploadComplete={(storageId, url) => {
+                    setFotoStorageId(storageId);
+                    set("foto")(url);
+                  }}
+                  label="Foto de Ficha"
+                />
+              </div>
+              
+              <div className="flex-1 w-full space-y-4">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                  <Field label="Nombre" value={form.nombre} onChange={set("nombre")} required />
+                  <Field label="Apellido" value={form.apellido} onChange={set("apellido")} required />
+                </div>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                  <Field label="Fecha de nacimiento" type="date" value={form.nacimiento} onChange={set("nacimiento")} />
+                  <SelectField label="Sexo" value={form.sexo} onChange={set("sexo")} options={[
+                    { value: "prefiero_no_decir", label: "Prefiero no decir" },
+                    { value: "masculino", label: "Masculino" },
+                    { value: "femenino", label: "Femenino" },
+                    { value: "otro", label: "Otro" },
+                  ]} />
+                </div>
+              </div>
             </div>
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-              <Field label="Fecha de nacimiento" type="date" value={form.nacimiento} onChange={set("nacimiento")} />
-              <SelectField label="Sexo" value={form.sexo} onChange={set("sexo")} options={[
-                { value: "prefiero_no_decir", label: "Prefiero no decir" },
-                { value: "masculino", label: "Masculino" },
-                { value: "femenino", label: "Femenino" },
-                { value: "otro", label: "Otro" },
-              ]} />
-            </div>
+
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
               <Field label="Teléfono del adolescente" type="tel" inputMode="tel" value={form.telefono} onChange={(v) => set("telefono")(normalizePhoneInput(v))} />
               <Field label="Teléfono secundario" type="tel" inputMode="tel" value={form.telefonoSecundario} onChange={(v) => set("telefonoSecundario")(normalizePhoneInput(v))} />

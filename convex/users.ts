@@ -106,7 +106,7 @@ export const login = mutation({
         name: user.name,
         role: user.role,
         permissions: (user.permissions && user.permissions.length > 0) ? user.permissions : ((user.role === "pastor" || user.role === "admin") ? ["manage_users", "manage_settings", "write_teens", "delete_teens", "view_reports", "use_ai"] : []),
-        avatar: user.avatar,
+        avatar: user.avatarStorageId ? (await ctx.storage.getUrl(user.avatarStorageId)) || undefined : user.avatar,
         phone: user.phone,
         birthDate: user.birthDate,
       },
@@ -139,7 +139,7 @@ export const getMe = query({
       name: user.name,
       role: user.role,
       permissions: (user.permissions && user.permissions.length > 0) ? user.permissions : ((user.role === "pastor" || user.role === "admin") ? ["manage_users", "manage_settings", "write_teens", "delete_teens", "view_reports", "use_ai"] : []),
-      avatar: user.avatar,
+      avatar: user.avatarStorageId ? (await ctx.storage.getUrl(user.avatarStorageId)) || undefined : user.avatar,
       phone: user.phone,
       birthDate: user.birthDate,
     };
@@ -155,17 +155,21 @@ export const listUsers = query({
       throw new Error("No autorizado");
     }
     const users = await ctx.db.query("users").collect();
-    return users.map(u => ({
-      _id: u._id,
-      email: u.email,
-      name: u.name,
-      role: u.role,
-      isActive: u.isActive,
-      permissions: (u.permissions && u.permissions.length > 0) ? u.permissions : ((u.role === "pastor" || u.role === "admin") ? ["manage_users", "manage_settings", "write_teens", "delete_teens", "view_reports", "use_ai"] : []),
-      avatar: u.avatar,
-      phone: u.phone,
-      birthDate: u.birthDate,
-    }));
+    const resolvedUsers = [];
+    for (const u of users) {
+      resolvedUsers.push({
+        _id: u._id,
+        email: u.email,
+        name: u.name,
+        role: u.role,
+        isActive: u.isActive,
+        permissions: (u.permissions && u.permissions.length > 0) ? u.permissions : ((u.role === "pastor" || u.role === "admin") ? ["manage_users", "manage_settings", "write_teens", "delete_teens", "view_reports", "use_ai"] : []),
+        avatar: u.avatarStorageId ? (await ctx.storage.getUrl(u.avatarStorageId)) || undefined : u.avatar,
+        phone: u.phone,
+        birthDate: u.birthDate,
+      });
+    }
+    return resolvedUsers;
   },
 });
 
@@ -186,6 +190,7 @@ export const updateUser = mutation({
     isActive: v.optional(v.boolean()),
     password: v.optional(v.string()),
     permissions: v.optional(v.array(v.string())),
+    avatarStorageId: v.optional(v.id("_storage")),
   },
   handler: async (ctx, args) => {
     const requester = await getUserFromToken(ctx, args.token);
@@ -214,6 +219,7 @@ export const updateUser = mutation({
     if (args.role !== undefined) patch.role = args.role;
     if (args.isActive !== undefined) patch.isActive = args.isActive;
     if (args.permissions !== undefined) patch.permissions = args.permissions;
+    if (args.avatarStorageId !== undefined) patch.avatarStorageId = args.avatarStorageId;
     if (args.password) {
       const salt = generateSalt();
       patch.salt = salt;
@@ -230,6 +236,7 @@ export const updateMe = mutation({
     name: v.optional(v.string()),
     password: v.optional(v.string()),
     avatar: v.optional(v.string()),
+    avatarStorageId: v.optional(v.id("_storage")),
     phone: v.optional(v.string()),
     birthDate: v.optional(v.string()),
   },
@@ -240,6 +247,7 @@ export const updateMe = mutation({
     const patch: Record<string, any> = {};
     if (args.name !== undefined) patch.name = args.name;
     if (args.avatar !== undefined) patch.avatar = args.avatar;
+    if (args.avatarStorageId !== undefined) patch.avatarStorageId = args.avatarStorageId;
     if (args.phone !== undefined) patch.phone = args.phone;
     if (args.birthDate !== undefined) patch.birthDate = args.birthDate;
     

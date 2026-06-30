@@ -113,6 +113,7 @@ async function buildTeenPayload(ctx: any, args: any, currentTeen?: any) {
     notas: cleanText(args.notas ?? currentTeen?.notas) ?? "",
     observacionInicial: cleanText(args.observacionInicial ?? currentTeen?.observacionInicial),
     foto: cleanText(args.foto ?? currentTeen?.foto) ?? "",
+    fotoStorageId: args.fotoStorageId === undefined ? currentTeen?.fotoStorageId : args.fotoStorageId,
     fechaIngreso,
     estado: args.estado === undefined ? currentTeen?.estado ?? "activo" : args.estado,
     motivoInactividad: cleanText(args.motivoInactividad ?? currentTeen?.motivoInactividad),
@@ -138,18 +139,33 @@ export const list = query({
   args: { token: v.optional(v.string()) },
   handler: async (ctx, args) => {
     const all = await ctx.db.query("teens").collect();
-    if (!args.token) return all;
-    const access = await getEffectiveAccess(ctx, args.token);
-    if (!access) return all;
-    if (access.isGlobal) return all;
-    return filterTeensByScope(access, all);
+    let filtered = all;
+    if (args.token) {
+      const access = await getEffectiveAccess(ctx, args.token);
+      if (access && !access.isGlobal) {
+        filtered = filterTeensByScope(access, all);
+      }
+    }
+    const resolved = [];
+    for (const t of filtered) {
+      resolved.push({
+        ...t,
+        foto: t.fotoStorageId ? (await ctx.storage.getUrl(t.fotoStorageId)) || "" : t.foto,
+      });
+    }
+    return resolved;
   },
 });
 
 export const get = query({
   args: { id: v.id("teens") },
   handler: async (ctx, args) => {
-    return await ctx.db.get(args.id);
+    const teen = await ctx.db.get(args.id);
+    if (!teen) return null;
+    return {
+      ...teen,
+      foto: teen.fotoStorageId ? (await ctx.storage.getUrl(teen.fotoStorageId)) || "" : teen.foto,
+    };
   },
 });
 
@@ -171,6 +187,7 @@ export const create = mutation({
     notas: v.string(),
     observacionInicial: v.optional(v.string()),
     foto: v.string(),
+    fotoStorageId: v.optional(v.id("_storage")),
     fechaIngreso: v.optional(v.string()),
     estado: v.optional(teenStatus),
     motivoInactividad: v.optional(v.string()),
@@ -217,6 +234,7 @@ export const update = mutation({
     notas: v.optional(v.string()),
     observacionInicial: v.optional(v.string()),
     foto: v.optional(v.string()),
+    fotoStorageId: v.optional(v.id("_storage")),
     fechaIngreso: v.optional(v.string()),
     estado: v.optional(teenStatus),
     motivoInactividad: v.optional(v.string()),
