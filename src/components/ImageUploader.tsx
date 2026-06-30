@@ -5,9 +5,10 @@ import { useAuth } from "../hooks/useAuth";
 
 interface ImageUploaderProps {
   currentImageUrl?: string;
-  onUploadComplete: (storageId: string, url: string) => void;
+  onUploadComplete: (imageId: string, url: string, provider: "cloudinary" | "convex") => void;
   label?: string;
   aspectRatio?: "1:1" | "4:3";
+  folder?: "profiles" | "teens";
 }
 
 export default function ImageUploader({
@@ -15,9 +16,11 @@ export default function ImageUploader({
   onUploadComplete,
   label = "Foto de perfil",
   aspectRatio = "1:1",
+  folder = "profiles",
 }: ImageUploaderProps) {
   const { token } = useAuth();
   const generateUploadUrl = useMutation(api.images.generateUploadUrl);
+  const generateCloudinarySignature = useMutation(api.images.generateCloudinarySignature);
   const [uploading, setUploading] = useState(false);
   const [previewUrl, setPreviewUrl] = useState<string | null>(currentImageUrl || null);
   const [error, setError] = useState<string | null>(null);
@@ -93,28 +96,53 @@ export default function ImageUploader({
       const tempUrl = URL.createObjectURL(compressedBlob);
       setPreviewUrl(tempUrl);
 
-      // 2. Obtener URL de subida de Convex
       if (!token) throw new Error("No tienes una sesión activa");
-      const uploadUrl = await generateUploadUrl({ token });
+      const signedUpload = await generateCloudinarySignature({ token, folder });
 
-      // 3. Subir archivo
-      const response = await fetch(uploadUrl, {
+      const body = new FormData();
+      body.append("file", compressedBlob, "image.jpg");
+      body.append("api_key", signedUpload.apiKey);
+      body.append("timestamp", String(signedUpload.timestamp));
+      body.append("folder", signedUpload.folder);
+      body.append("signature", signedUpload.signature);
+
+      const response = await fetch(`https://api.cloudinary.com/v1_1/${signedUpload.cloudName}/image/upload`, {
         method: "POST",
-        headers: { "Content-Type": "image/jpeg" },
-        body: compressedBlob,
+        body,
       });
 
       if (!response.ok) {
-        throw new Error("Fallo al subir archivo al almacenamiento de Convex");
+        throw new Error("Fallo al subir archivo a Cloudinary");
       }
 
-      const { storageId } = await response.json();
+      const result = await response.json();
       
-      // 4. Notificar al componente padre
-      onUploadComplete(storageId, tempUrl);
+      onUploadComplete(result.public_id, result.secure_url, "cloudinary");
+      setPreviewUrl(result.secure_url);
     } catch (err: any) {
       console.error(err);
-      setError(err?.message || "Ocurrió un error al subir la imagen.");
+      if (err?.message?.includes("Cloudinary no está configurado")) {
+        try {
+          if (!token) throw new Error("No tienes una sesión activa");
+          const compressedBlob = await resizeAndCompress(file);
+          const uploadUrl = await generateUploadUrl({ token });
+          const response = await fetch(uploadUrl, {
+            method: "POST",
+            headers: { "Content-Type": "image/jpeg" },
+            body: compressedBlob,
+          });
+          if (!response.ok) throw new Error("Fallo al subir archivo al almacenamiento de Convex");
+          const { storageId } = await response.json();
+          const tempUrl = URL.createObjectURL(compressedBlob);
+          setPreviewUrl(tempUrl);
+          onUploadComplete(storageId, tempUrl, "convex");
+        } catch (fallbackErr: any) {
+          console.error(fallbackErr);
+          setError(fallbackErr?.message || "Ocurrió un error al subir la imagen.");
+        }
+      } else {
+        setError(err?.message || "Ocurrió un error al subir la imagen.");
+      }
     } finally {
       setUploading(false);
     }

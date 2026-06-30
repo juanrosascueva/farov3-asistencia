@@ -382,10 +382,11 @@ export default function TeenForm({ teen, onClose, onSuccess }: TeenFormProps) {
               <div className="shrink-0 mt-1">
                 <ImageUploader 
                   currentImageUrl={form.foto} 
-                  onUploadComplete={(storageId, url) => {
-                    setFotoStorageId(storageId);
+                  onUploadComplete={(imageId, url, provider) => {
+                    setFotoStorageId(provider === "convex" ? imageId : "");
                     set("foto")(url);
                   }}
+                  folder="teens"
                   label="Foto de Ficha"
                 />
               </div>

@@ -106,7 +106,7 @@ export const login = mutation({
         name: user.name,
         role: user.role,
         permissions: (user.permissions && user.permissions.length > 0) ? user.permissions : ((user.role === "pastor" || user.role === "admin") ? ["manage_users", "manage_settings", "write_teens", "delete_teens", "view_reports", "use_ai"] : []),
-        avatar: user.avatarStorageId ? (await ctx.storage.getUrl(user.avatarStorageId)) || undefined : user.avatar,
+        avatar: user.avatar || (user.avatarStorageId ? (await ctx.storage.getUrl(user.avatarStorageId)) || undefined : undefined),
         phone: user.phone,
         birthDate: user.birthDate,
       },
@@ -139,7 +139,7 @@ export const getMe = query({
       name: user.name,
       role: user.role,
       permissions: (user.permissions && user.permissions.length > 0) ? user.permissions : ((user.role === "pastor" || user.role === "admin") ? ["manage_users", "manage_settings", "write_teens", "delete_teens", "view_reports", "use_ai"] : []),
-      avatar: user.avatarStorageId ? (await ctx.storage.getUrl(user.avatarStorageId)) || undefined : user.avatar,
+      avatar: user.avatar || (user.avatarStorageId ? (await ctx.storage.getUrl(user.avatarStorageId)) || undefined : undefined),
       phone: user.phone,
       birthDate: user.birthDate,
     };
@@ -164,7 +164,7 @@ export const listUsers = query({
         role: u.role,
         isActive: u.isActive,
         permissions: (u.permissions && u.permissions.length > 0) ? u.permissions : ((u.role === "pastor" || u.role === "admin") ? ["manage_users", "manage_settings", "write_teens", "delete_teens", "view_reports", "use_ai"] : []),
-        avatar: u.avatarStorageId ? (await ctx.storage.getUrl(u.avatarStorageId)) || undefined : u.avatar,
+        avatar: u.avatar || (u.avatarStorageId ? (await ctx.storage.getUrl(u.avatarStorageId)) || undefined : undefined),
         phone: u.phone,
         birthDate: u.birthDate,
       });

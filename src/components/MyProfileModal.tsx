@@ -100,12 +100,16 @@ export default function MyProfileModal({ onClose }: { onClose: () => void }) {
               <div className="relative mb-3">
                 <ImageUploader 
                   currentImageUrl={displayAvatar || undefined}
-                  onUploadComplete={async (storageId, url) => {
-                    setAvatarStorageId(storageId);
+                  onUploadComplete={async (imageId, url, provider) => {
+                    setAvatarStorageId(provider === "convex" ? imageId : "");
                     setAvatar(url);
                     if (token) {
                       try {
-                        await updateMe({ token, avatarStorageId: storageId as any });
+                        await updateMe(
+                          provider === "convex"
+                            ? { token, avatarStorageId: imageId as any }
+                            : { token, avatar: url }
+                        );
                       } catch (err: any) {
                         console.error("Error al guardar avatar inmediatamente:", err);
                       }
