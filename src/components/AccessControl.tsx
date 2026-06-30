@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useMutation, useQuery } from "convex/react";
 import { api } from "../../convex/_generated/api";
 import { useAuth } from "../hooks/useAuth";
@@ -205,10 +205,16 @@ function UserManager() {
       </div>
 
       {editingUser && (
-        <ResponsiveSheet title={`Accesos: ${editingUser.name}`} onClose={() => setEditingUser(null)} desktopMaxWidthClass="sm:max-w-2xl">
-          <UserPermissionsManager user={editingUser} />
-          <UserScopesManager userId={editingUser._id} />
-        </ResponsiveSheet>
+        (() => {
+          const currentEditingUser = users?.find((u: any) => u._id === editingUser._id);
+          if (!currentEditingUser) return null;
+          return (
+            <ResponsiveSheet title={`Accesos: ${currentEditingUser.name}`} onClose={() => setEditingUser(null)} desktopMaxWidthClass="sm:max-w-2xl">
+              <UserPermissionsManager user={currentEditingUser} />
+              <UserScopesManager userId={currentEditingUser._id} />
+            </ResponsiveSheet>
+          );
+        })()
       )}
     </div>
   );
@@ -508,6 +514,11 @@ function UserPermissionsManager({ user }: { user: any }) {
   const [editEmail, setEditEmail] = useState(user.email);
   const [savingEdit, setSavingEdit] = useState(false);
 
+  useEffect(() => {
+    setEditName(user.name);
+    setEditEmail(user.email);
+  }, [user]);
+
   const togglePermission = async (permId: string) => {
     if (!token) return;
     const hasPerm = userPerms.includes(permId);
@@ -588,12 +599,12 @@ function UserPermissionsManager({ user }: { user: any }) {
               </div>
             </div>
           ) : (
-            <div className="group relative pr-6">
+            <div className="relative pr-8">
               <p className="text-sm font-semibold">{user.name}</p>
               <p className="text-xs text-ink/50">{user.email}</p>
               <button 
                 onClick={() => setIsEditing(true)} 
-                className="absolute top-1/2 right-0 -translate-y-1/2 opacity-0 group-hover:opacity-100 transition-opacity p-1 text-ink/40 hover:text-teal-600"
+                className="absolute top-1/2 right-0 -translate-y-1/2 p-1 text-teal-600 hover:text-teal-700 bg-teal-50 dark:bg-teal-950/20 rounded-full w-6 h-6 flex items-center justify-center transition-colors shadow-sm"
                 title="Editar nombre y correo"
               >
                 <svg className="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M12 20h9" /><path d="M16.5 3.5a2.1 2.1 0 013 3L7 19l-4 1 1-4z" /></svg>
