@@ -32,7 +32,7 @@ export const create = mutation({
   },
   handler: async (ctx, args) => {
     const requester = await getUserFromToken(ctx, args.token);
-    if (!requester || requester.role !== "pastor") {
+    if (!requester || (requester.role !== "pastor" && requester.role !== "admin")) {
       throw new Error("No autorizado");
     }
     const id = await ctx.db.insert("userScopes", {
@@ -52,7 +52,7 @@ export const remove = mutation({
   args: { token: v.string(), id: v.id("userScopes") },
   handler: async (ctx, args) => {
     const requester = await getUserFromToken(ctx, args.token);
-    if (!requester || requester.role !== "pastor") {
+    if (!requester || (requester.role !== "pastor" && requester.role !== "admin")) {
       throw new Error("No autorizado");
     }
     await ctx.db.delete(args.id);
@@ -115,7 +115,7 @@ export const assignMe = mutation({
     const user = await getUserFromToken(ctx, args.token);
     if (!user) throw new Error("No autorizado");
 
-    const permissions = user.permissions || (user.role === "pastor" ? ["manage_users"] : []);
+    const permissions = (user.permissions && user.permissions.length > 0) ? user.permissions : ((user.role === "pastor" || user.role === "admin") ? ["manage_users"] : []);
     if (!permissions.includes("manage_users")) {
       throw new Error("No tienes permisos suficientes para auto-asignarte ministerios.");
     }

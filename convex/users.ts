@@ -16,6 +16,7 @@ export const register = mutation({
     password: v.string(),
     name: v.string(),
     role: v.union(
+      v.literal("admin"),
       v.literal("pastor"),
       v.literal("director"),
       v.literal("coordinador"),
@@ -28,7 +29,7 @@ export const register = mutation({
     const requester = await getUserFromToken(ctx, args.token);
     const isSelfRegistration = !requester;
 
-    const canManageUsers = requester && (requester.role === "pastor" || (requester.permissions && requester.permissions.includes("manage_users")));
+    const canManageUsers = requester && (requester.role === "pastor" || requester.role === "admin" || (requester.permissions && requester.permissions.includes("manage_users")));
     if (requester && !canManageUsers) {
       throw new Error("No tienes permisos para registrar usuarios");
     }
@@ -104,7 +105,7 @@ export const login = mutation({
         email: user.email,
         name: user.name,
         role: user.role,
-        permissions: user.permissions || (user.role === "pastor" ? ["manage_users", "manage_settings", "write_teens", "delete_teens", "view_reports", "use_ai"] : []),
+        permissions: (user.permissions && user.permissions.length > 0) ? user.permissions : ((user.role === "pastor" || user.role === "admin") ? ["manage_users", "manage_settings", "write_teens", "delete_teens", "view_reports", "use_ai"] : []),
         avatar: user.avatar,
         phone: user.phone,
         birthDate: user.birthDate,
@@ -137,7 +138,7 @@ export const getMe = query({
       email: user.email,
       name: user.name,
       role: user.role,
-      permissions: user.permissions || (user.role === "pastor" ? ["manage_users", "manage_settings", "write_teens", "delete_teens", "view_reports", "use_ai"] : []),
+      permissions: (user.permissions && user.permissions.length > 0) ? user.permissions : ((user.role === "pastor" || user.role === "admin") ? ["manage_users", "manage_settings", "write_teens", "delete_teens", "view_reports", "use_ai"] : []),
       avatar: user.avatar,
       phone: user.phone,
       birthDate: user.birthDate,
@@ -149,7 +150,7 @@ export const listUsers = query({
   args: { token: v.string() },
   handler: async (ctx, args) => {
     const user = await getUserFromToken(ctx, args.token);
-    const canManageUsers = user && (user.role === "pastor" || (user.permissions && user.permissions.includes("manage_users")));
+    const canManageUsers = user && (user.role === "pastor" || user.role === "admin" || (user.permissions && user.permissions.includes("manage_users")));
     if (!canManageUsers) {
       throw new Error("No autorizado");
     }
@@ -160,7 +161,7 @@ export const listUsers = query({
       name: u.name,
       role: u.role,
       isActive: u.isActive,
-      permissions: u.permissions || (u.role === "pastor" ? ["manage_users", "manage_settings", "write_teens", "delete_teens", "view_reports", "use_ai"] : []),
+      permissions: (u.permissions && u.permissions.length > 0) ? u.permissions : ((u.role === "pastor" || u.role === "admin") ? ["manage_users", "manage_settings", "write_teens", "delete_teens", "view_reports", "use_ai"] : []),
       avatar: u.avatar,
       phone: u.phone,
       birthDate: u.birthDate,

@@ -140,6 +140,7 @@ function UserManager() {
               <option value="coordinador">Coordinador</option>
               <option value="director">Director</option>
               <option value="pastor">Pastor</option>
+              <option value="admin">Administrador</option>
             </select>
           </div>
            <button
@@ -548,6 +549,7 @@ function UserPermissionsManager({ user }: { user: any }) {
           <option value="coordinador">Coordinador</option>
           <option value="director">Director</option>
           <option value="pastor">Pastor</option>
+          <option value="admin">Administrador</option>
         </select>
       </div>
 

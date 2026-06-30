@@ -9,7 +9,7 @@ interface AuthUser {
   _id: Id<"users">;
   email: string;
   name: string;
-  role: "pastor" | "director" | "coordinador" | "leader" | "helper";
+  role: "admin" | "pastor" | "director" | "coordinador" | "leader" | "helper";
   permissions: string[];
   avatar?: string;
   phone?: string;

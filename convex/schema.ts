@@ -6,6 +6,7 @@ export default defineSchema({
     email: v.string(),
     name: v.string(),
     role: v.union(
+      v.literal("admin"),
       v.literal("pastor"),
       v.literal("director"),
       v.literal("coordinador"),
@@ -57,6 +58,7 @@ export default defineSchema({
   userScopes: defineTable({
     userId: v.id("users"),
     role: v.union(
+      v.literal("admin"),
       v.literal("pastor"),
       v.literal("director"),
       v.literal("coordinador"),
