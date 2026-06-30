@@ -10,6 +10,7 @@ import {
   SPIRITUAL_STAGE_LABELS,
 } from "../lib/utils";
 import { useAuth } from "../hooks/useAuth";
+import { useScopes } from "../hooks/useScopes";
 import ResponsiveSheet from "./ResponsiveSheet";
 
 const DRAFT_KEY = "teen_form_draft_v2";
@@ -129,15 +130,21 @@ export default function TeenForm({ teen, onClose, onSuccess }: TeenFormProps) {
     );
   }, [teen, form, campusId, ministryId, groupId, step]);
 
-  const campuses = useQuery(api.campus.list, user && token ? { token } : "skip");
-  const ministries = useQuery(
+  const rawCampuses = useQuery(api.campus.list, user && token ? { token } : "skip");
+  const rawMinistries = useQuery(
     api.ministry.list,
     user && token && campusId ? { token, campusId: campusId as any } : "skip"
   );
-  const groups = useQuery(
+  const rawGroups = useQuery(
     api.group.list,
     user && token && ministryId ? { token, ministryId: ministryId as any } : "skip"
   );
+
+  const { filterCampuses, filterMinistries, filterGroups } = useScopes();
+
+  const campuses = useMemo(() => filterCampuses(rawCampuses), [rawCampuses, filterCampuses]);
+  const ministries = useMemo(() => filterMinistries(rawMinistries, campusId), [rawMinistries, filterMinistries, campusId]);
+  const groups = useMemo(() => filterGroups(rawGroups, campusId, ministryId), [rawGroups, filterGroups, campusId, ministryId]);
 
   const duplicateMatches = useQuery(
     api.teens.detectDuplicates,
@@ -206,6 +213,7 @@ export default function TeenForm({ teen, onClose, onSuccess }: TeenFormProps) {
         campusId: campusId ? (campusId as any) : undefined,
         ministryId: ministryId ? (ministryId as any) : undefined,
         groupId: groupId ? (groupId as any) : undefined,
+        token: token ?? undefined,
       };
       if (teen) {
         await updateTeen({ id: teen._id, ...(payload as any) });

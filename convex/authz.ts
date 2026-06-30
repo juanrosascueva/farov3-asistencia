@@ -19,6 +19,7 @@ export interface EffectiveAccess {
 }
 
 const ROLE_HIERARCHY: Record<string, number> = {
+  admin: 120,
   pastor: 100,
   director: 80,
   coordinador: 60,
@@ -47,7 +48,7 @@ export async function getEffectiveAccess(
 
   // If no explicit scopes, use the user's base role as global
   if (scopes.length === 0) {
-    const isGlobal = user.role === "pastor" || user.role === "director";
+    const isGlobal = user.role === "admin" || user.role === "pastor" || user.role === "director";
     return {
       user,
       scopes: [],
@@ -62,7 +63,7 @@ export async function getEffectiveAccess(
   const ministryIds = [...new Set(scopes.filter(s => s.ministryId).map(s => s.ministryId!))];
   const groupIds = [...new Set(scopes.filter(s => s.groupId).map(s => s.groupId!))];
 
-  const isGlobal = user.role === "pastor" || campusIds.length === 0;
+  const isGlobal = user.role === "admin" || user.role === "pastor" || user.role === "director";
 
   return {
     user,

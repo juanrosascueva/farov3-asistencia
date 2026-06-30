@@ -31,7 +31,7 @@ export const create = mutation({
   },
   handler: async (ctx, args) => {
     const user = await getUserFromToken(ctx, args.token);
-    if (!user || (user.role !== "pastor" && user.role !== "director")) {
+    if (!user || (user.role !== "admin" && user.role !== "pastor" && user.role !== "director")) {
       throw new Error("No autorizado");
     }
     const id = await ctx.db.insert("ministry", {
@@ -51,7 +51,7 @@ export const update = mutation({
   },
   handler: async (ctx, args) => {
     const user = await getUserFromToken(ctx, args.token);
-    if (!user || (user.role !== "pastor" && user.role !== "director")) {
+    if (!user || (user.role !== "admin" && user.role !== "pastor" && user.role !== "director")) {
       throw new Error("No autorizado");
     }
     if (args.name !== undefined) {
@@ -64,7 +64,7 @@ export const remove = mutation({
   args: { token: v.string(), id: v.id("ministry") },
   handler: async (ctx, args) => {
     const user = await getUserFromToken(ctx, args.token);
-    if (!user || (user.role !== "pastor" && user.role !== "director")) {
+    if (!user || (user.role !== "admin" && user.role !== "pastor" && user.role !== "director")) {
       throw new Error("No autorizado");
     }
     // Remove associated groups

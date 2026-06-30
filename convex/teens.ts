@@ -1,6 +1,6 @@
 import { v } from "convex/values";
 import { mutation, query } from "./_generated/server";
-import { getEffectiveAccess, filterTeensByScope } from "./authz";
+import { getEffectiveAccess, filterTeensByScope, requireAccess, canAccessTeen } from "./authz";
 
 const teenStatus = v.union(
   v.literal("activo"),
@@ -186,9 +186,14 @@ export const create = mutation({
     campusId: v.optional(v.id("campus")),
     ministryId: v.optional(v.id("ministry")),
     groupId: v.optional(v.id("group")),
+    token: v.optional(v.string()),
   },
   handler: async (ctx, args) => {
     const payload = await buildTeenPayload(ctx, args);
+    const access = await requireAccess(ctx, args.token, "helper");
+    if (!canAccessTeen(access, payload)) {
+      throw new Error("No tienes permisos para crear adolescentes en este ámbito (Sede/Ministerio/Grupo).");
+    }
     return await ctx.db.insert("teens", payload);
   },
 });
@@ -227,14 +232,24 @@ export const update = mutation({
     campusId: v.optional(v.id("campus")),
     ministryId: v.optional(v.id("ministry")),
     groupId: v.optional(v.id("group")),
+    token: v.optional(v.string()),
   },
   handler: async (ctx, args) => {
-    const { id, ...fields } = args;
-    const currentTeen = await ctx.db.get(id);
-    if (!currentTeen) throw new Error("El adolescente no existe.");
-    const payload = await buildTeenPayload(ctx, fields, currentTeen);
-    const cleaned = Object.fromEntries(Object.entries(payload).filter(([_, value]) => value !== undefined));
-    await ctx.db.patch(id, cleaned);
+    const current = await ctx.db.get(args.id);
+    if (!current) throw new Error("Ficha no encontrada");
+    
+    const access = await requireAccess(ctx, args.token, "helper");
+    if (!canAccessTeen(access, current)) {
+      throw new Error("No tienes permisos para editar a este adolescente.");
+    }
+
+    const payload = await buildTeenPayload(ctx, args, current);
+    
+    if (!canAccessTeen(access, payload)) {
+      throw new Error("No tienes permisos para mover al adolescente a este ámbito.");
+    }
+    
+    await ctx.db.patch(args.id, payload);
   },
 });
 
@@ -269,8 +284,16 @@ export const detectDuplicates = query({
 });
 
 export const remove = mutation({
-  args: { id: v.id("teens") },
+  args: { id: v.id("teens"), token: v.optional(v.string()) },
   handler: async (ctx, args) => {
+    const current = await ctx.db.get(args.id);
+    if (!current) throw new Error("Ficha no encontrada");
+    
+    const access = await requireAccess(ctx, args.token, "helper");
+    if (!canAccessTeen(access, current)) {
+      throw new Error("No tienes permisos para eliminar a este adolescente.");
+    }
+    
     for (const table of ["attendance", "journal"] as const) {
       const records = await ctx.db
         .query(table)

@@ -503,6 +503,10 @@ function UserPermissionsManager({ user }: { user: any }) {
   const { token } = useAuth();
   const updateUser = useMutation(api.users.updateUser);
   const userPerms = user.permissions || [];
+  const [isEditing, setIsEditing] = useState(false);
+  const [editName, setEditName] = useState(user.name);
+  const [editEmail, setEditEmail] = useState(user.email);
+  const [savingEdit, setSavingEdit] = useState(false);
 
   const togglePermission = async (permId: string) => {
     if (!token) return;
@@ -532,12 +536,70 @@ function UserPermissionsManager({ user }: { user: any }) {
     }
   };
 
+  const handleSaveEdit = async () => {
+    if (!token) return;
+    if (!editName.trim() || !editEmail.trim()) {
+      alert("El nombre y el correo son obligatorios.");
+      return;
+    }
+    setSavingEdit(true);
+    try {
+      await updateUser({
+        token,
+        userId: user._id,
+        name: editName.trim(),
+        email: editEmail.trim(),
+      });
+      setIsEditing(false);
+    } catch (err: any) {
+      alert(err.message);
+    } finally {
+      setSavingEdit(false);
+    }
+  };
+
   return (
     <div className="p-5 border-b border-ink/5">
-      <div className="mb-4 flex items-center justify-between">
-        <div>
-          <p className="text-sm font-semibold">{user.name}</p>
-          <p className="text-xs text-ink/50">{user.email}</p>
+      <div className="mb-4 flex items-start justify-between gap-3">
+        <div className="flex-1">
+          {isEditing ? (
+            <div className="space-y-2">
+              <input 
+                type="text" 
+                value={editName} 
+                onChange={(e) => setEditName(e.target.value)} 
+                className="w-full text-sm font-semibold bg-white border border-ink/20 rounded px-2 py-1"
+                placeholder="Nombre completo"
+              />
+              <input 
+                type="email" 
+                value={editEmail} 
+                onChange={(e) => setEditEmail(e.target.value)} 
+                className="w-full text-xs text-ink/70 bg-white border border-ink/20 rounded px-2 py-1"
+                placeholder="Correo electrónico"
+              />
+              <div className="flex gap-2">
+                <button onClick={handleSaveEdit} disabled={savingEdit} className="text-[10px] bg-teal-600 text-white px-2 py-1 rounded">
+                  {savingEdit ? "Guardando..." : "Guardar"}
+                </button>
+                <button onClick={() => { setIsEditing(false); setEditName(user.name); setEditEmail(user.email); }} className="text-[10px] bg-ink/10 text-ink px-2 py-1 rounded">
+                  Cancelar
+                </button>
+              </div>
+            </div>
+          ) : (
+            <div className="group relative pr-6">
+              <p className="text-sm font-semibold">{user.name}</p>
+              <p className="text-xs text-ink/50">{user.email}</p>
+              <button 
+                onClick={() => setIsEditing(true)} 
+                className="absolute top-1/2 right-0 -translate-y-1/2 opacity-0 group-hover:opacity-100 transition-opacity p-1 text-ink/40 hover:text-teal-600"
+                title="Editar nombre y correo"
+              >
+                <svg className="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M12 20h9" /><path d="M16.5 3.5a2.1 2.1 0 013 3L7 19l-4 1 1-4z" /></svg>
+              </button>
+            </div>
+          )}
         </div>
         <select
           value={user.role}

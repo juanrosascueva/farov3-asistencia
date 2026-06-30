@@ -174,12 +174,14 @@ export const updateUser = mutation({
     token: v.string(),
     userId: v.id("users"),
     name: v.optional(v.string()),
+    email: v.optional(v.string()),
     role: v.optional(v.union(
       v.literal("pastor"),
       v.literal("director"),
       v.literal("coordinador"),
       v.literal("leader"),
-      v.literal("helper")
+      v.literal("helper"),
+      v.literal("admin")
     )),
     isActive: v.optional(v.boolean()),
     password: v.optional(v.string()),
@@ -187,13 +189,28 @@ export const updateUser = mutation({
   },
   handler: async (ctx, args) => {
     const requester = await getUserFromToken(ctx, args.token);
-    const canManageUsers = requester && (requester.role === "pastor" || (requester.permissions && requester.permissions.includes("manage_users")));
+    const canManageUsers = requester && (requester.role === "pastor" || requester.role === "admin" || (requester.permissions && requester.permissions.includes("manage_users")));
     if (!canManageUsers) {
       throw new Error("No autorizado");
     }
 
     const patch: Record<string, any> = {};
     if (args.name !== undefined) patch.name = args.name;
+    
+    if (args.email !== undefined) {
+      const emailNormalized = args.email.trim().toLowerCase();
+      if (emailNormalized) {
+        const existing = await ctx.db
+          .query("users")
+          .withIndex("by_email", q => q.eq("email", emailNormalized))
+          .first();
+        if (existing && existing._id !== args.userId) {
+          throw new Error("Este correo electrónico ya está en uso por otro usuario.");
+        }
+        patch.email = emailNormalized;
+      }
+    }
+
     if (args.role !== undefined) patch.role = args.role;
     if (args.isActive !== undefined) patch.isActive = args.isActive;
     if (args.permissions !== undefined) patch.permissions = args.permissions;
@@ -240,7 +257,7 @@ export const deleteUser = mutation({
   args: { token: v.string(), userId: v.id("users") },
   handler: async (ctx, args) => {
     const requester = await getUserFromToken(ctx, args.token);
-    const canManageUsers = requester && (requester.role === "pastor" || (requester.permissions && requester.permissions.includes("manage_users")));
+    const canManageUsers = requester && (requester.role === "pastor" || requester.role === "admin" || (requester.permissions && requester.permissions.includes("manage_users")));
     if (!canManageUsers) {
       throw new Error("No autorizado");
     }

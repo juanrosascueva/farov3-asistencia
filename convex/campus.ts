@@ -28,8 +28,8 @@ export const create = mutation({
   },
   handler: async (ctx, args) => {
     const user = await getUserFromToken(ctx, args.token);
-    if (!user || (user.role !== "pastor" && user.role !== "director")) {
-      throw new Error("No autorizado. Solo pastores y directores pueden crear sedes.");
+    if (!user || (user.role !== "admin" && user.role !== "pastor" && user.role !== "director")) {
+      throw new Error("No autorizado. Solo administradores, pastores y directores pueden crear sedes.");
     }
     const id = await ctx.db.insert("campus", {
       name: args.name,
@@ -49,7 +49,7 @@ export const update = mutation({
   },
   handler: async (ctx, args) => {
     const user = await getUserFromToken(ctx, args.token);
-    if (!user || (user.role !== "pastor" && user.role !== "director")) {
+    if (!user || (user.role !== "admin" && user.role !== "pastor" && user.role !== "director")) {
       throw new Error("No autorizado");
     }
     const patch: Record<string, any> = {};
@@ -63,8 +63,8 @@ export const remove = mutation({
   args: { token: v.string(), id: v.id("campus") },
   handler: async (ctx, args) => {
     const user = await getUserFromToken(ctx, args.token);
-    if (!user || user.role !== "pastor") {
-      throw new Error("No autorizado. Solo el pastor puede eliminar sedes.");
+    if (!user || (user.role !== "pastor" && user.role !== "admin")) {
+      throw new Error("No autorizado. Solo administradores o pastores pueden eliminar sedes.");
     }
     // Remove associated ministries and groups
     const ministries = await ctx.db
