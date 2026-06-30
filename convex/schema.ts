@@ -16,6 +16,9 @@ export default defineSchema({
     salt: v.string(),
     isActive: v.boolean(),
     permissions: v.optional(v.array(v.string())),
+    avatar: v.optional(v.string()),
+    phone: v.optional(v.string()),
+    birthDate: v.optional(v.string()),
     createdAt: v.string(),
   })
     .index("by_email", ["email"]),

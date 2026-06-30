@@ -7,6 +7,7 @@ import ChatPanel from "./ChatPanel";
 import ResponsiveSheet from "./ResponsiveSheet";
 import { useMutation } from "convex/react";
 import { api } from "../../convex/_generated/api";
+import MyProfileModal from "./MyProfileModal";
 
 const ROUTES = [
   { id: "dashboard", label: "Resumen", icon: "home" },
@@ -289,103 +290,7 @@ function LogoIcon() {
   );
 }
 
-function AccountSettingsModal({ onClose }: { onClose: () => void }) {
-  const { user, token } = useAuth();
-  const updateMe = useMutation(api.users.updateMe);
-  const [name, setName] = useState(user?.name || "");
-  const [password, setPassword] = useState("");
-  const [saving, setSaving] = useState(false);
 
-  if (!user) return null;
-
-  const handleSave = async () => {
-    if (!token) return;
-    setSaving(true);
-    try {
-      await updateMe({
-        token,
-        name: name.trim() || undefined,
-        password: password || undefined,
-      });
-      alert("Tus datos han sido actualizados.");
-      onClose();
-    } catch (e: any) {
-      alert("Error: " + e.message);
-    } finally {
-      setSaving(false);
-    }
-  };
-
-  const initials = ((user.name?.[0] || "") + (user.name?.split(" ")[1]?.[0] || "")).toUpperCase();
-
-  return (
-    <ResponsiveSheet title="Mi Perfil" onClose={onClose} desktopMaxWidthClass="sm:max-w-sm">
-      <div className="p-5 flex flex-col gap-6">
-        {/* Header con Info del Usuario */}
-        <div className="flex flex-col items-center justify-center text-center">
-          <div className="w-20 h-20 rounded-full bg-gradient-to-br from-teal-500 to-teal-700 text-white font-bold text-3xl flex items-center justify-center shadow-md mb-3">
-            {initials}
-          </div>
-          <h2 className="text-lg font-bold text-ink/90">{user.name}</h2>
-          <p className="text-sm font-medium text-teal-600 capitalize">{user.role}</p>
-          <p className="text-xs text-ink/50 mt-0.5">{user.email}</p>
-        </div>
-
-        <div className="space-y-4">
-          <div>
-            <label className="block text-xs font-semibold text-ink/60 uppercase tracking-wide mb-1.5 ml-1">Nombre Completo</label>
-            <div className="relative">
-              <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-ink/30">
-                <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M20 21v-2a4 4 0 00-4-4H8a4 4 0 00-4 4v2" /><circle cx="12" cy="7" r="4" /></svg>
-              </div>
-              <input
-                type="text"
-                value={name}
-                onChange={(e) => setName(e.target.value)}
-                className="w-full bg-ink/[0.03] border-none focus:ring-2 focus:ring-teal-600/30 rounded-xl pl-9 pr-4 py-3 text-sm font-medium text-ink transition-shadow"
-              />
-            </div>
-          </div>
-          
-          <div>
-            <label className="block text-xs font-semibold text-ink/60 uppercase tracking-wide mb-1.5 ml-1">Nueva Contraseña</label>
-            <div className="relative">
-              <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-ink/30">
-                <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="11" width="18" height="11" rx="2" ry="2" /><path d="M7 11V7a5 5 0 0110 0v4" /></svg>
-              </div>
-              <input
-                type="password"
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                placeholder="Dejar en blanco para no cambiar"
-                className="w-full bg-ink/[0.03] border-none focus:ring-2 focus:ring-teal-600/30 rounded-xl pl-9 pr-4 py-3 text-sm font-medium text-ink transition-shadow placeholder:text-ink/30"
-              />
-            </div>
-            <p className="text-[11px] text-ink/40 mt-1.5 ml-1">
-              Solo llena este campo si deseas actualizar tu clave actual.
-            </p>
-          </div>
-        </div>
-
-        <button
-          onClick={handleSave}
-          disabled={saving}
-          className="w-full bg-gradient-to-r from-teal-600 to-teal-500 hover:from-teal-700 hover:to-teal-600 text-white font-semibold rounded-xl py-3.5 text-sm transition-all shadow-md hover:shadow-lg pressable flex justify-center items-center gap-2 mt-2"
-        >
-          {saving ? (
-            <svg className="animate-spin w-4 h-4 text-white" viewBox="0 0 24 24" fill="none">
-              <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
-              <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
-            </svg>
-          ) : (
-            <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M19 21H5a2 2 0 01-2-2V5a2 2 0 012-2h11l5 5v11a2 2 0 01-2 2z" /><polyline points="17 21 17 13 7 13 7 21" /><polyline points="7 3 7 8 15 8" /></svg>
-          )}
-          {saving ? "Guardando..." : "Guardar cambios"}
-        </button>
-      </div>
-    </ResponsiveSheet>
-  );
-}
 
 function LeaderBadge({ onlyAvatar = false }: { onlyAvatar?: boolean }) {
   const { user, logout } = useAuth();
@@ -411,10 +316,14 @@ function LeaderBadge({ onlyAvatar = false }: { onlyAvatar?: boolean }) {
       <div className="relative shrink-0" ref={ref}>
         <button
           onClick={() => setOpen(!open)}
-          className="w-9 h-9 rounded-full bg-teal-600/10 text-teal-700 dark:bg-teal-950/30 dark:text-teal-400 font-bold text-xs flex items-center justify-center pressable border border-teal-600/20"
+          className="w-9 h-9 rounded-full bg-teal-600/10 text-teal-700 dark:bg-teal-950/30 dark:text-teal-400 font-bold text-xs flex items-center justify-center pressable border border-teal-600/20 overflow-hidden"
           title={user.name}
         >
-          {initials || (
+          {user.avatar ? (
+            <img src={user.avatar} alt={user.name} className="w-full h-full object-cover" />
+          ) : initials ? (
+            initials
+          ) : (
             <svg className="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
               <path d="M20 21v-2a4 4 0 00-4-4H8a4 4 0 00-4 4v2" />
               <circle cx="12" cy="7" r="4" />
@@ -445,7 +354,7 @@ function LeaderBadge({ onlyAvatar = false }: { onlyAvatar?: boolean }) {
             </div>
           </div>
         )}
-        {showSettings && <AccountSettingsModal onClose={() => setShowSettings(false)} />}
+        {showSettings && <MyProfileModal onClose={() => setShowSettings(false)} />}
       </div>
     );
   }
@@ -456,7 +365,13 @@ function LeaderBadge({ onlyAvatar = false }: { onlyAvatar?: boolean }) {
         onClick={() => setOpen(!open)}
         className="flex w-full items-center gap-2 text-xs font-medium rounded-2xl px-3 py-2.5 transition bg-gradient-to-r from-teal-50 to-amber-50 text-teal-700 hover:from-teal-100 hover:to-amber-100 dark:from-teal-50/10 dark:to-amber-50/10 dark:text-amber-100"
       >
-        <svg className="w-3.5 h-3.5 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><path d="M20 21v-2a4 4 0 00-4-4H8a4 4 0 00-4 4v2" /><circle cx="12" cy="7" r="4" /></svg>
+        <div className="w-4 h-4 rounded-full overflow-hidden shrink-0 bg-teal-600/10 flex items-center justify-center">
+          {user.avatar ? (
+            <img src={user.avatar} alt={user.name} className="w-full h-full object-cover" />
+          ) : (
+            <svg className="w-2.5 h-2.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><path d="M20 21v-2a4 4 0 00-4-4H8a4 4 0 00-4 4v2" /><circle cx="12" cy="7" r="4" /></svg>
+          )}
+        </div>
         <span className="truncate flex-1 text-left">{user.name}</span>
         <svg className="w-3 h-3 shrink-0 opacity-50" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M6 9l6 6 6-6" /></svg>
       </button>
@@ -484,7 +399,7 @@ function LeaderBadge({ onlyAvatar = false }: { onlyAvatar?: boolean }) {
           </div>
         </div>
       )}
-      {showSettings && <AccountSettingsModal onClose={() => setShowSettings(false)} />}
+      {showSettings && <MyProfileModal onClose={() => setShowSettings(false)} />}
     </div>
   );
 }

@@ -105,6 +105,9 @@ export const login = mutation({
         name: user.name,
         role: user.role,
         permissions: user.permissions || (user.role === "pastor" ? ["manage_users", "manage_settings", "write_teens", "delete_teens", "view_reports", "use_ai"] : []),
+        avatar: user.avatar,
+        phone: user.phone,
+        birthDate: user.birthDate,
       },
     };
   },
@@ -135,6 +138,9 @@ export const getMe = query({
       name: user.name,
       role: user.role,
       permissions: user.permissions || (user.role === "pastor" ? ["manage_users", "manage_settings", "write_teens", "delete_teens", "view_reports", "use_ai"] : []),
+      avatar: user.avatar,
+      phone: user.phone,
+      birthDate: user.birthDate,
     };
   },
 });
@@ -155,6 +161,9 @@ export const listUsers = query({
       role: u.role,
       isActive: u.isActive,
       permissions: u.permissions || (u.role === "pastor" ? ["manage_users", "manage_settings", "write_teens", "delete_teens", "view_reports", "use_ai"] : []),
+      avatar: u.avatar,
+      phone: u.phone,
+      birthDate: u.birthDate,
     }));
   },
 });
@@ -202,6 +211,9 @@ export const updateMe = mutation({
     token: v.string(),
     name: v.optional(v.string()),
     password: v.optional(v.string()),
+    avatar: v.optional(v.string()),
+    phone: v.optional(v.string()),
+    birthDate: v.optional(v.string()),
   },
   handler: async (ctx, args) => {
     const requester = await getUserFromToken(ctx, args.token);
@@ -209,6 +221,9 @@ export const updateMe = mutation({
 
     const patch: Record<string, any> = {};
     if (args.name !== undefined) patch.name = args.name;
+    if (args.avatar !== undefined) patch.avatar = args.avatar;
+    if (args.phone !== undefined) patch.phone = args.phone;
+    if (args.birthDate !== undefined) patch.birthDate = args.birthDate;
     
     if (args.password) {
       const salt = generateSalt();

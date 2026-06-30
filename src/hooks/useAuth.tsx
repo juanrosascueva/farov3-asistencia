@@ -11,6 +11,9 @@ interface AuthUser {
   name: string;
   role: "pastor" | "director" | "coordinador" | "leader" | "helper";
   permissions: string[];
+  avatar?: string;
+  phone?: string;
+  birthDate?: string;
 }
 
 interface AuthContextValue {

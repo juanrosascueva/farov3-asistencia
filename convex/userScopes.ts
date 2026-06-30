@@ -58,3 +58,80 @@ export const remove = mutation({
     await ctx.db.delete(args.id);
   },
 });
+
+export const myScopes = query({
+  args: { token: v.string() },
+  handler: async (ctx, args) => {
+    const user = await getUserFromToken(ctx, args.token);
+    if (!user) return [];
+
+    const scopes = await ctx.db
+      .query("userScopes")
+      .withIndex("by_userId", (q) => q.eq("userId", user._id))
+      .collect();
+
+    // Enriquecer scopes con los nombres de sedes, ministerios y grupos
+    return Promise.all(
+      scopes.map(async (s) => {
+        let campusName, ministryName, groupName;
+        if (s.campusId) {
+          const c = await ctx.db.get(s.campusId);
+          campusName = c?.name;
+        }
+        if (s.ministryId) {
+          const m = await ctx.db.get(s.ministryId);
+          ministryName = m?.name;
+        }
+        if (s.groupId) {
+          const g = await ctx.db.get(s.groupId);
+          groupName = g?.name;
+        }
+        return {
+          ...s,
+          campusName,
+          ministryName,
+          groupName,
+        };
+      })
+    );
+  },
+});
+
+export const assignMe = mutation({
+  args: {
+    token: v.string(),
+    campusId: v.optional(v.id("campus")),
+    ministryId: v.optional(v.id("ministry")),
+    groupId: v.optional(v.id("group")),
+    role: v.union(
+      v.literal("pastor"),
+      v.literal("director"),
+      v.literal("coordinador"),
+      v.literal("leader"),
+      v.literal("helper")
+    ),
+  },
+  handler: async (ctx, args) => {
+    const user = await getUserFromToken(ctx, args.token);
+    if (!user) throw new Error("No autorizado");
+
+    const permissions = user.permissions || (user.role === "pastor" ? ["manage_users"] : []);
+    if (!permissions.includes("manage_users")) {
+      throw new Error("No tienes permisos suficientes para auto-asignarte ministerios.");
+    }
+
+    if (!args.campusId && !args.ministryId && !args.groupId) {
+      throw new Error("Debe seleccionar al menos un ámbito (sede, ministerio o grupo).");
+    }
+
+    await ctx.db.insert("userScopes", {
+      userId: user._id,
+      role: args.role,
+      campusId: args.campusId,
+      ministryId: args.ministryId,
+      groupId: args.groupId,
+      assignedBy: user._id,
+      createdAt: new Date().toISOString(),
+    });
+  },
+});
