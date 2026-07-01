@@ -292,7 +292,7 @@ export default function TeenForm({ teen, onClose, onSuccess }: TeenFormProps) {
           type="button"
           disabled={!canGoNext}
           onClick={() => setStep((s) => s + 1)}
-          className="rounded-xl bg-ink text-white px-4 py-2.5 text-sm font-semibold disabled:opacity-40 w-full sm:w-auto order-1 sm:order-none"
+          className="rounded-xl bg-ink dark:bg-teal-600 dark:hover:bg-teal-500 text-white px-4 py-2.5 text-sm font-semibold disabled:opacity-40 w-full sm:w-auto order-1 sm:order-none"
         >
           Siguiente
         </button>
@@ -301,7 +301,7 @@ export default function TeenForm({ teen, onClose, onSuccess }: TeenFormProps) {
           type="submit"
           form={FORM_ID}
           disabled={submitting || stepErrors.length > 0}
-          className="rounded-xl bg-ink text-white px-4 py-2.5 text-sm font-semibold disabled:opacity-40 flex items-center justify-center gap-2 w-full sm:w-auto order-1 sm:order-none"
+          className="rounded-xl bg-ink dark:bg-teal-600 dark:hover:bg-teal-500 text-white px-4 py-2.5 text-sm font-semibold disabled:opacity-40 flex items-center justify-center gap-2 w-full sm:w-auto order-1 sm:order-none"
         >
           {submitting && (
             <svg className="animate-spin h-4 w-4 text-white" viewBox="0 0 24 24" fill="none">

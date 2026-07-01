@@ -5,14 +5,7 @@ export default defineSchema({
   users: defineTable({
     email: v.string(),
     name: v.string(),
-    role: v.union(
-      v.literal("admin"),
-      v.literal("pastor"),
-      v.literal("director"),
-      v.literal("coordinador"),
-      v.literal("leader"),
-      v.literal("helper")
-    ),
+    role: v.string(),
     hashedPassword: v.string(),
     salt: v.string(),
     isActive: v.boolean(),
@@ -58,14 +51,7 @@ export default defineSchema({
 
   userScopes: defineTable({
     userId: v.id("users"),
-    role: v.union(
-      v.literal("admin"),
-      v.literal("pastor"),
-      v.literal("director"),
-      v.literal("coordinador"),
-      v.literal("leader"),
-      v.literal("helper")
-    ),
+    role: v.string(),
     campusId: v.optional(v.id("campus")),
     ministryId: v.optional(v.id("ministry")),
     groupId: v.optional(v.id("group")),
@@ -76,6 +62,13 @@ export default defineSchema({
     .index("by_campusId", ["campusId"])
     .index("by_ministryId", ["ministryId"])
     .index("by_groupId", ["groupId"]),
+
+  customRoles: defineTable({
+    name: v.string(),
+    permissions: v.array(v.string()),
+    createdAt: v.string(),
+  })
+    .index("by_name", ["name"]),
 
   teens: defineTable({
     nombre: v.string(),

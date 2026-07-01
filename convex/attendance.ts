@@ -1,5 +1,6 @@
 import { v } from "convex/values";
 import { mutation, query } from "./_generated/server";
+import { getUserFromToken } from "./authHelper";
 
 export const list = query({
   handler: async (ctx) => {
@@ -59,6 +60,43 @@ export const mark = mutation({
         teenId: args.teenId,
         status: args.status,
       });
+    }
+  },
+});
+
+export const deleteDate = mutation({
+  args: { token: v.string(), date: v.string() },
+  handler: async (ctx, args) => {
+    const user = await getUserFromToken(ctx, args.token);
+    if (!user || (user.role !== "admin" && user.role !== "pastor")) {
+      throw new Error("No autorizado. Solo pastores o administradores pueden eliminar fechas de asistencia.");
+    }
+    const records = await ctx.db
+      .query("attendance")
+      .withIndex("by_date", (q) => q.eq("date", args.date))
+      .collect();
+    for (const r of records) {
+      await ctx.db.delete(r._id);
+    }
+  },
+});
+
+export const updateDate = mutation({
+  args: { token: v.string(), oldDate: v.string(), newDate: v.string() },
+  handler: async (ctx, args) => {
+    const user = await getUserFromToken(ctx, args.token);
+    if (!user || (user.role !== "admin" && user.role !== "pastor")) {
+      throw new Error("No autorizado. Solo pastores o administradores pueden editar fechas de asistencia.");
+    }
+    if (!/^\d{4}-\d{2}-\d{2}$/.test(args.newDate)) {
+      throw new Error("Formato de fecha inválido. Use AAAA-MM-DD.");
+    }
+    const records = await ctx.db
+      .query("attendance")
+      .withIndex("by_date", (q) => q.eq("date", args.oldDate))
+      .collect();
+    for (const r of records) {
+      await ctx.db.patch(r._id, { date: args.newDate });
     }
   },
 });

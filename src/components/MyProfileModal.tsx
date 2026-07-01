@@ -240,7 +240,7 @@ export default function MyProfileModal({ onClose }: { onClose: () => void }) {
               <button
                 onClick={handleSaveSecurity}
                 disabled={saving || !password}
-                className="w-full bg-ink hover:bg-ink/80 disabled:bg-ink/30 text-white font-bold rounded-xl py-3.5 text-sm shadow-md transition-all mt-4"
+                className="w-full bg-ink hover:bg-ink/80 disabled:bg-ink/30 dark:bg-teal-600 dark:hover:bg-teal-500 text-white font-bold rounded-xl py-3.5 text-sm shadow-md transition-all mt-4"
               >
                 {saving ? "Actualizando..." : "Cambiar Contraseña"}
               </button>

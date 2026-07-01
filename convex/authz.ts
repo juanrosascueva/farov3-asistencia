@@ -83,7 +83,18 @@ export async function requireAccess(
   const access = await getEffectiveAccess(ctx, token);
   if (!access) throw new Error("No autenticado");
 
-  const userLevel = ROLE_HIERARCHY[access.user.role] || 0;
+  let userLevel = ROLE_HIERARCHY[access.user.role] || 0;
+  if (userLevel === 0) {
+    // Si no está en la jerarquía fija, buscar en customRoles
+    const customRole = await ctx.db
+      .query("customRoles")
+      .withIndex("by_name", (q: any) => q.eq("name", access.user.role))
+      .first();
+    if (customRole) {
+      userLevel = 20; // Nivel helper por defecto para roles personalizados
+    }
+  }
+
   const requiredLevel = ROLE_HIERARCHY[minRole] || 0;
   if (userLevel < requiredLevel) {
     throw new Error(`Se requiere rol "${minRole}" o superior. Tu rol: ${access.user.role}`);

@@ -3,6 +3,7 @@ import { useMutation } from "convex/react";
 import { api } from "../../convex/_generated/api";
 import type { Doc } from "../../convex/_generated/dataModel";
 import type { AttendanceMap, AttendanceStatus } from "../lib/types";
+import { useAuth } from "../hooks/useAuth";
 import {
   fmtDate,
   fmtDateShort,
@@ -29,12 +30,17 @@ export default function Asistencia({
 }: AsistenciaProps) {
   const allDates = Object.keys(attendanceMap).sort();
   const markAtt = useMutation(api.attendance.mark);
+  const deleteDateMut = useMutation(api.attendance.deleteDate);
+  const updateDateMut = useMutation(api.attendance.updateDate);
+  const { user, token } = useAuth();
 
   const [selectedDate, setSelectedDate] = useState(
     allDates[allDates.length - 1] || todayISO()
   );
   const [showNewDate, setShowNewDate] = useState(false);
   const [newDate, setNewDate] = useState(todayISO());
+  const [showEditDate, setShowEditDate] = useState(false);
+  const [editDateValue, setEditDateValue] = useState(selectedDate);
   const [searchQuery, setSearchQuery] = useState("");
   const [pendingCount, setPendingCount] = useState(0);
   const [celebration, setCelebration] = useState<{
@@ -43,6 +49,10 @@ export default function Asistencia({
     newBadges: any[];
   } | null>(null);
   const pendingCheck = useRef<{ teenId: string; name: string; status: AttendanceStatus; oldPresentStreak: number } | null>(null);
+
+  useEffect(() => {
+    setEditDateValue(selectedDate);
+  }, [selectedDate]);
 
   const recent = [
     ...new Set([...lastNSundays(6), ...allDates]),
@@ -92,6 +102,37 @@ export default function Asistencia({
     }
   };
 
+  const handleDeleteDate = async () => {
+    if (!token) return;
+    if (!confirm(`¿Estás seguro de que deseas eliminar por completo la fecha ${fmtDate(selectedDate)}? Se perderán todas las asistencias marcadas para este día.`)) {
+      return;
+    }
+    try {
+      await deleteDateMut({ token, date: selectedDate });
+      alert("Fecha eliminada con éxito.");
+      const remainingDates = allDates.filter((d) => d !== selectedDate);
+      setSelectedDate(remainingDates[remainingDates.length - 1] || todayISO());
+    } catch (err: any) {
+      alert("Error: " + err.message);
+    }
+  };
+
+  const handleSaveEditDate = async () => {
+    if (!token) return;
+    if (!editDateValue || editDateValue === selectedDate) {
+      setShowEditDate(false);
+      return;
+    }
+    try {
+      await updateDateMut({ token, oldDate: selectedDate, newDate: editDateValue });
+      alert("Fecha modificada con éxito.");
+      setSelectedDate(editDateValue);
+      setShowEditDate(false);
+    } catch (err: any) {
+      alert("Error: " + err.message);
+    }
+  };
+
   const filteredTeens = teens.filter((t) =>
     `${t.nombre} ${t.apellido}`.toLowerCase().includes(searchQuery.toLowerCase())
   );
@@ -107,6 +148,26 @@ export default function Asistencia({
             <h1 className="font-display text-2xl font-bold">
               {fmtDate(selectedDate)}
             </h1>
+            
+            {(user?.role === "pastor" || user?.role === "admin") && (
+              <div className="flex items-center gap-1 shrink-0 ml-1">
+                <button
+                  onClick={() => setShowEditDate(true)}
+                  className="p-1 rounded-full text-ink/40 hover:text-teal-600 hover:bg-ink/5 transition pressable"
+                  title="Editar fecha"
+                >
+                  <svg className="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round"><path d="M12 20h9" /><path d="M16.5 3.5a2.1 2.1 0 013 3L7 19l-4 1 1-4z" /></svg>
+                </button>
+                <button
+                  onClick={handleDeleteDate}
+                  className="p-1 rounded-full text-ink/40 hover:text-red-500 hover:bg-red-50 transition pressable"
+                  title="Eliminar fecha completa"
+                >
+                  <svg className="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round"><polyline points="3 6 5 6 21 6" /><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2" /></svg>
+                </button>
+              </div>
+            )}
+            
             {/* Indicador de sincronización */}
             <div className="flex items-center gap-1 text-[11px] font-semibold transition-opacity duration-300">
               {pendingCount > 0 ? (
@@ -273,33 +334,68 @@ export default function Asistencia({
       )}
 
       {showNewDate && (
-        <Modal title="Nueva fecha de asistencia" onClose={() => setShowNewDate(false)}>
-          <form
-            onSubmit={(e) => {
-              e.preventDefault();
-              handleNewDate();
-            }}
-            className="p-5 space-y-4"
-          >
+        <Modal title="Agregar nueva fecha" onClose={() => setShowNewDate(false)}>
+          <div className="space-y-4">
+            <p className="text-xs text-ink/60">
+              Selecciona una fecha del calendario para cargarla en la lista y empezar a tomar asistencia.
+            </p>
             <div>
-              <label className="text-xs font-semibold text-ink/50 mb-1 block">
-                Fecha de la reunión
-              </label>
+              <label className="text-xs font-semibold text-ink/50 mb-1.5 block">Fecha de Asistencia</label>
               <input
                 type="date"
                 value={newDate}
                 onChange={(e) => setNewDate(e.target.value)}
-                required
                 className="w-full bg-card border border-ink/10 rounded-xl px-3.5 py-2.5 text-sm"
               />
             </div>
-            <button
-              type="submit"
-              className="w-full bg-ink text-white rounded-xl py-3 text-sm font-semibold"
-            >
-              Crear y abrir
-            </button>
-          </form>
+            <div className="flex gap-2 justify-end pt-2">
+              <button
+                onClick={() => setShowNewDate(false)}
+                className="px-4 py-2 border border-ink/10 rounded-xl text-xs font-semibold text-ink/60 hover:bg-ink/5"
+              >
+                Cancelar
+              </button>
+              <button
+                onClick={handleNewDate}
+                className="px-4 py-2 bg-ink text-white rounded-xl text-xs font-semibold hover:bg-ink/90"
+              >
+                Cargar Fecha
+              </button>
+            </div>
+          </div>
+        </Modal>
+      )}
+
+      {showEditDate && (
+        <Modal title="Editar Fecha de Asistencia" onClose={() => setShowEditDate(false)}>
+          <div className="space-y-4">
+            <p className="text-xs text-ink/60">
+              Modifica la fecha para todos los registros de asistencia de este día.
+            </p>
+            <div>
+              <label className="text-xs font-semibold text-ink/50 mb-1.5 block">Nueva Fecha</label>
+              <input
+                type="date"
+                value={editDateValue}
+                onChange={(e) => setEditDateValue(e.target.value)}
+                className="w-full bg-card border border-ink/10 rounded-xl px-3.5 py-2.5 text-sm"
+              />
+            </div>
+            <div className="flex gap-2 justify-end pt-2">
+              <button
+                onClick={() => setShowEditDate(false)}
+                className="px-4 py-2 border border-ink/10 rounded-xl text-xs font-semibold text-ink/60 hover:bg-ink/5"
+              >
+                Cancelar
+              </button>
+              <button
+                onClick={handleSaveEditDate}
+                className="px-4 py-2 bg-ink text-white rounded-xl text-xs font-semibold hover:bg-ink/90"
+              >
+                Guardar
+              </button>
+            </div>
+          </div>
         </Modal>
       )}
 

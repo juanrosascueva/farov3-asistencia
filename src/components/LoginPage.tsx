@@ -109,7 +109,7 @@ export default function LoginPage() {
           </p>
           <button
             onClick={() => { setRequestSuccess(false); setShowRequestAccess(false); setRequestEmail(""); setRequestPassword(""); setRequestName(""); }}
-            className="w-full bg-ink text-white rounded-xl py-2.5 text-sm font-semibold pressable"
+            className="w-full bg-ink dark:bg-teal-600 dark:hover:bg-teal-500 text-white rounded-xl py-2.5 text-sm font-semibold pressable"
           >
             Volver a inicio de sesión
           </button>
@@ -133,7 +133,7 @@ export default function LoginPage() {
           </p>
           <button
             onClick={() => { setShowSetup(false); setSetupDone(false); }}
-            className="bg-ink text-white rounded-xl py-2.5 px-6 text-sm font-semibold"
+            className="bg-ink dark:bg-teal-600 dark:hover:bg-teal-500 text-white rounded-xl py-2.5 px-6 text-sm font-semibold"
           >
             Iniciar sesión
           </button>
@@ -207,7 +207,7 @@ export default function LoginPage() {
             <button
               type="submit"
               disabled={submitting}
-              className="w-full bg-ink text-white rounded-xl py-2.5 text-sm font-semibold disabled:opacity-50 pressable"
+              className="w-full bg-ink dark:bg-teal-600 dark:hover:bg-teal-500 text-white rounded-xl py-2.5 text-sm font-semibold disabled:opacity-50 pressable"
             >
               {submitting ? "Enviando solicitud..." : "Enviar solicitud"}
             </button>
@@ -252,7 +252,7 @@ export default function LoginPage() {
             <button
               type="submit"
               disabled={submitting}
-              className="w-full bg-ink text-white rounded-xl py-2.5 text-sm font-semibold disabled:opacity-50 pressable"
+              className="w-full bg-ink dark:bg-teal-600 dark:hover:bg-teal-500 text-white rounded-xl py-2.5 text-sm font-semibold disabled:opacity-50 pressable"
             >
               {submitting ? "Ingresando..." : "Iniciar sesión"}
             </button>
@@ -316,7 +316,7 @@ export default function LoginPage() {
             <button
               type="submit"
               disabled={submitting}
-              className="w-full bg-ink text-white rounded-xl py-2.5 text-sm font-semibold disabled:opacity-50 pressable"
+              className="w-full bg-ink dark:bg-teal-600 dark:hover:bg-teal-500 text-white rounded-xl py-2.5 text-sm font-semibold disabled:opacity-50 pressable"
             >
               {submitting ? "Configurando..." : "Configurar"}
             </button>
