@@ -6,7 +6,7 @@ export const list = query({
   args: { token: v.string(), ministryId: v.id("ministry") },
   handler: async (ctx, args) => {
     const user = await getUserFromToken(ctx, args.token);
-    if (!user) throw new Error("No autenticado");
+    if (!user) return [];
     return await ctx.db
       .query("group")
       .withIndex("by_ministryId", q => q.eq("ministryId", args.ministryId))
@@ -18,7 +18,7 @@ export const get = query({
   args: { token: v.string(), id: v.id("group") },
   handler: async (ctx, args) => {
     const user = await getUserFromToken(ctx, args.token);
-    if (!user) throw new Error("No autenticado");
+    if (!user) return null;
     return await ctx.db.get(args.id);
   },
 });

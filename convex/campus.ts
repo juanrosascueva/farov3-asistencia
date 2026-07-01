@@ -6,7 +6,7 @@ export const list = query({
   args: { token: v.string() },
   handler: async (ctx, args) => {
     const user = await getUserFromToken(ctx, args.token);
-    if (!user) throw new Error("No autenticado");
+    if (!user) return [];
     return await ctx.db.query("campus").collect();
   },
 });
@@ -15,7 +15,7 @@ export const get = query({
   args: { token: v.string(), id: v.id("campus") },
   handler: async (ctx, args) => {
     const user = await getUserFromToken(ctx, args.token);
-    if (!user) throw new Error("No autenticado");
+    if (!user) return null;
     return await ctx.db.get(args.id);
   },
 });

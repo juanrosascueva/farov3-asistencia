@@ -6,7 +6,7 @@ export const list = query({
   args: { token: v.string(), userId: v.optional(v.id("users")) },
   handler: async (ctx, args) => {
     const user = await getUserFromToken(ctx, args.token);
-    if (!user) throw new Error("No autenticado");
+    if (!user) return [];
     const targetId = args.userId || user._id;
     return await ctx.db
       .query("userScopes")
