@@ -112,7 +112,7 @@ export default function TeenImportModal({ onClose, onSuccess }: TeenImportModalP
       <button
         onClick={handleImport}
         disabled={submitting || validRows.length === 0}
-        className="rounded-xl bg-ink px-4 py-2.5 text-sm font-semibold text-white disabled:opacity-40 w-full sm:w-auto order-1 sm:order-none"
+        className="rounded-xl bg-ink dark:bg-teal-600 dark:hover:bg-teal-500 px-4 py-2.5 text-sm font-semibold text-white disabled:opacity-40 w-full sm:w-auto order-1 sm:order-none"
       >
         {submitting ? "Importando..." : `Importar ${validRows.length} registros`}
       </button>

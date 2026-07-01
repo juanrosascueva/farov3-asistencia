@@ -6,6 +6,8 @@ import ResponsiveSheet from "./ResponsiveSheet";
 
 export default function AccessControl() {
   const { user, token, canManageUsers } = useAuth();
+  const [activeTab, setActiveTab] = useState<"users" | "campus" | "roles">("users");
+
   if (!user || !canManageUsers) return null;
 
   return (
@@ -19,11 +21,45 @@ export default function AccessControl() {
           Gestiona permisos, usuarios y la estructura organizacional.
         </p>
       </div>
+
+      <div className="flex gap-1.5 border-b border-ink/10 pb-px">
+        <button
+          onClick={() => setActiveTab("users")}
+          className={`px-3 py-2 text-xs font-semibold rounded-t-xl border-t border-x -mb-px transition-all ${
+            activeTab === "users"
+              ? "text-teal-700 border-ink/10 bg-card"
+              : "text-ink/50 border-transparent hover:text-ink hover:bg-ink/5"
+          }`}
+        >
+          Líderes / Usuarios
+        </button>
+        <button
+          onClick={() => setActiveTab("campus")}
+          className={`px-3 py-2 text-xs font-semibold rounded-t-xl border-t border-x -mb-px transition-all ${
+            activeTab === "campus"
+              ? "text-teal-700 border-ink/10 bg-card"
+              : "text-ink/50 border-transparent hover:text-ink hover:bg-ink/5"
+          }`}
+        >
+          Sedes y Ministerios
+        </button>
+        <button
+          onClick={() => setActiveTab("roles")}
+          className={`px-3 py-2 text-xs font-semibold rounded-t-xl border-t border-x -mb-px transition-all ${
+            activeTab === "roles"
+              ? "text-teal-700 border-ink/10 bg-card"
+              : "text-ink/50 border-transparent hover:text-ink hover:bg-ink/5"
+          }`}
+        >
+          Roles Personalizados
+        </button>
+      </div>
       
-      <div className="bg-card rounded-card shadow-soft p-5 space-y-4">
-      <UserManager />
-      <CampusManager />
-    </div>
+      <div className="bg-card rounded-b-card rounded-tr-card shadow-soft p-5">
+        {activeTab === "users" && <UserManager />}
+        {activeTab === "campus" && <CampusManager />}
+        {activeTab === "roles" && <CustomRolesManager />}
+      </div>
     </div>
   );
 }
@@ -39,6 +75,7 @@ function UserManager() {
   const [editingUser, setEditingUser] = useState<any | null>(null);
 
   const users = useQuery(api.users.listUsers, token ? { token } : "skip");
+  const customRoles = useQuery(api.customRoles.list, token ? { token } : "skip") || [];
   const register = useMutation(api.users.register);
   const migrateEmails = useMutation(api.users.migrateEmailsToLowerCase);
   const updateUser = useMutation(api.users.updateUser);
@@ -133,14 +170,23 @@ function UserManager() {
           </div>
           <div>
             <label className="text-xs font-semibold text-ink/50 mb-1 block">Rol</label>
-            <select value={role} onChange={e => setRole(e.target.value as any)}
-              className="w-full bg-card border border-ink/10 rounded-xl px-3.5 py-2 text-sm">
-              <option value="leader">Líder</option>
-              <option value="helper">Ayudante</option>
-              <option value="coordinador">Coordinador</option>
-              <option value="director">Director</option>
-              <option value="pastor">Pastor</option>
-              <option value="admin">Administrador</option>
+            <select value={role} onChange={e => setRole(e.target.value)}
+              className="w-full bg-card border border-ink/10 rounded-xl px-3.5 py-2 text-sm capitalize">
+              <optgroup label="Roles del sistema">
+                <option value="leader">Líder</option>
+                <option value="helper">Ayudante</option>
+                <option value="coordinador">Coordinador</option>
+                <option value="director">Director</option>
+                <option value="pastor">Pastor</option>
+                <option value="admin">Administrador</option>
+              </optgroup>
+              {customRoles.length > 0 && (
+                <optgroup label="Roles personalizados">
+                  {customRoles.map((cr: any) => (
+                    <option key={cr._id} value={cr.name}>{cr.name}</option>
+                  ))}
+                </optgroup>
+              )}
             </select>
           </div>
            <button
@@ -305,10 +351,10 @@ function CampusManager() {
               <span className="w-2 h-2 rounded-full shrink-0 bg-teal-500" />
               <button
                 onClick={() => setSelectedCampus(selectedCampus === c._id ? null : c._id)}
-                className="flex-1 text-sm font-medium text-left truncate"
+                className="flex-1 text-sm font-medium text-left min-w-0"
               >
-                {c.name}
-                {c.address && <span className="text-xs text-ink/40 ml-2">· {c.address}</span>}
+                <span className="block truncate">{c.name}</span>
+                {c.address && <span className="block text-[11px] text-ink/45 truncate mt-0.5">{c.address}</span>}
               </button>
               <button onClick={() => { setEditingId(c._id); setName(c.name); setAddress(c.address || ""); setShowForm(true); }}
                 className="w-6 h-6 rounded-full bg-ink/5 flex items-center justify-center text-ink/30 hover:text-teal-600 hover:bg-teal-50 transition"
@@ -508,6 +554,7 @@ const PERMISSION_DEFS = [
 function UserPermissionsManager({ user }: { user: any }) {
   const { token } = useAuth();
   const updateUser = useMutation(api.users.updateUser);
+  const customRoles = useQuery(api.customRoles.list, token ? { token } : "skip") || [];
   const userPerms = user.permissions || [];
   const [isEditing, setIsEditing] = useState(false);
   const [editName, setEditName] = useState(user.name);
@@ -571,8 +618,8 @@ function UserPermissionsManager({ user }: { user: any }) {
 
   return (
     <div className="p-5 border-b border-ink/5">
-      <div className="mb-4 flex items-start justify-between gap-3">
-        <div className="flex-1">
+      <div className="mb-4 flex flex-col sm:flex-row sm:items-start justify-between gap-3">
+        <div className="flex-1 min-w-0">
           {isEditing ? (
             <div className="space-y-2">
               <input 
@@ -599,9 +646,9 @@ function UserPermissionsManager({ user }: { user: any }) {
               </div>
             </div>
           ) : (
-            <div className="relative pr-8">
-              <p className="text-sm font-semibold">{user.name}</p>
-              <p className="text-xs text-ink/50">{user.email}</p>
+            <div className="relative pr-8 min-w-0">
+              <p className="text-sm font-semibold truncate" title={user.name}>{user.name}</p>
+              <p className="text-xs text-ink/50 truncate" title={user.email}>{user.email}</p>
               <button 
                 onClick={() => setIsEditing(true)} 
                 className="absolute top-1/2 right-0 -translate-y-1/2 p-1 text-teal-600 hover:text-teal-700 bg-teal-50 dark:bg-teal-950/20 rounded-full w-6 h-6 flex items-center justify-center transition-colors shadow-sm"
@@ -615,14 +662,23 @@ function UserPermissionsManager({ user }: { user: any }) {
         <select
           value={user.role}
           onChange={handleRoleChange}
-          className="bg-ink/5 border-none rounded-xl px-3 py-1.5 text-xs font-semibold capitalize"
+          className="bg-ink/5 border-none rounded-xl px-3 py-1.5 text-xs font-semibold capitalize shrink-0 self-start sm:self-auto"
         >
-          <option value="leader">Líder</option>
-          <option value="helper">Ayudante</option>
-          <option value="coordinador">Coordinador</option>
-          <option value="director">Director</option>
-          <option value="pastor">Pastor</option>
-          <option value="admin">Administrador</option>
+          <optgroup label="Roles del sistema">
+            <option value="leader">Líder</option>
+            <option value="helper">Ayudante</option>
+            <option value="coordinador">Coordinador</option>
+            <option value="director">Director</option>
+            <option value="pastor">Pastor</option>
+            <option value="admin">Administrador</option>
+          </optgroup>
+          {customRoles.length > 0 && (
+            <optgroup label="Roles personalizados">
+              {customRoles.map((cr: any) => (
+                <option key={cr._id} value={cr.name}>{cr.name}</option>
+              ))}
+            </optgroup>
+          )}
         </select>
       </div>
 
@@ -846,7 +902,7 @@ function ScopeRow({ scope, onDelete }: { scope: any; onDelete: () => void }) {
     if (scope.campusId) {
       return `${roleLabel} en Sede: ${campus ? campus.name : "..."}`;
     }
-    return `${roleLabel} Global`;
+    return `${roleLabel} en toda la iglesia`;
   };
 
   return (
@@ -861,6 +917,192 @@ function ScopeRow({ scope, onDelete }: { scope: any; onDelete: () => void }) {
           <path d="M18 6L6 18M6 6l12 12" />
         </svg>
       </button>
+    </div>
+  );
+}
+
+function CustomRolesManager() {
+  const { token } = useAuth();
+  const [showForm, setShowForm] = useState(false);
+  const [name, setName] = useState("");
+  const [selectedPerms, setSelectedPerms] = useState<string[]>([]);
+  const [editingId, setEditingId] = useState<string | null>(null);
+  const [submitting, setSubmitting] = useState(false);
+
+  const customRoles = useQuery(api.customRoles.list, token ? { token } : "skip");
+  const createRole = useMutation(api.customRoles.create);
+  const updateRole = useMutation(api.customRoles.update);
+  const removeRole = useMutation(api.customRoles.remove);
+
+  const handleCreate = async () => {
+    if (!name.trim()) return;
+    setSubmitting(true);
+    try {
+      await createRole({
+        token: token!,
+        name: name.trim(),
+        permissions: selectedPerms,
+      });
+      setName("");
+      setSelectedPerms([]);
+      setShowForm(false);
+    } catch (err: any) {
+      alert(err.message);
+    } finally {
+      setSubmitting(false);
+    }
+  };
+
+  const handleUpdate = async (id: string) => {
+    if (!name.trim()) return;
+    setSubmitting(true);
+    try {
+      await updateRole({
+        token: token!,
+        id: id as any,
+        name: name.trim(),
+        permissions: selectedPerms,
+      });
+      setName("");
+      setSelectedPerms([]);
+      setEditingId(null);
+      setShowForm(false);
+    } catch (err: any) {
+      alert(err.message);
+    } finally {
+      setSubmitting(false);
+    }
+  };
+
+  const togglePermission = (permId: string) => {
+    if (selectedPerms.includes(permId)) {
+      setSelectedPerms(selectedPerms.filter(p => p !== permId));
+    } else {
+      setSelectedPerms([...selectedPerms, permId]);
+    }
+  };
+
+  return (
+    <div className="space-y-3 pt-3">
+      <div className="flex items-center justify-between">
+        <p className="text-xs font-semibold text-ink/40 uppercase tracking-wide">
+          Catálogo de Roles ({customRoles?.length || 0})
+        </p>
+        <button
+          onClick={() => {
+            setShowForm(!showForm);
+            setEditingId(null);
+            setName("");
+            setSelectedPerms([]);
+          }}
+          className="text-xs font-semibold text-teal-700 hover:text-teal-600 transition flex items-center gap-1 pressable"
+        >
+          <svg className="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><path d="M12 5v14M5 12h14" /></svg>
+          {showForm ? "Cancelar" : "Nuevo rol"}
+        </button>
+      </div>
+
+      {showForm && (
+        <div className="bg-ink/[0.02] border border-ink/10 rounded-xl p-4 space-y-4">
+          <div>
+            <label className="text-xs font-semibold text-ink/50 mb-1.5 block">Nombre del rol</label>
+            <input
+              type="text"
+              value={name}
+              onChange={e => setName(e.target.value)}
+              placeholder="Ej: Líder de Música, Ayudante Célula"
+              className="w-full bg-card border border-ink/10 rounded-xl px-3.5 py-2 text-sm"
+            />
+          </div>
+
+          <div>
+            <label className="text-xs font-semibold text-ink/50 mb-2 block">Asignar permisos granulares</label>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
+              {PERMISSION_DEFS.map(perm => (
+                <label key={perm.id} className="flex items-start gap-2.5 cursor-pointer p-2 rounded-lg bg-card border border-ink/5 hover:border-ink/10 transition">
+                  <input
+                    type="checkbox"
+                    checked={selectedPerms.includes(perm.id)}
+                    onChange={() => togglePermission(perm.id)}
+                    className="mt-0.5 rounded text-teal-600 focus:ring-teal-500"
+                  />
+                  <div className="min-w-0">
+                    <p className="text-xs font-semibold text-ink leading-tight">{perm.label}</p>
+                    <p className="text-[10px] text-ink/40 leading-tight mt-0.5">{perm.desc}</p>
+                  </div>
+                </label>
+              ))}
+            </div>
+          </div>
+
+          <button
+            onClick={editingId ? () => handleUpdate(editingId) : handleCreate}
+            disabled={submitting || !name.trim()}
+            className="w-full bg-ink text-white rounded-xl py-2 text-sm font-semibold disabled:opacity-50 pressable flex items-center justify-center gap-1.5"
+          >
+            {submitting && (
+              <svg className="animate-spin h-3.5 w-3.5 text-white" viewBox="0 0 24 24" fill="none">
+                <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+                <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
+              </svg>
+            )}
+            {submitting ? "Guardando..." : editingId ? "Guardar cambios" : "Crear rol"}
+          </button>
+        </div>
+      )}
+
+      <div className="space-y-2">
+        {(customRoles || []).map((r: any) => (
+          <div key={r._id} className="flex items-start justify-between gap-3 py-3 px-4 rounded-xl bg-ink/[0.02] border border-ink/5">
+            <div className="min-w-0">
+              <p className="text-sm font-bold text-ink leading-none">{r.name}</p>
+              <div className="flex flex-wrap gap-1 mt-2">
+                {r.permissions.map((pId: string) => {
+                  const def = PERMISSION_DEFS.find(d => d.id === pId);
+                  return (
+                    <span key={pId} className="text-[9px] font-semibold bg-teal-50 text-teal-700 dark:bg-teal-950/20 dark:text-teal-400 px-1.5 py-0.5 rounded border border-teal-100 dark:border-teal-900/30">
+                      {def ? def.label : pId}
+                    </span>
+                  );
+                })}
+                {r.permissions.length === 0 && (
+                  <span className="text-[9px] font-semibold bg-ink/5 text-ink/40 px-1.5 py-0.5 rounded">
+                    Sin permisos asignados
+                  </span>
+                )}
+              </div>
+            </div>
+            <div className="flex items-center gap-1.5 shrink-0">
+              <button
+                onClick={() => {
+                  setEditingId(r._id);
+                  setName(r.name);
+                  setSelectedPerms(r.permissions);
+                  setShowForm(true);
+                }}
+                className="w-7 h-7 rounded-full bg-ink/5 flex items-center justify-center text-ink/30 hover:text-teal-600 hover:bg-teal-50 transition pressable"
+                title="Editar"
+              >
+                <svg className="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><path d="M12 20h9" /><path d="M16.5 3.5a2.1 2.1 0 013 3L7 19l-4 1 1-4z" /></svg>
+              </button>
+              <button
+                onClick={() => {
+                  if (confirm(`¿Eliminar el rol "${r.name}"? Los usuarios que lo tengan asignado perderán los permisos por defecto de este rol.`)) {
+                    removeRole({ token: token!, id: r._id });
+                  }
+                }}
+                className="w-7 h-7 rounded-full bg-ink/5 flex items-center justify-center text-ink/30 hover:text-coral-600 hover:bg-coral-50 transition pressable"
+                title="Eliminar"
+              >
+                <svg className="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M18 6L6 18M6 6l12 12" /></svg>
+              </button>
+            </div>
+          </div>
+        ))}
+        {(!customRoles || customRoles.length === 0) && (
+          <p className="text-xs text-ink/30 py-2 text-center">No hay roles personalizados. Crea el primero.</p>
+        )}
+      </div>
     </div>
   );
 }

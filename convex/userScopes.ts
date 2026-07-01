@@ -19,13 +19,7 @@ export const create = mutation({
   args: {
     token: v.string(),
     userId: v.id("users"),
-    role: v.union(
-      v.literal("pastor"),
-      v.literal("director"),
-      v.literal("coordinador"),
-      v.literal("leader"),
-      v.literal("helper")
-    ),
+    role: v.string(),
     campusId: v.optional(v.id("campus")),
     ministryId: v.optional(v.id("ministry")),
     groupId: v.optional(v.id("group")),
