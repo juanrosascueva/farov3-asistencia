@@ -149,8 +149,14 @@ export default function ScopeSwitcher({ fullWidth = false }: { fullWidth?: boole
                     scope.campusId === c._id ? "text-teal-700 font-semibold" : "text-ink/70"
                   }`}
                 >
-                  <span className="w-4 h-4 rounded-full bg-teal-100 flex items-center justify-center shrink-0">
-                    <span className="w-2 h-2 rounded-full bg-teal-600" />
+                  <span className={`w-4 h-4 rounded-full border flex items-center justify-center shrink-0 transition-colors ${
+                    scope.campusId === c._id
+                      ? "border-teal-600 bg-teal-50"
+                      : "border-ink/20 bg-transparent"
+                  }`}>
+                    {scope.campusId === c._id && (
+                      <span className="w-2 h-2 rounded-full bg-teal-600" />
+                    )}
                   </span>
                   {c.name}
                   {scope.campusId === c._id && (
@@ -185,8 +191,14 @@ export default function ScopeSwitcher({ fullWidth = false }: { fullWidth?: boole
                     scope.ministryId === m._id ? "text-teal-700 font-semibold" : "text-ink/70"
                   }`}
                 >
-                  <span className="w-4 h-4 rounded-full bg-sage-100 flex items-center justify-center shrink-0">
-                    <span className="w-2 h-2 rounded-full bg-sage-600" />
+                  <span className={`w-4 h-4 rounded-full border flex items-center justify-center shrink-0 transition-colors ${
+                    scope.ministryId === m._id
+                      ? "border-sage-600 bg-sage-50"
+                      : "border-ink/20 bg-transparent"
+                  }`}>
+                    {scope.ministryId === m._id && (
+                      <span className="w-2 h-2 rounded-full bg-sage-600" />
+                    )}
                   </span>
                   {m.name}
                   {scope.ministryId === m._id && (
@@ -224,12 +236,15 @@ export default function ScopeSwitcher({ fullWidth = false }: { fullWidth?: boole
                     scope.groupId === g._id ? "text-teal-700 font-semibold" : "text-ink/70"
                   }`}
                 >
-                  <svg className="w-4 h-4 shrink-0 text-ink/40" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
-                    <path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2" />
-                    <circle cx="9" cy="7" r="4" />
-                    <path d="M23 21v-2a4 4 0 00-3-3.87" />
-                    <path d="M16 3.13a4 4 0 010 7.75" />
-                  </svg>
+                  <span className={`w-4 h-4 rounded-full border flex items-center justify-center shrink-0 transition-colors ${
+                    scope.groupId === g._id
+                      ? "border-teal-600 bg-teal-50"
+                      : "border-ink/20 bg-transparent"
+                  }`}>
+                    {scope.groupId === g._id && (
+                      <span className="w-2 h-2 rounded-full bg-teal-600" />
+                    )}
+                  </span>
                   {g.name}
                   {scope.groupId === g._id && (
                     <svg className="w-3.5 h-3.5 ml-auto shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M20 6L9 17l-5-5" /></svg>

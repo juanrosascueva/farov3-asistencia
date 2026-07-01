@@ -5,6 +5,7 @@ import { useAuth } from "../hooks/useAuth";
 import ScopeSwitcher from "./ScopeSwitcher";
 import ChatPanel from "./ChatPanel";
 import ResponsiveSheet from "./ResponsiveSheet";
+import { useScope } from "../hooks/useScope";
 import { useMutation } from "convex/react";
 import { api } from "../../convex/_generated/api";
 import MyProfileModal from "./MyProfileModal";
@@ -39,11 +40,14 @@ export default function Layout({
   const [moreOpen, setMoreOpen] = useState(false);
   const auth = useAuth();
   const { logout } = auth;
+  const { scope, scopeLabel } = useScope();
   
   const visibleRoutes = ROUTES.filter((r) => {
     if (!r.perm) return true;
     return (auth as any)[r.perm] === true;
   });
+
+  const displaySubtitle = scope.campusId ? scopeLabel : "Ministerio de Adolescentes";
 
   return (
     <div className="max-w-7xl mx-auto lg:flex lg:gap-8 lg:px-6 lg:pt-6">
@@ -53,8 +57,8 @@ export default function Layout({
             <LogoIcon />
             <div className="min-w-0 flex-1 pr-2">
               <p className="font-display font-bold text-lg leading-none text-ink">Congregación Cristo Vive</p>
-              <p className="text-[11px] text-ink/55 leading-none mt-1">
-                Ministerio de Adolescentes
+              <p className="text-[11px] text-teal-600 font-semibold leading-none mt-1.5 truncate" title={displaySubtitle}>
+                {displaySubtitle}
               </p>
             </div>
           </div>
@@ -103,7 +107,9 @@ export default function Layout({
               <LogoIcon />
               <div className="min-w-0">
                 <p className="font-display font-bold text-base truncate">Cristo Vive</p>
-                <p className="text-[11px] text-ink/45 truncate">Ministerio de Adolescentes</p>
+                <p className="text-[11px] text-teal-600 font-semibold truncate" title={displaySubtitle}>
+                  {displaySubtitle}
+                </p>
               </div>
             </div>
             <LeaderBadge onlyAvatar />
