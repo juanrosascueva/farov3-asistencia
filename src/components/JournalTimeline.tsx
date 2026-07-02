@@ -35,7 +35,8 @@ export default function JournalTimeline({ teenId }: JournalProps) {
   const deleteEntry = useMutation(api.journal.remove);
   const analyzeEntry = useAction(api.ai.analyzeJournalEntry as any);
   const allAnalyses = useQuery(api.ai.getAllAnalyses);
-  const { user } = useAuth();
+  const { user, token } = useAuth();
+  const recordJournalView = useMutation(api.auditLog.recordJournalView);
 
   const [showForm, setShowForm] = useState(false);
   const [content, setContent] = useState("");
@@ -60,6 +61,9 @@ export default function JournalTimeline({ teenId }: JournalProps) {
   };
 
   useEffect(() => {
+    if (token) {
+      recordJournalView({ token, teenId: teenId as any });
+    }
     return () => {
       if (recognitionRef.current) {
         try {
@@ -72,7 +76,7 @@ export default function JournalTimeline({ teenId }: JournalProps) {
         window.clearTimeout(listeningTimeoutRef.current);
       }
     };
-  }, []);
+  }, [recordJournalView, teenId, token]);
 
   const handleSubmit = async (e: FormEvent) => {
     e.preventDefault();
@@ -85,6 +89,7 @@ export default function JournalTimeline({ teenId }: JournalProps) {
       leaderName: leaderName.trim(),
       followUp,
       isConfidential,
+      token: token ?? undefined,
     });
     if (entryId) {
       analyzeEntry({
@@ -92,6 +97,7 @@ export default function JournalTimeline({ teenId }: JournalProps) {
         teenId: teenId as any,
         content: content.trim(),
         category,
+        token: token ?? undefined,
       });
     }
     setContent("");
@@ -394,7 +400,7 @@ export default function JournalTimeline({ teenId }: JournalProps) {
                       )}
                     </div>
                     <button
-                      onClick={() => deleteEntry({ id: entry._id })}
+                      onClick={() => deleteEntry({ id: entry._id, token: token ?? undefined })}
                       className="shrink-0 w-8 h-8 rounded-full bg-ink/5 flex items-center justify-center text-ink/30 hover:text-coral-600 hover:bg-coral-50 transition mt-1"
                       title="Eliminar"
                     >

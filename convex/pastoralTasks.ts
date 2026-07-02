@@ -2,6 +2,7 @@ import { v } from "convex/values";
 import { internalMutation, mutation, query } from "./_generated/server";
 import { getUserFromToken } from "./authHelper";
 import { canAccessTeen, filterTeensByScope, requireAccess } from "./authz";
+import { logAudit } from "./auditLog";
 
 const priority = v.union(v.literal("low"), v.literal("medium"), v.literal("high"), v.literal("critical"));
 const taskStatus = v.union(
@@ -101,7 +102,7 @@ export const create = mutation({
   handler: async (ctx, args) => {
     const { access } = await requireTeenAccess(ctx, args.token, args.teenId);
     const now = new Date().toISOString();
-    return await ctx.db.insert("pastoralTasks", {
+    const payload = {
       teenId: args.teenId,
       source: args.source,
       title: args.title.trim(),
@@ -109,13 +110,22 @@ export const create = mutation({
       assignedToUserId: args.assignedToUserId,
       dueDate: args.dueDate,
       priority: args.priority,
-      status: "pending",
+      status: "pending" as const,
       relatedPlanId: args.relatedPlanId,
       relatedCrisisAlertId: args.relatedCrisisAlertId,
       createdBy: access.user._id,
       createdAt: now,
       updatedAt: now,
+    };
+    const id = await ctx.db.insert("pastoralTasks", payload);
+    await logAudit(ctx, {
+      token: args.token,
+      action: "pastoral_task.created",
+      entityType: "pastoralTask",
+      entityId: String(id),
+      newValue: payload,
     });
+    return id;
   },
 });
 
@@ -129,10 +139,20 @@ export const updateStatus = mutation({
     const task = await ctx.db.get(args.taskId);
     if (!task) throw new Error("Tarea no encontrada.");
     await requireTeenAccess(ctx, args.token, task.teenId);
-    await ctx.db.patch(args.taskId, {
+    const patch = {
       status: args.status,
       completedAt: args.status === "done" ? new Date().toISOString() : undefined,
       updatedAt: new Date().toISOString(),
+    };
+    await ctx.db.patch(args.taskId, patch);
+    await logAudit(ctx, {
+      token: args.token,
+      action: "pastoral_task.updated",
+      entityType: "pastoralTask",
+      entityId: String(args.taskId),
+      previousValue: task,
+      newValue: { ...task, ...patch },
+      details: `Estado actualizado a ${args.status}.`,
     });
   },
 });
@@ -149,11 +169,21 @@ export const reassign = mutation({
     const task = await ctx.db.get(args.taskId);
     if (!task) throw new Error("Tarea no encontrada.");
     await requireTeenAccess(ctx, args.token, task.teenId);
-    await ctx.db.patch(args.taskId, {
+    const patch = {
       assignedToUserId: args.assignedToUserId,
       dueDate: args.dueDate,
       priority: args.priority ?? task.priority,
       updatedAt: new Date().toISOString(),
+    };
+    await ctx.db.patch(args.taskId, patch);
+    await logAudit(ctx, {
+      token: args.token,
+      action: "pastoral_task.updated",
+      entityType: "pastoralTask",
+      entityId: String(args.taskId),
+      previousValue: task,
+      newValue: { ...task, ...patch },
+      details: "Tarea reasignada o reprogramada.",
     });
   },
 });
@@ -165,6 +195,13 @@ export const remove = mutation({
     if (!task) return;
     await requireTeenAccess(ctx, args.token, task.teenId);
     await ctx.db.delete(args.taskId);
+    await logAudit(ctx, {
+      token: args.token,
+      action: "pastoral_task.deleted",
+      entityType: "pastoralTask",
+      entityId: String(args.taskId),
+      previousValue: task,
+    });
   },
 });
 

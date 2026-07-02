@@ -22,7 +22,7 @@ export default function Ajustes({ teens, attendanceMap, dark, setDark }: Ajustes
   const [showReset, setShowReset] = useState(false);
   const [importing, setImporting] = useState(false);
 
-  const { user } = useAuth();
+  const { user, token } = useAuth();
 
   const { templates, addTemplate, updateTemplate, deleteTemplate, resetTemplates } = useTemplates();
   const [editTpl, setEditTpl] = useState<MessageTemplate | null>(null);
@@ -36,9 +36,13 @@ export default function Ajustes({ teens, attendanceMap, dark, setDark }: Ajustes
   const { pastoralTargetCoverage, setPastoralTargetCoverage } = usePastoralTarget();
 
   const createTeen = useMutation(api.teens.create);
+  const recordExport = useMutation(api.auditLog.recordExport);
 
-  const handleExportJson = () => {
+  const handleExportJson = async () => {
     const data = { teens, attendance: attendanceMap };
+    if (token) {
+      await recordExport({ token, exportType: "respaldo_json", recordCount: teens.length, details: "Respaldo completo de adolescentes y asistencia." });
+    }
     downloadFile(
       "faro_respaldo.json",
       JSON.stringify(data, null, 2),
@@ -46,7 +50,7 @@ export default function Ajustes({ teens, attendanceMap, dark, setDark }: Ajustes
     );
   };
 
-  const handleExportCsv = () => {
+  const handleExportCsv = async () => {
     const dates = Object.keys(attendanceMap).sort();
     let csv = "Nombre,Apellido," + dates.map(fmtDate).join(",") + "\n";
     teens.forEach((t) => {
@@ -55,6 +59,9 @@ export default function Ajustes({ teens, attendanceMap, dark, setDark }: Ajustes
         dates.map((d) => attendanceMap[d]?.[t._id] || "").join(",") +
         "\n";
     });
+    if (token) {
+      await recordExport({ token, exportType: "asistencia_csv", recordCount: teens.length, details: `${dates.length} fechas exportadas.` });
+    }
     downloadFile("faro_asistencia.csv", csv, "text/csv");
   };
 
@@ -77,6 +84,7 @@ export default function Ajustes({ teens, attendanceMap, dark, setDark }: Ajustes
               gustos: t.gustos || "",
               notas: t.notas || "",
               foto: t.foto || "",
+              token: token ?? undefined,
             });
           }
           alert("Importación completada con éxito");
@@ -395,12 +403,13 @@ export default function Ajustes({ teens, attendanceMap, dark, setDark }: Ajustes
 
 function ResetForm({ onCancel }: { onCancel: () => void }) {
   const resetAll = useMutation(api.teens.removeAll);
+  const { token } = useAuth();
   const [resetting, setResetting] = useState(false);
 
   const handleReset = async () => {
     setResetting(true);
     try {
-      await resetAll();
+      await resetAll({ token: token ?? undefined });
       onCancel();
     } catch (err: any) {
       alert(err.message);

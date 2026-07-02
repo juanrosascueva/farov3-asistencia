@@ -1,6 +1,7 @@
 import { v } from "convex/values";
 import { mutation, query } from "./_generated/server";
 import { getUserFromToken } from "./authHelper";
+import { logAudit } from "./auditLog";
 
 export const list = query({
   args: { token: v.string() },
@@ -32,11 +33,20 @@ export const create = mutation({
       .first();
     if (existing) throw new Error("Ya existe un rol con ese nombre.");
 
-    return await ctx.db.insert("customRoles", {
+    const id = await ctx.db.insert("customRoles", {
       name: cleanName,
       permissions: args.permissions,
       createdAt: new Date().toISOString(),
     });
+    await logAudit(ctx, {
+      token: args.token,
+      action: "role.created",
+      entityType: "customRole",
+      entityId: String(id),
+      newValue: { name: cleanName, permissions: args.permissions },
+      details: `Rol creado: ${cleanName}`,
+    });
+    return id;
   },
 });
 
@@ -76,6 +86,15 @@ export const update = mutation({
       name: cleanName,
       permissions: args.permissions,
     });
+    await logAudit(ctx, {
+      token: args.token,
+      action: "role.permission_changed",
+      entityType: "customRole",
+      entityId: String(args.id),
+      previousValue: { name: roleDoc.name, permissions: roleDoc.permissions },
+      newValue: { name: cleanName, permissions: args.permissions },
+      details: `Rol actualizado: ${cleanName}`,
+    });
   },
 });
 
@@ -95,5 +114,13 @@ export const remove = mutation({
     }
     
     await ctx.db.delete(args.id);
+    await logAudit(ctx, {
+      token: args.token,
+      action: "role.deleted",
+      entityType: "customRole",
+      entityId: String(args.id),
+      previousValue: { name: roleDoc.name, permissions: roleDoc.permissions },
+      details: `Rol eliminado: ${roleDoc.name}`,
+    });
   },
 });

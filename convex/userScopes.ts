@@ -1,6 +1,7 @@
 import { v } from "convex/values";
 import { mutation, query } from "./_generated/server";
 import { getUserFromToken } from "./authHelper";
+import { logAudit } from "./auditLog";
 
 export const list = query({
   args: { token: v.string(), userId: v.optional(v.id("users")) },
@@ -38,6 +39,20 @@ export const create = mutation({
       assignedBy: requester._id,
       createdAt: new Date().toISOString(),
     });
+    await logAudit(ctx, {
+      token: args.token,
+      action: "user.scope_assigned",
+      entityType: "userScope",
+      entityId: String(id),
+      newValue: {
+        userId: args.userId,
+        role: args.role,
+        campusId: args.campusId,
+        ministryId: args.ministryId,
+        groupId: args.groupId,
+      },
+      details: `Ambito asignado por ${requester.name}.`,
+    });
     return id;
   },
 });
@@ -49,7 +64,16 @@ export const remove = mutation({
     if (!requester || (requester.role !== "pastor" && requester.role !== "admin")) {
       throw new Error("No autorizado");
     }
+    const current = await ctx.db.get(args.id);
     await ctx.db.delete(args.id);
+    await logAudit(ctx, {
+      token: args.token,
+      action: "user.scope_removed",
+      entityType: "userScope",
+      entityId: String(args.id),
+      previousValue: current,
+      details: "Ambito de usuario removido.",
+    });
   },
 });
 
@@ -118,7 +142,7 @@ export const assignMe = mutation({
       throw new Error("Debe seleccionar al menos un ámbito (sede, ministerio o grupo).");
     }
 
-    await ctx.db.insert("userScopes", {
+    const id = await ctx.db.insert("userScopes", {
       userId: user._id,
       role: args.role,
       campusId: args.campusId,
@@ -126,6 +150,20 @@ export const assignMe = mutation({
       groupId: args.groupId,
       assignedBy: user._id,
       createdAt: new Date().toISOString(),
+    });
+    await logAudit(ctx, {
+      token: args.token,
+      action: "user.scope_assigned",
+      entityType: "userScope",
+      entityId: String(id),
+      newValue: {
+        userId: user._id,
+        role: args.role,
+        campusId: args.campusId,
+        ministryId: args.ministryId,
+        groupId: args.groupId,
+      },
+      details: "Autoasignacion de ambito.",
     });
   },
 });

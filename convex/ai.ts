@@ -180,6 +180,7 @@ export const analyzeJournalEntry = action({
     teenId: v.id("teens"),
     content: v.string(),
     category: v.string(),
+    token: v.optional(v.string()),
   },
   handler: async (ctx, args) => {
     // 1. Verificar si la entrada es confidencial
@@ -228,6 +229,19 @@ export const analyzeJournalEntry = action({
         severity: crisisSeverity,
       });
     }
+    await ctx.runMutation(internal.auditLog.logInternal, {
+      token: args.token,
+      action: "ai.analysis.generated",
+      entityType: "journal",
+      entityId: args.entryId,
+      newValue: {
+        teenId: args.teenId,
+        riskLevel: result.riskLevel,
+        isCrisis: result.isCrisis,
+        modelUsed,
+      },
+      details: "Analisis IA de bitacora generado.",
+    });
 
     return { success: true, ...result, modelUsed };
   },
@@ -576,7 +590,7 @@ function parseSummary(raw: string): {
 }
 
 export const generateTeenSummary = action({
-  args: { teenId: v.id("teens") },
+  args: { teenId: v.id("teens"), token: v.optional(v.string()) },
   handler: async (ctx, args) => {
     const apiKey = process.env.OPENROUTER_API_KEY;
     if (!apiKey) return { success: false, error: "No API key configured" };
@@ -604,6 +618,14 @@ export const generateTeenSummary = action({
       teenId: args.teenId,
       ...result,
       modelUsed,
+    });
+    await ctx.runMutation(internal.auditLog.logInternal, {
+      token: args.token,
+      action: "ai.summary.generated",
+      entityType: "teen",
+      entityId: args.teenId,
+      newValue: { teenId: args.teenId, modelUsed },
+      details: "Resumen pastoral IA generado.",
     });
 
     return { success: true, ...result, modelUsed };
@@ -700,7 +722,7 @@ function parseDropout(raw: string): {
 }
 
 export const predictDropout = action({
-  args: { teenId: v.id("teens") },
+  args: { teenId: v.id("teens"), token: v.optional(v.string()) },
   handler: async (ctx, args) => {
     const apiKey = process.env.OPENROUTER_API_KEY;
     if (!apiKey) return { success: false, error: "No API key configured" };
@@ -728,6 +750,14 @@ export const predictDropout = action({
       teenId: args.teenId,
       ...result,
       modelUsed,
+    });
+    await ctx.runMutation(internal.auditLog.logInternal, {
+      token: args.token,
+      action: "ai.dropout.generated",
+      entityType: "teen",
+      entityId: args.teenId,
+      newValue: { teenId: args.teenId, probability: result.probability, riskLevel: result.riskLevel, modelUsed },
+      details: "Prediccion IA de abandono generada.",
     });
 
     return { success: true, ...result, modelUsed };
@@ -988,7 +1018,16 @@ ${specificTeenContext ? `\nInformación detallada sobre adolescentes consultados
 
     for (const model of FREE_MODELS) {
       const raw = await callModelRaw(apiKey, model, messages, 1000);
-      if (raw) return { success: true, answer: raw, modelUsed: model };
+      if (raw) {
+        await ctx.runMutation(internal.auditLog.logInternal, {
+          token: args.token,
+          action: "ai.chat.generated",
+          entityType: "aiChat",
+          details: "Respuesta de IA pastoral generada.",
+          newValue: { modelUsed: model },
+        });
+        return { success: true, answer: raw, modelUsed: model };
+      }
     }
     return {
       success: true,

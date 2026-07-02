@@ -29,6 +29,7 @@ import { Avatar } from "./Layout";
 import TeenForm from "./TeenForm";
 import Modal from "./Modal";
 import ResponsiveSheet from "./ResponsiveSheet";
+import { useAuth } from "../hooks/useAuth";
 
 function sanitizeAiText(text: string): string {
   return text
@@ -58,6 +59,7 @@ export default function Profile({
   const [showDelete, setShowDelete] = useState(false);
   const [showWhatsApp, setShowWhatsApp] = useState(false);
   const [showQuickWA, setShowQuickWA] = useState(false);
+  const { token } = useAuth();
   const deleteTeen = useMutation(api.teens.remove);
 
   const teenSummary = useQuery(api.ai.getTeenSummary, { teenId: teen._id as any });
@@ -100,7 +102,7 @@ export default function Profile({
   const allTemplates = templates.map((t) => ({ ...t, text: fill(t.text, vars) }));
 
   const handleDelete = async () => {
-    await deleteTeen({ id: teen._id });
+    await deleteTeen({ id: teen._id, token: token ?? undefined });
     onDeleted();
   };
 
@@ -285,7 +287,7 @@ export default function Profile({
             </div>
           </div>
           <button
-            onClick={async () => { setGeneratingDropout(true); await predictDropout({ teenId: teen._id as any }); setGeneratingDropout(false); }}
+            onClick={async () => { setGeneratingDropout(true); await predictDropout({ teenId: teen._id as any, token: token ?? undefined }); setGeneratingDropout(false); }}
             disabled={generatingDropout}
             className="text-xs font-semibold bg-ink/5 hover:bg-ink/10 rounded-full px-3 py-1.5 disabled:opacity-50"
           >
@@ -308,7 +310,7 @@ export default function Profile({
             <p className="text-xs mt-0.5 opacity-80">Factor principal: {dropoutPred.primaryFactor}</p>
             <p className="text-xs mt-1 italic opacity-70">{dropoutPred.recommendation}</p>
             <button
-              onClick={async () => { setGeneratingDropout(true); await predictDropout({ teenId: teen._id as any }); setGeneratingDropout(false); }}
+              onClick={async () => { setGeneratingDropout(true); await predictDropout({ teenId: teen._id as any, token: token ?? undefined }); setGeneratingDropout(false); }}
               disabled={generatingDropout}
               className="text-[11px] font-semibold mt-2 underline underline-offset-2 opacity-60 hover:opacity-100 disabled:opacity-30"
             >
@@ -434,7 +436,7 @@ export default function Profile({
         generating={generatingSummary}
         onGenerate={async () => {
           setGeneratingSummary(true);
-          await generateSummary({ teenId: teen._id as any });
+          await generateSummary({ teenId: teen._id as any, token: token ?? undefined });
           setGeneratingSummary(false);
         }}
         hasData={(analyses as any[]).length > 0 || s.total > 0}

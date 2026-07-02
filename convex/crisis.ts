@@ -1,6 +1,7 @@
 import { v } from "convex/values";
 import { internalMutation, mutation, query } from "./_generated/server";
 import { canAccessTeen, filterTeensByScope, requireAccess } from "./authz";
+import { logAudit } from "./auditLog";
 
 const severity = v.union(v.literal("low"), v.literal("medium"), v.literal("high"), v.literal("critical"));
 const status = v.union(
@@ -126,16 +127,26 @@ export const updateStatus = mutation({
       throw new Error("Solo coordinador, director, pastor o admin pueden cerrar o derivar una crisis critica.");
     }
     const now = new Date().toISOString();
-    await ctx.db.patch(args.alertId, {
+    const patch = {
       status: nextStatus,
       decisionNotes: notes || alert.decisionNotes,
       lastActionAt: now,
       closedAt: ["attended", "referred"].includes(nextStatus) ? now : undefined,
       attendedAt: nextStatus === "attended" ? now : alert.attendedAt,
       attendedBy: nextStatus === "attended" ? access.user.name : alert.attendedBy,
-    });
+    };
+    await ctx.db.patch(args.alertId, patch);
     const actionType = nextStatus === "in_progress" ? "note" : nextStatus;
     await insertAction(ctx, args.alertId, actionType, notes || `Estado actualizado a ${nextStatus}.`, access.user._id);
+    await logAudit(ctx, {
+      token: args.token,
+      action: nextStatus === "attended" ? "crisis.attended" : nextStatus === "referred" ? "crisis.referred" : "crisis.status_changed",
+      entityType: "crisisAlert",
+      entityId: String(args.alertId),
+      previousValue: alert,
+      newValue: { ...alert, ...patch },
+      details: notes || `Estado actualizado a ${nextStatus}.`,
+    });
   },
 });
 
@@ -151,15 +162,25 @@ export const markAttended = mutation({
       throw new Error("Solo coordinador, director, pastor o admin pueden cerrar una crisis critica.");
     }
     const now = new Date().toISOString();
-    await ctx.db.patch(args.alertId, {
-      status: "attended",
+    const patch = {
+      status: "attended" as const,
       decisionNotes: args.notes.trim(),
       lastActionAt: now,
       closedAt: now,
       attendedAt: now,
       attendedBy: access.user.name,
-    });
+    };
+    await ctx.db.patch(args.alertId, patch);
     await insertAction(ctx, args.alertId, "attended", args.notes.trim(), access.user._id);
+    await logAudit(ctx, {
+      token: args.token,
+      action: "crisis.attended",
+      entityType: "crisisAlert",
+      entityId: String(args.alertId),
+      previousValue: alert,
+      newValue: { ...alert, ...patch },
+      details: args.notes.trim(),
+    });
   },
 });
 

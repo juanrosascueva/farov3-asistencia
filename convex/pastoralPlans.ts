@@ -1,6 +1,7 @@
 import { v } from "convex/values";
 import { mutation, query } from "./_generated/server";
 import { canAccessTeen, filterTeensByScope, requireAccess } from "./authz";
+import { logAudit } from "./auditLog";
 
 const priority = v.union(v.literal("low"), v.literal("medium"), v.literal("high"), v.literal("critical"));
 const planStatus = v.union(v.literal("active"), v.literal("completed"), v.literal("paused"));
@@ -66,13 +67,29 @@ export const upsertActive = mutation({
     };
     if (existing) {
       await ctx.db.patch(existing._id, values);
+      await logAudit(ctx, {
+        token: args.token,
+        action: "pastoral_plan.updated",
+        entityType: "pastoralPlan",
+        entityId: String(existing._id),
+        previousValue: existing,
+        newValue: { teenId: args.teenId, ...values },
+      });
       return existing._id;
     }
-    return await ctx.db.insert("pastoralPlans", {
+    const id = await ctx.db.insert("pastoralPlans", {
       teenId: args.teenId,
       ...values,
       createdAt: now,
     });
+    await logAudit(ctx, {
+      token: args.token,
+      action: "pastoral_plan.created",
+      entityType: "pastoralPlan",
+      entityId: String(id),
+      newValue: { teenId: args.teenId, ...values },
+    });
+    return id;
   },
 });
 
@@ -86,10 +103,19 @@ export const complete = mutation({
     const plan = await ctx.db.get(args.planId);
     if (!plan) throw new Error("Plan no encontrado.");
     await requireTeenAccess(ctx, args.token, plan.teenId);
-    await ctx.db.patch(args.planId, {
-      status: "completed",
+    const patch = {
+      status: "completed" as const,
       followUpResult: args.followUpResult?.trim() || plan.followUpResult,
       updatedAt: new Date().toISOString(),
+    };
+    await ctx.db.patch(args.planId, patch);
+    await logAudit(ctx, {
+      token: args.token,
+      action: "pastoral_plan.completed",
+      entityType: "pastoralPlan",
+      entityId: String(args.planId),
+      previousValue: plan,
+      newValue: { ...plan, ...patch },
     });
   },
 });

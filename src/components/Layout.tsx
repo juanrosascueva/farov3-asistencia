@@ -19,6 +19,7 @@ const ROUTES = [
   { id: "reportes", label: "Reportes", icon: "chart", perm: "canViewReports" },
   { id: "ajustes", label: "Ajustes", icon: "settings", perm: "canManageSettings" },
   { id: "accesos", label: "Accesos", icon: "lock", perm: "canManageUsers" },
+  { id: "auditoria", label: "Auditoría", icon: "clipboard", perm: "canManageUsers" },
 ];
 
 interface LayoutProps {
@@ -159,14 +160,14 @@ export default function Layout({
         <button
           onClick={() => setMoreOpen(true)}
           className={`flex-1 flex flex-col items-center justify-center gap-0.5 py-2.5 pressable ${
-            ["campana", "ia", "reportes", "ajustes", "accesos"].includes(currentRoute)
+            ["campana", "ia", "reportes", "ajustes", "accesos", "auditoria"].includes(currentRoute)
               ? "tab-active text-teal-700 font-semibold"
               : "text-ink/45"
           }`}
         >
           <Icon name="menu" cls="w-5 h-5" />
           <span className="text-[10.5px] font-medium">Más</span>
-          <span className={`tab-dot w-1 h-1 rounded-full bg-teal-600 transition ${["campana", "ia", "reportes", "ajustes", "accesos"].includes(currentRoute) ? "opacity-100 scale-100" : "opacity-0 scale-0"}`} />
+          <span className={`tab-dot w-1 h-1 rounded-full bg-teal-600 transition ${["campana", "ia", "reportes", "ajustes", "accesos", "auditoria"].includes(currentRoute) ? "opacity-100 scale-100" : "opacity-0 scale-0"}`} />
         </button>
       </nav>
 
@@ -182,7 +183,7 @@ export default function Layout({
               Herramientas y Ajustes
             </p>
             <nav className="flex flex-col gap-1">
-              {visibleRoutes.filter(r => ["campana", "ia", "reportes", "ajustes", "accesos"].includes(r.id)).map((r) => (
+              {visibleRoutes.filter(r => ["campana", "ia", "reportes", "ajustes", "accesos", "auditoria"].includes(r.id)).map((r) => (
                 <button
                   key={r.id}
                   onClick={() => {

@@ -1,6 +1,7 @@
 import { v } from "convex/values";
 import { mutation, query } from "./_generated/server";
 import { getEffectiveAccess, filterTeensByScope, requireAccess, canAccessTeen } from "./authz";
+import { logAudit } from "./auditLog";
 
 const teenStatus = v.union(
   v.literal("activo"),
@@ -219,7 +220,16 @@ export const create = mutation({
     if (!canAccessTeen(access, payload)) {
       throw new Error("No tienes permisos para crear adolescentes en este ámbito (Sede/Ministerio/Grupo).");
     }
-    return await ctx.db.insert("teens", payload);
+    const id = await ctx.db.insert("teens", payload);
+    await logAudit(ctx, {
+      token: args.token,
+      action: "teen.created",
+      entityType: "teen",
+      entityId: String(id),
+      newValue: payload,
+      details: `${payload.nombre} ${payload.apellido}`,
+    });
+    return id;
   },
 });
 
@@ -276,6 +286,16 @@ export const update = mutation({
     }
     
     await ctx.db.patch(args.id, payload);
+    const deactivated = current.estado !== payload.estado && ["inactivo", "egresado"].includes(payload.estado || "");
+    await logAudit(ctx, {
+      token: args.token,
+      action: deactivated ? "teen.deactivated" : "teen.updated",
+      entityType: "teen",
+      entityId: String(args.id),
+      previousValue: current,
+      newValue: payload,
+      details: `${payload.nombre} ${payload.apellido}`,
+    });
   },
 });
 
@@ -330,6 +350,14 @@ export const remove = mutation({
       }
     }
     await ctx.db.delete(args.id);
+    await logAudit(ctx, {
+      token: args.token,
+      action: "teen.deleted",
+      entityType: "teen",
+      entityId: String(args.id),
+      previousValue: current,
+      details: `${current.nombre} ${current.apellido}`,
+    });
   },
 });
 
@@ -376,7 +404,8 @@ export const migrateTeenProfiles = mutation({
 });
 
 export const removeAll = mutation({
-  handler: async (ctx) => {
+  args: { token: v.optional(v.string()) },
+  handler: async (ctx, args) => {
     const allJournal = await ctx.db.query("journal").collect();
     for (const r of allJournal) {
       await ctx.db.delete(r._id);
@@ -389,5 +418,11 @@ export const removeAll = mutation({
     for (const t of allTeens) {
       await ctx.db.delete(t._id);
     }
+    await logAudit(ctx, {
+      token: args.token,
+      action: "data.bulk_deleted",
+      entityType: "system",
+      details: `Borrado masivo: ${allTeens.length} adolescentes, ${allAttendance.length} asistencias, ${allJournal.length} bitacoras.`,
+    });
   },
 });

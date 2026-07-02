@@ -239,14 +239,21 @@ export default defineSchema({
     action: v.string(),
     userId: v.optional(v.id("users")),
     userName: v.optional(v.string()),
+    entityType: v.optional(v.string()),
+    entityId: v.optional(v.string()),
     targetType: v.string(),
     targetId: v.optional(v.string()),
+    previousValue: v.optional(v.string()),
+    newValue: v.optional(v.string()),
     details: v.optional(v.string()),
+    ip: v.optional(v.string()),
+    userAgent: v.optional(v.string()),
     createdAt: v.string(),
   })
     .index("by_createdAt", ["createdAt"])
     .index("by_action", ["action"])
-    .index("by_userId", ["userId"]),
+    .index("by_userId", ["userId"])
+    .index("by_entityType", ["entityType"]),
 
   crisisAlerts: defineTable({
     analysisId: v.id("journalAnalysis"),

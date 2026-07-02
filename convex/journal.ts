@@ -1,6 +1,7 @@
 import { v } from "convex/values";
 import { mutation, query } from "./_generated/server";
 import { getUserFromToken } from "./authHelper";
+import { logAudit } from "./auditLog";
 
 export const list = query({
   args: { teenId: v.id("teens"), token: v.optional(v.string()) },
@@ -37,16 +38,50 @@ export const create = mutation({
     followUp: v.boolean(),
     isConfidential: v.optional(v.boolean()),
     createdBy: v.optional(v.string()),
+    token: v.optional(v.string()),
   },
   handler: async (ctx, args) => {
-    return await ctx.db.insert("journal", args);
+    const { token, ...entry } = args;
+    const id = await ctx.db.insert("journal", entry);
+    await logAudit(ctx, {
+      token,
+      action: "journal.created",
+      entityType: "journal",
+      entityId: String(id),
+      newValue: {
+        teenId: entry.teenId,
+        entryDate: entry.entryDate,
+        category: entry.category,
+        followUp: entry.followUp,
+        isConfidential: entry.isConfidential === true,
+      },
+      details: "Entrada de bitacora pastoral creada.",
+    });
+    return id;
   },
 });
 
 export const remove = mutation({
-  args: { id: v.id("journal") },
+  args: { id: v.id("journal"), token: v.optional(v.string()) },
   handler: async (ctx, args) => {
+    const current = await ctx.db.get(args.id);
     await ctx.db.delete(args.id);
+    if (current) {
+      await logAudit(ctx, {
+        token: args.token,
+        action: "journal.deleted",
+        entityType: "journal",
+        entityId: String(args.id),
+        previousValue: {
+          teenId: current.teenId,
+          entryDate: current.entryDate,
+          category: current.category,
+          followUp: current.followUp,
+          isConfidential: current.isConfidential === true,
+        },
+        details: "Entrada de bitacora pastoral eliminada.",
+      });
+    }
   },
 });
 

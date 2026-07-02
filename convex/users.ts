@@ -9,6 +9,7 @@ import {
   cleanExpiredSession,
   SESSION_TTL_DAYS,
 } from "./authHelper";
+import { logAudit } from "./auditLog";
 
 export const register = mutation({
   args: {
@@ -38,7 +39,7 @@ export const register = mutation({
     const salt = generateSalt();
     const hashedPassword = await hashPassword(args.password, salt);
 
-    await ctx.db.insert("users", {
+    const id = await ctx.db.insert("users", {
       email: emailNormalized,
       name: args.name,
       role: args.role,
@@ -46,6 +47,14 @@ export const register = mutation({
       salt,
       isActive: !isSelfRegistration,
       createdAt: new Date().toISOString(),
+    });
+    await logAudit(ctx, {
+      token: args.token,
+      action: "user.created",
+      entityType: "user",
+      entityId: String(id),
+      newValue: { email: emailNormalized, name: args.name, role: args.role, isActive: !isSelfRegistration },
+      details: isSelfRegistration ? "Solicitud de registro creada." : "Usuario creado por administrador.",
     });
 
     return { success: true };
@@ -187,6 +196,9 @@ export const updateUser = mutation({
       throw new Error("No autorizado");
     }
 
+    const current = await ctx.db.get(args.userId);
+    if (!current) throw new Error("Usuario no encontrado");
+
     const patch: Record<string, any> = {};
     if (args.name !== undefined) patch.name = args.name;
     
@@ -215,6 +227,31 @@ export const updateUser = mutation({
     }
 
     await ctx.db.patch(args.userId, patch);
+    const action =
+      args.permissions !== undefined ? "user.permission_changed" :
+      args.role !== undefined ? "user.role_changed" :
+      "user.updated";
+    await logAudit(ctx, {
+      token: args.token,
+      action,
+      entityType: "user",
+      entityId: String(args.userId),
+      previousValue: {
+        name: current.name,
+        email: current.email,
+        role: current.role,
+        isActive: current.isActive,
+        permissions: current.permissions,
+      },
+      newValue: {
+        name: patch.name ?? current.name,
+        email: patch.email ?? current.email,
+        role: patch.role ?? current.role,
+        isActive: patch.isActive ?? current.isActive,
+        permissions: patch.permissions ?? current.permissions,
+      },
+      details: `Usuario actualizado: ${current.email}`,
+    });
   },
 });
 
@@ -332,6 +369,7 @@ export const deleteUser = mutation({
       throw new Error("No autorizado");
     }
 
+    const target = await ctx.db.get(args.userId);
     // Clean sessions
     const sessions = await ctx.db
       .query("sessions")
@@ -342,6 +380,14 @@ export const deleteUser = mutation({
     }
 
     await ctx.db.delete(args.userId);
+    await logAudit(ctx, {
+      token: args.token,
+      action: "user.deleted",
+      entityType: "user",
+      entityId: String(args.userId),
+      previousValue: target ? { email: target.email, name: target.name, role: target.role, isActive: target.isActive } : undefined,
+      details: target ? `Usuario eliminado: ${target.email}` : "Usuario eliminado.",
+    });
   },
 });
 
