@@ -5,9 +5,28 @@ import { logAudit } from "./auditLog";
 
 const teenStatus = v.union(
   v.literal("activo"),
+  v.literal("visitante"),
+  v.literal("nuevo"),
   v.literal("seguimiento"),
   v.literal("inactivo"),
+  v.literal("trasladado"),
   v.literal("egresado")
+);
+
+const sourceType = v.union(
+  v.literal("amigo"),
+  v.literal("familiar"),
+  v.literal("campaña"),
+  v.literal("culto"),
+  v.literal("escuela_biblica"),
+  v.literal("otro")
+);
+
+const integrationLevel = v.union(
+  v.literal("nuevo"),
+  v.literal("en_proceso"),
+  v.literal("integrado"),
+  v.literal("necesita_acompañamiento")
 );
 
 const spiritualStage = v.union(
@@ -50,6 +69,22 @@ function normalizePhone(value: string | undefined): string | undefined {
   return normalized;
 }
 
+function hasAnyContact(payload: any): boolean {
+  return Boolean(payload.telefono || payload.telefonoPadre || payload.contactoEmergenciaTelefono);
+}
+
+function isCompleteProfile(payload: any): boolean {
+  return Boolean(
+    payload.nombre &&
+    payload.apellido &&
+    payload.campusId &&
+    hasAnyContact(payload) &&
+    payload.nombreEncargado &&
+    payload.parentescoEncargado &&
+    payload.nacimiento
+  );
+}
+
 function assertValidDate(value: string | undefined, fieldName: string, { allowFuture = false } = {}) {
   if (value === undefined || value === "") return;
   if (!/^\d{4}-\d{2}-\d{2}$/.test(value)) {
@@ -88,8 +123,9 @@ async function validateScopeConsistency(ctx: any, campusId?: string, ministryId?
 }
 
 async function buildTeenPayload(ctx: any, args: any, currentTeen?: any) {
+  const isQuick = args.registroRapido === undefined ? currentTeen?.registroRapido === true : args.registroRapido === true;
   const nombre = cleanText(args.nombre ?? currentTeen?.nombre);
-  const apellido = cleanText(args.apellido ?? currentTeen?.apellido);
+  const apellido = cleanText(args.apellido ?? currentTeen?.apellido) || (isQuick ? "Visitante" : undefined);
   if (!nombre || nombre.length < 2) throw new Error("El nombre debe tener al menos 2 caracteres.");
   if (!apellido || apellido.length < 2) throw new Error("El apellido debe tener al menos 2 caracteres.");
 
@@ -105,18 +141,26 @@ async function buildTeenPayload(ctx: any, args: any, currentTeen?: any) {
   const groupId = args.groupId === undefined ? currentTeen?.groupId : cleanOptionalId(args.groupId);
   await validateScopeConsistency(ctx, campusId, ministryId, groupId);
 
-  return {
+  const telefono = normalizePhone(args.telefono ?? currentTeen?.telefono) ?? "";
+  const telefonoPadre = normalizePhone(args.telefonoPadre ?? currentTeen?.telefonoPadre) ?? "";
+  const contactoEmergenciaTelefono = normalizePhone(args.contactoEmergenciaTelefono ?? currentTeen?.contactoEmergenciaTelefono);
+  if (!isQuick && !campusId) throw new Error("Un adolescente regular debe tener sede asignada.");
+  if (!isQuick && !(telefono || telefonoPadre || contactoEmergenciaTelefono)) {
+    throw new Error("Un adolescente regular debe tener teléfono o contacto familiar.");
+  }
+
+  const payload = {
     nombre,
     apellido,
     nacimiento,
     sexo: args.sexo === undefined ? currentTeen?.sexo : args.sexo,
-    telefono: normalizePhone(args.telefono ?? currentTeen?.telefono) ?? "",
-    telefonoPadre: normalizePhone(args.telefonoPadre ?? currentTeen?.telefonoPadre) ?? "",
+    telefono,
+    telefonoPadre,
     telefonoSecundario: normalizePhone(args.telefonoSecundario ?? currentTeen?.telefonoSecundario),
     nombreEncargado: cleanText(args.nombreEncargado ?? currentTeen?.nombreEncargado),
     parentescoEncargado: cleanText(args.parentescoEncargado ?? currentTeen?.parentescoEncargado),
     contactoEmergenciaNombre: cleanText(args.contactoEmergenciaNombre ?? currentTeen?.contactoEmergenciaNombre),
-    contactoEmergenciaTelefono: normalizePhone(args.contactoEmergenciaTelefono ?? currentTeen?.contactoEmergenciaTelefono),
+    contactoEmergenciaTelefono,
     permiteMensajes: args.permiteMensajes === undefined ? currentTeen?.permiteMensajes : args.permiteMensajes,
     gustos: cleanText(args.gustos ?? currentTeen?.gustos) ?? "",
     notas: cleanText(args.notas ?? currentTeen?.notas) ?? "",
@@ -125,6 +169,13 @@ async function buildTeenPayload(ctx: any, args: any, currentTeen?: any) {
     fotoStorageId: args.fotoStorageId === undefined ? currentTeen?.fotoStorageId : args.fotoStorageId,
     fechaIngreso,
     estado: args.estado === undefined ? currentTeen?.estado ?? "activo" : args.estado,
+    fuenteIngreso: args.fuenteIngreso === undefined ? currentTeen?.fuenteIngreso : args.fuenteIngreso,
+    primeraVisita: cleanText(args.primeraVisita ?? currentTeen?.primeraVisita),
+    liderPrincipalId: args.liderPrincipalId === undefined ? currentTeen?.liderPrincipalId : cleanOptionalId(args.liderPrincipalId),
+    nivelIntegracion: args.nivelIntegracion === undefined ? currentTeen?.nivelIntegracion : args.nivelIntegracion,
+    invitadoPor: cleanText(args.invitadoPor ?? currentTeen?.invitadoPor),
+    edadAproximada: cleanText(args.edadAproximada ?? currentTeen?.edadAproximada),
+    registroRapido: isQuick,
     motivoInactividad: cleanText(args.motivoInactividad ?? currentTeen?.motivoInactividad),
     colegio: cleanText(args.colegio ?? currentTeen?.colegio),
     gradoEscolar: cleanText(args.gradoEscolar ?? currentTeen?.gradoEscolar),
@@ -142,6 +193,30 @@ async function buildTeenPayload(ctx: any, args: any, currentTeen?: any) {
     ministryId,
     groupId,
   };
+  return {
+    ...payload,
+    fichaCompleta: args.fichaCompleta === false ? false : isCompleteProfile(payload),
+  };
+}
+
+async function findDuplicateMatches(ctx: any, args: any, excludeId?: string) {
+  const all = await ctx.db.query("teens").collect();
+  const fullName = `${cleanText(args.nombre) || ""} ${cleanText(args.apellido) || ""}`.trim().toLowerCase();
+  const teenPhoneDigits = (args.telefono || "").replace(/\D/g, "");
+  const parentPhoneDigits = (args.telefonoPadre || "").replace(/\D/g, "");
+  return all
+    .filter((teen: any) => !excludeId || String(teen._id) !== excludeId)
+    .map((teen: any) => {
+      const teenFullName = `${teen.nombre} ${teen.apellido}`.trim().toLowerCase();
+      const teenDigits = (teen.telefono || "").replace(/\D/g, "");
+      const parentDigits = (teen.telefonoPadre || "").replace(/\D/g, "");
+      const reasons: string[] = [];
+      if (fullName && teenFullName === fullName) reasons.push("Mismo nombre completo");
+      if (teenPhoneDigits && teenDigits && teenPhoneDigits === teenDigits) reasons.push("Mismo teléfono del adolescente");
+      if (parentPhoneDigits && parentDigits && parentPhoneDigits === parentDigits) reasons.push("Mismo teléfono del tutor");
+      return reasons.length > 0 ? { teenId: teen._id, nombre: teen.nombre, apellido: teen.apellido, reasons } : null;
+    })
+    .filter(Boolean);
 }
 
 export const list = query({
@@ -199,6 +274,14 @@ export const create = mutation({
     fotoStorageId: v.optional(v.id("_storage")),
     fechaIngreso: v.optional(v.string()),
     estado: v.optional(teenStatus),
+    fuenteIngreso: v.optional(sourceType),
+    primeraVisita: v.optional(v.string()),
+    liderPrincipalId: v.optional(v.union(v.id("users"), v.literal(""))),
+    nivelIntegracion: v.optional(integrationLevel),
+    invitadoPor: v.optional(v.string()),
+    edadAproximada: v.optional(v.string()),
+    registroRapido: v.optional(v.boolean()),
+    fichaCompleta: v.optional(v.boolean()),
     motivoInactividad: v.optional(v.string()),
     colegio: v.optional(v.string()),
     gradoEscolar: v.optional(v.string()),
@@ -213,9 +296,14 @@ export const create = mutation({
     ministryId: optionalMinistryId,
     groupId: optionalGroupId,
     token: v.optional(v.string()),
+    confirmDuplicate: v.optional(v.boolean()),
   },
   handler: async (ctx, args) => {
     const payload = await buildTeenPayload(ctx, args);
+    const duplicates = await findDuplicateMatches(ctx, payload);
+    if (duplicates.length > 0 && !args.confirmDuplicate) {
+      throw new Error("Posible duplicado detectado. Confirma explícitamente para guardar de todos modos.");
+    }
     const access = await requireAccess(ctx, args.token, "helper");
     if (!canAccessTeen(access, payload)) {
       throw new Error("No tienes permisos para crear adolescentes en este ámbito (Sede/Ministerio/Grupo).");
@@ -255,6 +343,14 @@ export const update = mutation({
     fotoStorageId: v.optional(v.id("_storage")),
     fechaIngreso: v.optional(v.string()),
     estado: v.optional(teenStatus),
+    fuenteIngreso: v.optional(sourceType),
+    primeraVisita: v.optional(v.string()),
+    liderPrincipalId: v.optional(v.union(v.id("users"), v.literal(""))),
+    nivelIntegracion: v.optional(integrationLevel),
+    invitadoPor: v.optional(v.string()),
+    edadAproximada: v.optional(v.string()),
+    registroRapido: v.optional(v.boolean()),
+    fichaCompleta: v.optional(v.boolean()),
     motivoInactividad: v.optional(v.string()),
     colegio: v.optional(v.string()),
     gradoEscolar: v.optional(v.string()),
@@ -286,6 +382,25 @@ export const update = mutation({
     }
     
     await ctx.db.patch(args.id, payload);
+    if (String(current.groupId || "") !== String(payload.groupId || "")) {
+      await ctx.db.insert("teenGroupHistory", {
+        teenId: args.id,
+        previousGroupId: current.groupId,
+        newGroupId: payload.groupId,
+        changedByUserId: access.user._id,
+        reason: "Cambio desde ficha pastoral",
+        createdAt: new Date().toISOString(),
+      });
+      await logAudit(ctx, {
+        token: args.token,
+        action: "teen.group_changed",
+        entityType: "teen",
+        entityId: String(args.id),
+        previousValue: { groupId: current.groupId },
+        newValue: { groupId: payload.groupId },
+        details: `${payload.nombre} ${payload.apellido}`,
+      });
+    }
     const deactivated = current.estado !== payload.estado && ["inactivo", "egresado"].includes(payload.estado || "");
     await logAudit(ctx, {
       token: args.token,
@@ -308,24 +423,7 @@ export const detectDuplicates = query({
     excludeId: v.optional(v.id("teens")),
   },
   handler: async (ctx, args) => {
-    const all = await ctx.db.query("teens").collect();
-    const fullName = `${cleanText(args.nombre) || ""} ${cleanText(args.apellido) || ""}`.trim().toLowerCase();
-    const teenPhoneDigits = (args.telefono || "").replace(/\D/g, "");
-    const parentPhoneDigits = (args.telefonoPadre || "").replace(/\D/g, "");
-
-    return all
-      .filter((teen) => !args.excludeId || String(teen._id) !== String(args.excludeId))
-      .map((teen) => {
-        const teenFullName = `${teen.nombre} ${teen.apellido}`.trim().toLowerCase();
-        const teenDigits = (teen.telefono || "").replace(/\D/g, "");
-        const parentDigits = (teen.telefonoPadre || "").replace(/\D/g, "");
-        const reasons: string[] = [];
-        if (fullName && teenFullName === fullName) reasons.push("Mismo nombre completo");
-        if (teenPhoneDigits && teenDigits && teenPhoneDigits === teenDigits) reasons.push("Mismo teléfono del adolescente");
-        if (parentPhoneDigits && parentDigits && parentPhoneDigits === parentDigits) reasons.push("Mismo teléfono del tutor");
-        return reasons.length > 0 ? { teenId: teen._id, nombre: teen.nombre, apellido: teen.apellido, reasons } : null;
-      })
-      .filter(Boolean);
+    return await findDuplicateMatches(ctx, args, args.excludeId ? String(args.excludeId) : undefined);
   },
 });
 

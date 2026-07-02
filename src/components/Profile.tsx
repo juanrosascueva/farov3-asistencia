@@ -160,6 +160,11 @@ export default function Profile({
               <span className="inline-flex items-center gap-1 text-xs font-semibold px-2.5 py-1 rounded-full border bg-ink/[0.03] text-ink/60 border-ink/10">
                 Ficha {completeness.percent}%
               </span>
+              {((teen as any).fichaCompleta === false || (teen as any).registroRapido) && (
+                <span className="inline-flex items-center gap-1 text-xs font-semibold px-2.5 py-1 rounded-full border bg-red-50 text-red-700 border-red-100">
+                  Ficha incompleta
+                </span>
+              )}
               {teen.requiereSeguimientoEspecial && (
                 <span className="inline-flex items-center gap-1 text-xs font-semibold px-2.5 py-1 rounded-full border bg-red-50 text-red-700 border-red-100">
                   Seguimiento especial

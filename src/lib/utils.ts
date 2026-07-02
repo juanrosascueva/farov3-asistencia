@@ -15,8 +15,11 @@ import type {
 
 export const TEEN_STATUS_META: Record<TeenStatus, { label: string; cls: string }> = {
   activo: { label: "Activo", cls: "bg-green-50 text-green-700 border-green-100" },
+  visitante: { label: "Visitante", cls: "bg-cyan-50 text-cyan-700 border-cyan-100" },
+  nuevo: { label: "Nuevo", cls: "bg-teal-50 text-teal-700 border-teal-100" },
   seguimiento: { label: "Seguimiento", cls: "bg-amber-50 text-amber-700 border-amber-100" },
   inactivo: { label: "Inactivo", cls: "bg-slate-100 text-slate-700 border-slate-200" },
+  trasladado: { label: "Trasladado", cls: "bg-purple-50 text-purple-700 border-purple-100" },
   egresado: { label: "Egresado", cls: "bg-blue-50 text-blue-700 border-blue-100" },
 };
 
@@ -189,6 +192,7 @@ export function getTeenStatus(teen: Record<string, any>): TeenStatus {
 
 export function getTeenContactWarnings(teen: Record<string, any>): string[] {
   const warnings: string[] = [];
+  if (teen.fichaCompleta === false || teen.registroRapido) warnings.push("Ficha incompleta");
   if (!teen.nombreEncargado) warnings.push("Sin nombre de tutor");
   if (!teen.telefonoPadre && !teen.contactoEmergenciaTelefono) warnings.push("Sin contacto familiar");
   if (!teen.telefono && !teen.telefonoPadre) warnings.push("Sin teléfonos");
@@ -198,6 +202,21 @@ export function getTeenContactWarnings(teen: Record<string, any>): string[] {
 }
 
 export function teenProfileCompleteness(teen: Record<string, any>): TeenProfileCompleteness {
+  if (teen.registroRapido && teen.fichaCompleta === false) {
+    const requiredQuick: Array<[string, boolean]> = [
+      ["Nombre", !!teen.nombre],
+      ["Contacto", !!(teen.telefono || teen.telefonoPadre || teen.contactoEmergenciaTelefono)],
+      ["Sede", !!teen.campusId],
+      ["Observación inicial", !!teen.observacionInicial],
+    ];
+    const completedQuick = requiredQuick.filter(([, ok]) => ok).length;
+    return {
+      percent: Math.round((completedQuick / requiredQuick.length) * 100),
+      completed: completedQuick,
+      total: requiredQuick.length,
+      missing: requiredQuick.filter(([, ok]) => !ok).map(([label]) => label),
+    };
+  }
   const required: Array<[string, boolean]> = [
     ["Nombre", !!teen.nombre],
     ["Apellido", !!teen.apellido],

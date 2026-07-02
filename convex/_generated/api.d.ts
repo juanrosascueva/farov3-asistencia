@@ -19,6 +19,7 @@ import type * as contacts from "../contacts.js";
 import type * as crisis from "../crisis.js";
 import type * as crons from "../crons.js";
 import type * as customRoles from "../customRoles.js";
+import type * as dashboard from "../dashboard.js";
 import type * as group from "../group.js";
 import type * as images from "../images.js";
 import type * as journal from "../journal.js";
@@ -50,6 +51,7 @@ declare const fullApi: ApiFromModules<{
   crisis: typeof crisis;
   crons: typeof crons;
   customRoles: typeof customRoles;
+  dashboard: typeof dashboard;
   group: typeof group;
   images: typeof images;
   journal: typeof journal;

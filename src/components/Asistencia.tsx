@@ -1,9 +1,10 @@
 import { useState, useCallback, useRef, useEffect } from "react";
-import { useMutation } from "convex/react";
+import { useMutation, useQuery } from "convex/react";
 import { api } from "../../convex/_generated/api";
 import type { Doc } from "../../convex/_generated/dataModel";
-import type { AttendanceMap, AttendanceStatus } from "../lib/types";
+import type { AttendanceMap, AttendanceStatus, MeetingType } from "../lib/types";
 import { useAuth } from "../hooks/useAuth";
+import { useScope } from "../hooks/useScope";
 import {
   fmtDate,
   fmtDateShort,
@@ -23,6 +24,15 @@ interface AsistenciaProps {
   onOpenProfile: (id: string) => void;
 }
 
+const MEETING_LABELS: Record<MeetingType, string> = {
+  culto_adolescentes: "Culto de adolescentes",
+  celula: "Célula",
+  discipulado: "Discipulado",
+  ensayo: "Ensayo",
+  evento_especial: "Evento especial",
+  campamento: "Campamento",
+};
+
 export default function Asistencia({
   teens,
   attendanceMap,
@@ -30,15 +40,21 @@ export default function Asistencia({
 }: AsistenciaProps) {
   const allDates = Object.keys(attendanceMap).sort();
   const markAtt = useMutation(api.attendance.mark);
+  const createSession = useMutation(api.attendance.createSession);
   const deleteDateMut = useMutation(api.attendance.deleteDate);
   const updateDateMut = useMutation(api.attendance.updateDate);
   const { user, token } = useAuth();
+  const { scope } = useScope();
+  const sessions = useQuery(api.attendance.listSessions, token ? { token } : {}) ?? [];
+  const needsContact = useQuery(api.attendance.getNeedsContact, token ? { token } : {}) ?? [];
 
   const [selectedDate, setSelectedDate] = useState(
     allDates[allDates.length - 1] || todayISO()
   );
   const [showNewDate, setShowNewDate] = useState(false);
   const [newDate, setNewDate] = useState(todayISO());
+  const [newMeetingType, setNewMeetingType] = useState<MeetingType>("culto_adolescentes");
+  const [selectedSessionId, setSelectedSessionId] = useState<string>("");
   const [showEditDate, setShowEditDate] = useState(false);
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const [editDateValue, setEditDateValue] = useState(selectedDate);
@@ -57,8 +73,9 @@ export default function Asistencia({
     setEditDateValue(selectedDate);
   }, [selectedDate]);
 
-  // Solo mostrar fechas que tienen registros reales en la base de datos
-  const recent = [...allDates].sort().slice(-10);
+  const sessionDates = sessions.map((s: any) => s.date);
+  const recent = [...new Set([...allDates, ...sessionDates])].sort().slice(-10);
+  const selectedSession = sessions.find((s: any) => String(s._id) === selectedSessionId);
 
   if (!attendanceMap[selectedDate]) {
     attendanceMap[selectedDate] = {};
@@ -73,7 +90,21 @@ export default function Asistencia({
     }
     setPendingCount((c) => c + 1);
     try {
-      await markAtt({ date: selectedDate, teenId: teenId as any, status });
+      const detail =
+        status === "present"
+          ? {}
+          : status === "excused"
+          ? { excuseReason: window.prompt("Motivo de justificación", "") || undefined }
+          : { absenceComment: window.prompt("Comentario breve de ausencia", "") || undefined };
+      await markAtt({
+        token: token ?? undefined,
+        sessionId: selectedSessionId ? (selectedSessionId as any) : undefined,
+        date: selectedDate,
+        teenId: teenId as any,
+        status,
+        checkInMethod: "mobile",
+        ...detail,
+      });
     } catch (err) {
       console.error(err);
     } finally {
@@ -97,11 +128,20 @@ export default function Asistencia({
     }
   }, [attendanceMap]);
 
-  const handleNewDate = () => {
+  const handleNewDate = async () => {
     setShowNewDate(false);
-    if (newDate) {
-      setSelectedDate(newDate);
-    }
+    if (!newDate || !token) return;
+    const id = await createSession({
+      token,
+      date: newDate,
+      type: newMeetingType,
+      campusId: scope.campusId ? (scope.campusId as any) : undefined,
+      ministryId: scope.ministryId ? (scope.ministryId as any) : undefined,
+      groupId: scope.groupId ? (scope.groupId as any) : undefined,
+      title: MEETING_LABELS[newMeetingType],
+    });
+    setSelectedDate(newDate);
+    setSelectedSessionId(String(id));
   };
 
   const handleDeleteDate = async () => {
@@ -142,6 +182,7 @@ export default function Asistencia({
   };
 
   const filteredTeens = teens.filter((t) =>
+    (!selectedSession?.groupId || String(t.groupId || "") === String(selectedSession.groupId)) &&
     `${t.nombre} ${t.apellido}`.toLowerCase().includes(searchQuery.toLowerCase())
   );
 
@@ -220,6 +261,50 @@ export default function Asistencia({
           </button>
         ))}
       </div>
+
+      {sessions.filter((s: any) => s.date === selectedDate).length > 0 && (
+        <div className="rounded-2xl border border-ink/10 bg-card p-3">
+          <label className="text-[11px] font-bold text-ink/45 uppercase tracking-wide">Sesión</label>
+          <select
+            value={selectedSessionId}
+            onChange={(e) => setSelectedSessionId(e.target.value)}
+            className="mt-1 w-full bg-ink/[0.03] border border-ink/10 rounded-xl px-3 py-2 text-sm font-semibold"
+          >
+            <option value="">Legacy / culto adolescentes</option>
+            {sessions.filter((s: any) => s.date === selectedDate).map((s: any) => (
+              <option key={s._id} value={s._id}>{MEETING_LABELS[s.type as MeetingType]}{s.title ? ` - ${s.title}` : ""}</option>
+            ))}
+          </select>
+          {selectedSessionId && (
+            <button
+              type="button"
+              onClick={() => navigator.clipboard?.writeText(`${location.origin}${location.pathname}?session=${selectedSessionId}`)}
+              className="mt-2 text-xs font-semibold text-teal-700 underline underline-offset-2"
+            >
+              Copiar URL de check-in de sesión
+            </button>
+          )}
+        </div>
+      )}
+
+      {needsContact.length > 0 && (
+        <div className="rounded-2xl border border-amber-100 bg-amber-50 p-3.5">
+          <p className="text-sm font-bold text-amber-800">Adolescentes que necesitan contacto esta semana</p>
+          <div className="mt-2 flex flex-wrap gap-2">
+            {needsContact.slice(0, 5).map((item: any) => (
+              <button
+                key={String(item.teenId)}
+                type="button"
+                onClick={() => onOpenProfile(String(item.teenId))}
+                className="rounded-xl border border-amber-200 bg-white/70 px-3 py-2 text-left text-xs"
+              >
+                <span className="font-semibold text-amber-900">{item.teenName}</span>
+                <span className="block text-amber-700">{item.reasons.join(" · ")}</span>
+              </button>
+            ))}
+          </div>
+        </div>
+      )}
 
       {teens.length === 0 ? (
         <div className="text-center py-8 px-4">
@@ -357,6 +442,21 @@ export default function Asistencia({
                 onChange={(e) => setNewDate(e.target.value)}
                 className="w-full bg-card border-2 border-ink/10 focus:border-teal-500 rounded-xl px-4 py-3 text-sm font-semibold outline-none transition-colors"
               />
+            </div>
+
+            <div>
+              <label className="text-xs font-bold text-ink/60 uppercase tracking-wider mb-2 block">
+                Tipo de reunión
+              </label>
+              <select
+                value={newMeetingType}
+                onChange={(e) => setNewMeetingType(e.target.value as MeetingType)}
+                className="w-full bg-card border-2 border-ink/10 focus:border-teal-500 rounded-xl px-4 py-3 text-sm font-semibold outline-none transition-colors"
+              >
+                {Object.entries(MEETING_LABELS).map(([value, label]) => (
+                  <option key={value} value={value}>{label}</option>
+                ))}
+              </select>
             </div>
 
             {/* Botones */}

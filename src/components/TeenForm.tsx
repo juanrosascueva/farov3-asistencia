@@ -35,6 +35,14 @@ const empty = {
   foto: "",
   fechaIngreso: "",
   estado: "activo" as TeenStatus,
+  fuenteIngreso: "culto",
+  primeraVisita: "",
+  liderPrincipalId: "",
+  nivelIntegracion: "nuevo",
+  invitadoPor: "",
+  edadAproximada: "",
+  registroRapido: false,
+  fichaCompleta: true,
   motivoInactividad: "",
   colegio: "",
   gradoEscolar: "",
@@ -55,17 +63,35 @@ const STEPS = [
   { id: "consentimiento", label: "Consentimientos" },
 ] as const;
 
+const SOURCE_OPTIONS = [
+  { value: "amigo", label: "Invitado por amigo" },
+  { value: "familiar", label: "Familiar" },
+  { value: "campaña", label: "Campaña" },
+  { value: "culto", label: "Culto" },
+  { value: "escuela_biblica", label: "Escuela bíblica" },
+  { value: "otro", label: "Otro" },
+];
+
+const INTEGRATION_OPTIONS = [
+  { value: "nuevo", label: "Nuevo" },
+  { value: "en_proceso", label: "En proceso" },
+  { value: "integrado", label: "Integrado" },
+  { value: "necesita_acompañamiento", label: "Necesita acompañamiento" },
+];
+
 interface TeenFormProps {
   teen?: Doc<"teens">;
+  quickVisitor?: boolean;
   onClose: () => void;
   onSuccess: () => void;
 }
 
-export default function TeenForm({ teen, onClose, onSuccess }: TeenFormProps) {
+export default function TeenForm({ teen, quickVisitor = false, onClose, onSuccess }: TeenFormProps) {
   const { token, user } = useAuth();
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState("");
   const [step, setStep] = useState(0);
+  const [confirmDuplicate, setConfirmDuplicate] = useState(false);
 
   const initialForm = useMemo(() => {
     if (teen) {
@@ -87,6 +113,14 @@ export default function TeenForm({ teen, onClose, onSuccess }: TeenFormProps) {
         foto: teen.foto,
         fechaIngreso: teen.fechaIngreso || "",
         estado: teen.estado || "activo",
+        fuenteIngreso: (teen as any).fuenteIngreso || "culto",
+        primeraVisita: (teen as any).primeraVisita || "",
+        liderPrincipalId: (teen as any).liderPrincipalId || "",
+        nivelIntegracion: (teen as any).nivelIntegracion || "nuevo",
+        invitadoPor: (teen as any).invitadoPor || "",
+        edadAproximada: (teen as any).edadAproximada || "",
+        registroRapido: (teen as any).registroRapido || false,
+        fichaCompleta: (teen as any).fichaCompleta ?? true,
         motivoInactividad: teen.motivoInactividad || "",
         colegio: teen.colegio || "",
         gradoEscolar: teen.gradoEscolar || "",
@@ -99,8 +133,16 @@ export default function TeenForm({ teen, onClose, onSuccess }: TeenFormProps) {
         fechaConsentimiento: teen.fechaConsentimiento || "",
       };
     }
-    return { ...empty };
-  }, [teen]);
+    return {
+      ...empty,
+      estado: quickVisitor ? "visitante" : empty.estado,
+      nivelIntegracion: "nuevo",
+      registroRapido: quickVisitor,
+      fichaCompleta: !quickVisitor,
+      primeraVisita: quickVisitor ? new Date().toISOString().slice(0, 10) : "",
+      fechaIngreso: quickVisitor ? new Date().toISOString().slice(0, 10) : "",
+    };
+  }, [teen, quickVisitor]);
 
   const [form, setForm] = useState(initialForm);
   const [campusId, setCampusId] = useState<string>(teen?.campusId || "");
@@ -109,7 +151,7 @@ export default function TeenForm({ teen, onClose, onSuccess }: TeenFormProps) {
   const [fotoStorageId, setFotoStorageId] = useState<string>(teen?.fotoStorageId || "");
 
   useEffect(() => {
-    if (teen) return;
+    if (teen || quickVisitor) return;
     try {
       const raw = localStorage.getItem(DRAFT_KEY);
       if (!raw) return;
@@ -123,15 +165,15 @@ export default function TeenForm({ teen, onClose, onSuccess }: TeenFormProps) {
     } catch {
       localStorage.removeItem(DRAFT_KEY);
     }
-  }, [teen]);
+  }, [teen, quickVisitor]);
 
   useEffect(() => {
-    if (teen) return;
+    if (teen || quickVisitor) return;
     localStorage.setItem(
       DRAFT_KEY,
       JSON.stringify({ form, campusId, ministryId, groupId, step, fotoStorageId })
     );
-  }, [teen, form, campusId, ministryId, groupId, step, fotoStorageId]);
+  }, [teen, quickVisitor, form, campusId, ministryId, groupId, step, fotoStorageId]);
 
   const rawCampuses = useQuery(api.campus.list, user && token ? { token } : "skip");
   const rawMinistries = useQuery(
@@ -171,6 +213,12 @@ export default function TeenForm({ teen, onClose, onSuccess }: TeenFormProps) {
 
   const stepErrors = useMemo(() => {
     const errors: string[] = [];
+    if (quickVisitor) {
+      if (!form.nombre.trim()) errors.push("Ingresa el nombre del visitante.");
+      if (!form.telefono.trim() && !form.telefonoPadre.trim() && !form.contactoEmergenciaTelefono.trim()) errors.push("Agrega un teléfono o contacto del apoderado.");
+      if (!campusId) errors.push("Selecciona una sede.");
+      return errors;
+    }
     if (step === 0) {
       if (!form.nombre.trim()) errors.push("Ingresa el nombre.");
       if (!form.apellido.trim()) errors.push("Ingresa el apellido.");
@@ -187,7 +235,7 @@ export default function TeenForm({ teen, onClose, onSuccess }: TeenFormProps) {
       if (form.consentimientoDatos && !form.fechaConsentimiento) errors.push("Registra la fecha del consentimiento de datos.");
     }
     return errors;
-  }, [step, form, campusId]);
+  }, [step, form, campusId, quickVisitor]);
 
   const set = (key: keyof typeof form) => (value: string | boolean) =>
     setForm((prev) => ({ ...prev, [key]: value }));
@@ -222,12 +270,20 @@ export default function TeenForm({ teen, onClose, onSuccess }: TeenFormProps) {
         groupId: groupId ? (groupId as any) : undefined,
         fotoStorageId: fotoStorageId ? (fotoStorageId as any) : undefined,
         token: token ?? undefined,
+        confirmDuplicate,
       };
       if (teen) {
         await updateTeen({ id: teen._id, ...(payload as any) });
       } else {
-        await createTeen(payload as any);
-        localStorage.removeItem(DRAFT_KEY);
+        await createTeen({
+          ...(payload as any),
+          estado: quickVisitor ? "visitante" : payload.estado,
+          nivelIntegracion: quickVisitor ? "nuevo" : payload.nivelIntegracion,
+          registroRapido: quickVisitor ? true : payload.registroRapido,
+          fichaCompleta: quickVisitor ? false : payload.fichaCompleta,
+          apellido: quickVisitor && !payload.apellido ? "Visitante" : payload.apellido,
+        });
+        if (!quickVisitor) localStorage.removeItem(DRAFT_KEY);
       }
       onSuccess();
     } catch (err: any) {
@@ -238,6 +294,21 @@ export default function TeenForm({ teen, onClose, onSuccess }: TeenFormProps) {
   };
 
   const canGoNext = stepErrors.length === 0;
+  const quickFooter = (
+    <div className="grid grid-cols-1 gap-2 sm:flex sm:items-center sm:justify-between">
+      <button type="button" onClick={onClose} className="rounded-xl border border-ink/10 px-4 py-2.5 text-sm font-semibold text-ink/60 w-full sm:w-auto">
+        Cancelar
+      </button>
+      <button
+        type="submit"
+        form={FORM_ID}
+        disabled={submitting || stepErrors.length > 0}
+        className="rounded-xl bg-ink dark:bg-teal-600 dark:hover:bg-teal-500 text-white px-4 py-2.5 text-sm font-semibold disabled:opacity-40 w-full sm:w-auto"
+      >
+        {submitting ? "Guardando..." : "Registrar visitante"}
+      </button>
+    </div>
+  );
   const mobileProgress = (
     <div className="rounded-2xl border border-ink/10 bg-ink/[0.02] p-3.5 sm:hidden">
       <div className="flex items-center justify-between gap-3 text-sm">
@@ -317,13 +388,69 @@ export default function TeenForm({ teen, onClose, onSuccess }: TeenFormProps) {
 
   return (
     <ResponsiveSheet
-      title={teen ? "Editar ficha pastoral" : "Registrar adolescente"}
+      title={quickVisitor ? "Registro rápido de visitante" : teen ? "Editar ficha pastoral" : "Registrar adolescente"}
       onClose={closePreservingDraft}
-      desktopMaxWidthClass="sm:max-w-4xl"
-      progress={mobileProgress}
-      footer={footer}
+      desktopMaxWidthClass={quickVisitor ? "sm:max-w-2xl" : "sm:max-w-4xl"}
+      progress={quickVisitor ? undefined : mobileProgress}
+      footer={quickVisitor ? quickFooter : footer}
     >
       <form id={FORM_ID} onSubmit={handleSubmit} className="space-y-4 sm:space-y-5 h-full">
+        {quickVisitor && (
+          <section className="space-y-4">
+            <SectionHeader title="Datos mínimos" helper="La ficha quedará marcada como incompleta para completarla después." />
+            {error && <Alert tone="red" message={error} />}
+            {stepErrors.length > 0 && <Alert tone="amber" message={stepErrors[0]} />}
+            {duplicateMatches && duplicateMatches.length > 0 && !teen && (
+              <DuplicateWarning matches={duplicateMatches} confirmed={confirmDuplicate} onConfirm={() => setConfirmDuplicate(true)} />
+            )}
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+              <Field label="Nombre" value={form.nombre} onChange={set("nombre")} required />
+              <Field label="Edad aproximada" value={form.edadAproximada} onChange={set("edadAproximada")} inputMode="numeric" placeholder="Ej: 14" />
+            </div>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+              <Field label="Teléfono del visitante" type="tel" inputMode="tel" value={form.telefono} onChange={(v) => set("telefono")(normalizePhoneInput(v))} />
+              <Field label="Contacto del apoderado" type="tel" inputMode="tel" value={form.telefonoPadre} onChange={(v) => set("telefonoPadre")(normalizePhoneInput(v))} />
+            </div>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+              <Field label="Quién lo invitó" value={form.invitadoPor} onChange={set("invitadoPor")} />
+              <SelectField label="Fuente de ingreso" value={form.fuenteIngreso} onChange={set("fuenteIngreso")} options={SOURCE_OPTIONS} />
+            </div>
+            <div className="space-y-3">
+              <SelectField
+                label="Sede"
+                value={campusId}
+                onChange={(v) => {
+                  setCampusId(String(v));
+                  setMinistryId("");
+                  setGroupId("");
+                }}
+                options={[{ value: "", label: "Selecciona una sede" }, ...((campuses || []).map((c: any) => ({ value: c._id, label: c.name })))]}
+              />
+              {campusId && (
+                <SelectField
+                  label="Ministerio"
+                  value={ministryId}
+                  onChange={(v) => {
+                    setMinistryId(String(v));
+                    setGroupId("");
+                  }}
+                  options={[{ value: "", label: "Sin ministerio" }, ...((ministries || []).map((m: any) => ({ value: m._id, label: m.name })))]}
+                />
+              )}
+              {ministryId && (
+                <SelectField
+                  label="Grupo"
+                  value={groupId}
+                  onChange={(v) => setGroupId(String(v))}
+                  options={[{ value: "", label: "Sin grupo" }, ...((groups || []).map((g: any) => ({ value: g._id, label: g.name })))]}
+                />
+              )}
+            </div>
+            <TextArea label="Observación inicial" value={form.observacionInicial} onChange={set("observacionInicial")} rows={4} />
+          </section>
+        )}
+        {!quickVisitor && (
+          <>
         <div className="hidden sm:flex sm:flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
             <div className="flex flex-wrap gap-2">
               {STEPS.map((item, index) => (
@@ -352,23 +479,7 @@ export default function TeenForm({ teen, onClose, onSuccess }: TeenFormProps) {
         </div>
 
         {duplicateMatches && duplicateMatches.length > 0 && !teen && (
-          <details className="rounded-2xl border border-amber-200 bg-amber-50 p-4 group">
-            <summary className="list-none cursor-pointer flex items-start justify-between gap-3">
-              <div>
-                <p className="text-sm font-semibold text-amber-800">Posibles duplicados detectados</p>
-                <p className="text-xs text-amber-800/80 mt-1">{duplicateMatches.length} coincidencia{duplicateMatches.length > 1 ? "s" : ""} encontrada{duplicateMatches.length > 1 ? "s" : ""}.</p>
-              </div>
-              <span className="text-xs font-semibold text-amber-700 shrink-0 group-open:hidden">Ver</span>
-            </summary>
-            <div className="mt-3 space-y-2 text-xs text-amber-800/90">
-              {duplicateMatches.map((match) => (
-                <div key={match.teenId} className="rounded-xl bg-white/70 px-3 py-2 border border-amber-100">
-                  <p className="font-semibold">{match.nombre} {match.apellido}</p>
-                  <p>{match.reasons.join(" · ")}</p>
-                </div>
-              ))}
-            </div>
-          </details>
+          <DuplicateWarning matches={duplicateMatches} confirmed={confirmDuplicate} onConfirm={() => setConfirmDuplicate(true)} />
         )}
 
         {error && <Alert tone="red" message={error} />}
@@ -453,6 +564,14 @@ export default function TeenForm({ teen, onClose, onSuccess }: TeenFormProps) {
                 options={Object.entries(TEEN_STATUS_META).map(([value, meta]) => ({ value, label: meta.label }))}
               />
             </div>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+              <SelectField label="Fuente de ingreso" value={form.fuenteIngreso} onChange={set("fuenteIngreso")} options={SOURCE_OPTIONS} />
+              <Field label="Primera visita" type="date" value={form.primeraVisita} onChange={set("primeraVisita")} />
+            </div>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+              <SelectField label="Nivel de integración" value={form.nivelIntegracion} onChange={set("nivelIntegracion")} options={INTEGRATION_OPTIONS} />
+              <Field label="Invitado por" value={form.invitadoPor} onChange={set("invitadoPor")} />
+            </div>
             {form.estado !== "activo" && (
               <TextArea label="Motivo del estado actual" value={form.motivoInactividad} onChange={set("motivoInactividad")} rows={2} />
             )}
@@ -520,6 +639,8 @@ export default function TeenForm({ teen, onClose, onSuccess }: TeenFormProps) {
             </div>
           </section>
         )}
+          </>
+        )}
       </form>
     </ResponsiveSheet>
   );
@@ -537,6 +658,47 @@ function SectionHeader({ title, helper }: { title: string; helper: string }) {
 function Alert({ tone, message }: { tone: "amber" | "red"; message: string }) {
   const cls = tone === "red" ? "border-red-200 bg-red-50 text-red-700" : "border-amber-200 bg-amber-50 text-amber-800";
   return <div className={`rounded-2xl border p-3 text-sm ${cls}`}>{message}</div>;
+}
+
+function DuplicateWarning({
+  matches,
+  confirmed,
+  onConfirm,
+}: {
+  matches: { teenId: string; nombre: string; apellido: string; reasons: string[] }[];
+  confirmed: boolean;
+  onConfirm: () => void;
+}) {
+  return (
+    <details className="rounded-2xl border border-amber-200 bg-amber-50 p-4 group">
+      <summary className="list-none cursor-pointer flex items-start justify-between gap-3">
+        <div>
+          <p className="text-sm font-semibold text-amber-800">Posibles duplicados detectados</p>
+          <p className="text-xs text-amber-800/80 mt-1">
+            {matches.length} coincidencia{matches.length > 1 ? "s" : ""} encontrada{matches.length > 1 ? "s" : ""}.
+          </p>
+        </div>
+        <span className="text-xs font-semibold text-amber-700 shrink-0 group-open:hidden">Ver</span>
+      </summary>
+      <div className="mt-3 space-y-2 text-xs text-amber-800/90">
+        {matches.map((match) => (
+          <div key={match.teenId} className="rounded-xl bg-white/70 px-3 py-2 border border-amber-100">
+            <p className="font-semibold">{match.nombre} {match.apellido}</p>
+            <p>{match.reasons.join(" · ")}</p>
+          </div>
+        ))}
+        <button
+          type="button"
+          onClick={onConfirm}
+          className={`rounded-xl px-3 py-2 text-xs font-semibold border ${
+            confirmed ? "bg-green-50 text-green-700 border-green-200" : "bg-white text-amber-800 border-amber-200"
+          }`}
+        >
+          {confirmed ? "Duplicado confirmado: guardar permitido" : "Confirmar que deseo guardar de todos modos"}
+        </button>
+      </div>
+    </details>
+  );
 }
 
 function Field({

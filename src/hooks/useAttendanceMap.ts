@@ -1,9 +1,11 @@
 import { useQuery } from "convex/react";
 import { api } from "../../convex/_generated/api";
 import type { AttendanceMap } from "../lib/types";
+import { useAuth } from "./useAuth";
 
 export function useAttendanceMap(): AttendanceMap | undefined {
-  const records = useQuery(api.attendance.list);
+  const { token } = useAuth();
+  const records = useQuery(api.attendance.list, token ? { token } : {});
 
   if (!records) return undefined;
 

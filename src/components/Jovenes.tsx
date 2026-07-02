@@ -36,6 +36,7 @@ export default function Jovenes({
 }: JovenesProps) {
   const [query, setQuery] = useState("");
   const [showForm, setShowForm] = useState(false);
+  const [showQuickVisitor, setShowQuickVisitor] = useState(false);
   const [showImport, setShowImport] = useState(false);
   const [editingTeen, setEditingTeen] = useState<Doc<"teens"> | null>(null);
   const [deletingTeen, setDeletingTeen] = useState<Doc<"teens"> | null>(null);
@@ -171,6 +172,15 @@ export default function Jovenes({
           >
             <svg className="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4" /><polyline points="7 10 12 15 17 10" /><line x1="12" y1="15" x2="12" y2="3" /></svg>
             Importar
+          </button>
+          <button
+            onClick={() => setShowQuickVisitor(true)}
+            className="text-xs font-semibold bg-teal-50 border border-teal-100 text-teal-700 rounded-full px-3.5 py-2 flex items-center justify-center gap-1.5 min-w-0"
+          >
+            <svg className="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+              <path d="M12 5v14M5 12h14" />
+            </svg>
+            Visitante
           </button>
           <button
             onClick={() => setShowForm(true)}
@@ -497,6 +507,11 @@ export default function Jovenes({
                       <span className="inline-flex items-center gap-1 text-[11px] font-semibold px-1.5 py-0.5 rounded-full border bg-ink/[0.03] text-ink/60 border-ink/10">
                         Ficha {completeness.percent}%
                       </span>
+                      {((t as any).fichaCompleta === false || (t as any).registroRapido) && (
+                        <span className="inline-flex items-center gap-1 text-[11px] font-semibold px-1.5 py-0.5 rounded-full border bg-red-50 text-red-700 border-red-100">
+                          Ficha incompleta
+                        </span>
+                      )}
                     </div>
                     {(s.presentStreak > 2 || risk.score >= 2 || hasFollowUp) && (
                       <div className="flex flex-wrap items-center gap-1 mt-1">
@@ -618,6 +633,14 @@ export default function Jovenes({
         <TeenForm
           onClose={() => setShowForm(false)}
           onSuccess={() => setShowForm(false)}
+        />
+      )}
+
+      {showQuickVisitor && (
+        <TeenForm
+          quickVisitor
+          onClose={() => setShowQuickVisitor(false)}
+          onSuccess={() => setShowQuickVisitor(false)}
         />
       )}
 

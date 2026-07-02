@@ -69,6 +69,77 @@ interface DashboardProps {
   onOpenProfile: (id: string) => void;
 }
 
+function RoleDashboardSummary({ summary, onOpenProfile }: { summary: any; onOpenProfile: (id: string) => void }) {
+  const variantLabels: Record<string, string> = {
+    pastor: "Salud general del ministerio",
+    coordinador: "Estado de tus grupos",
+    leader: "Mis adolescentes y seguimientos",
+  };
+  const m = summary.metrics;
+  const cards =
+    summary.variant === "pastor"
+      ? [
+          ["Asistencia total", `${m.attendancePct}%`],
+          ["Retención nuevos/visitantes", `${m.newTeens + m.visitors}`],
+          ["Adolescentes en riesgo", `${summary.needsContact.length}`],
+          ["Líderes con tareas", `${m.leadersWithTasks}`],
+        ]
+      : summary.variant === "coordinador"
+      ? [
+          ["Adolescentes sin contacto", `${summary.needsContact.length}`],
+          ["Asistencia por grupo", `${m.attendancePct}%`],
+          ["Alertas pendientes", `${m.pendingCrisis}`],
+          ["Tareas vencidas", `${m.overdueTasks}`],
+        ]
+      : [
+          ["Mis adolescentes", `${m.totalTeens}`],
+          ["Asistencia reciente", `${m.attendancePct}%`],
+          ["Tareas pastorales", `${m.openTasks}`],
+          ["Nuevos visitantes", `${m.visitors}`],
+        ];
+  return (
+    <section className="rounded-card border border-ink/10 bg-card p-4 shadow-soft">
+      <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
+        <div>
+          <p className="text-xs font-bold uppercase tracking-wide text-teal-700">{variantLabels[summary.variant] || variantLabels.leader}</p>
+          <p className="text-sm text-ink/50">Dashboard filtrado por rol y alcance autorizado.</p>
+        </div>
+        {m.criticalCrisis > 0 && (
+          <span className="rounded-full bg-red-50 px-3 py-1 text-xs font-bold text-red-700 border border-red-100">
+            {m.criticalCrisis} crisis crítica
+          </span>
+        )}
+      </div>
+      <div className="mt-4 grid grid-cols-2 gap-2 lg:grid-cols-4">
+        {cards.map(([label, value]) => (
+          <div key={label} className="rounded-2xl border border-ink/10 bg-ink/[0.02] p-3">
+            <p className="text-[11px] font-semibold text-ink/45">{label}</p>
+            <p className="mt-1 text-2xl font-bold text-ink">{value}</p>
+          </div>
+        ))}
+      </div>
+      {summary.needsContact.length > 0 && (
+        <div className="mt-4">
+          <p className="text-sm font-bold text-ink">Adolescentes que necesitan contacto esta semana</p>
+          <div className="mt-2 grid gap-2 sm:grid-cols-2">
+            {summary.needsContact.slice(0, 4).map((item: any) => (
+              <button
+                key={String(item.teenId)}
+                type="button"
+                onClick={() => onOpenProfile(String(item.teenId))}
+                className="rounded-2xl border border-amber-100 bg-amber-50 px-3 py-2 text-left"
+              >
+                <span className="block text-sm font-semibold text-amber-900">{item.teenName}</span>
+                <span className="block text-xs text-amber-700">{item.reasons.join(" · ")}</span>
+              </button>
+            ))}
+          </div>
+        </div>
+      )}
+    </section>
+  );
+}
+
 export default function Dashboard({
   teens,
   attendanceMap,
@@ -119,6 +190,7 @@ export default function Dashboard({
   });
 
   const crisisAlertsRaw = useQuery(api.crisis.getUnattendedAlerts, token ? { token } : {}) ?? [];
+  const roleSummary = useQuery(api.dashboard.getRoleSummary, token ? { token } : "skip") as any;
   const pastoralTasks = useQuery(api.pastoralTasks.listOpenForDashboard, token ? { token } : "skip") ?? [];
   const updateCrisisStatus = useMutation(api.crisis.updateStatus);
   const dropoutPredictions = useQuery(api.ai.getAllDropoutPredictions) ?? [];
@@ -167,6 +239,10 @@ export default function Dashboard({
           Resumen del ministerio
         </h1>
       </div>
+
+      {roleSummary && (
+        <RoleDashboardSummary summary={roleSummary} onOpenProfile={onOpenProfile} />
+      )}
 
       {crisisTeens.length > 0 && (
         <div className="bg-red-50 border border-red-200 rounded-card p-4">

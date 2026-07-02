@@ -99,11 +99,38 @@ export default defineSchema({
     estado: v.optional(
       v.union(
         v.literal("activo"),
+        v.literal("visitante"),
+        v.literal("nuevo"),
         v.literal("seguimiento"),
         v.literal("inactivo"),
+        v.literal("trasladado"),
         v.literal("egresado")
       )
     ),
+    fuenteIngreso: v.optional(
+      v.union(
+        v.literal("amigo"),
+        v.literal("familiar"),
+        v.literal("campaña"),
+        v.literal("culto"),
+        v.literal("escuela_biblica"),
+        v.literal("otro")
+      )
+    ),
+    primeraVisita: v.optional(v.string()),
+    liderPrincipalId: v.optional(v.id("users")),
+    nivelIntegracion: v.optional(
+      v.union(
+        v.literal("nuevo"),
+        v.literal("en_proceso"),
+        v.literal("integrado"),
+        v.literal("necesita_acompañamiento")
+      )
+    ),
+    invitadoPor: v.optional(v.string()),
+    edadAproximada: v.optional(v.string()),
+    registroRapido: v.optional(v.boolean()),
+    fichaCompleta: v.optional(v.boolean()),
     motivoInactividad: v.optional(v.string()),
     colegio: v.optional(v.string()),
     gradoEscolar: v.optional(v.string()),
@@ -132,7 +159,39 @@ export default defineSchema({
     .index("by_estado", ["estado"])
     .index("by_fechaIngreso", ["fechaIngreso"]),
 
+  teenGroupHistory: defineTable({
+    teenId: v.id("teens"),
+    previousGroupId: v.optional(v.id("group")),
+    newGroupId: v.optional(v.id("group")),
+    changedByUserId: v.optional(v.id("users")),
+    reason: v.optional(v.string()),
+    createdAt: v.string(),
+  })
+    .index("by_teenId", ["teenId"]),
+
+  meetingSessions: defineTable({
+    date: v.string(),
+    type: v.union(
+      v.literal("culto_adolescentes"),
+      v.literal("celula"),
+      v.literal("discipulado"),
+      v.literal("ensayo"),
+      v.literal("evento_especial"),
+      v.literal("campamento")
+    ),
+    campusId: v.optional(v.id("campus")),
+    ministryId: v.optional(v.id("ministry")),
+    groupId: v.optional(v.id("group")),
+    title: v.optional(v.string()),
+    createdBy: v.optional(v.id("users")),
+    createdAt: v.string(),
+  })
+    .index("by_date", ["date"])
+    .index("by_groupId", ["groupId"])
+    .index("by_date_type", ["date", "type"]),
+
   attendance: defineTable({
+    sessionId: v.optional(v.id("meetingSessions")),
     date: v.string(),
     teenId: v.id("teens"),
     status: v.union(
@@ -140,10 +199,17 @@ export default defineSchema({
       v.literal("absent"),
       v.literal("excused")
     ),
+    excuseReason: v.optional(v.string()),
+    absenceComment: v.optional(v.string()),
+    checkInMethod: v.optional(
+      v.union(v.literal("manual"), v.literal("mobile"), v.literal("qr"))
+    ),
   })
     .index("by_date", ["date"])
     .index("by_teenId", ["teenId"])
-    .index("by_date_and_teen", ["date", "teenId"]),
+    .index("by_date_and_teen", ["date", "teenId"])
+    .index("by_sessionId", ["sessionId"])
+    .index("by_session_and_teen", ["sessionId", "teenId"]),
 
   journal: defineTable({
     teenId: v.id("teens"),
