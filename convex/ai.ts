@@ -879,7 +879,8 @@ export const chatWithAI = action({
           const teenDetail = await ctx.runQuery(internal.ai.getTeenData, { teenId: t._id as any });
           if (teenDetail) {
             const journalsList = (teenDetail.recentJournals || [])
-              .map((j: any) => `  * [${j.entryDate} - ${j.category}] (por ${j.leaderName}): "${j.content}" ${j.isConfidential ? "(CONFIDENCIAL)" : ""}`)
+              .filter((j: any) => !j.isConfidential)
+              .map((j: any) => `  * [${j.entryDate} - ${j.category}] (por ${j.leaderName}): "${j.content}"`)
               .join("\n");
 
             specificTeenContext += `\n--- DETALLE DE ADOLESCENTE CONSULTADO (${t.nombre} ${t.apellido}) ---
