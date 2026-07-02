@@ -43,6 +43,7 @@ export default function JournalTimeline({ teenId }: JournalProps) {
   const [entryDate, setEntryDate] = useState(new Date().toISOString().slice(0, 10));
   const [leaderName, setLeaderName] = useState(user?.name || "");
   const [followUp, setFollowUp] = useState(false);
+  const [isConfidential, setIsConfidential] = useState(false);
   const [listening, setListening] = useState(false);
   const [structuring, setStructuring] = useState(false);
   const structureAction = useAction(api.ai.structureTranscription as any);
@@ -83,6 +84,7 @@ export default function JournalTimeline({ teenId }: JournalProps) {
       category: category as any,
       leaderName: leaderName.trim(),
       followUp,
+      isConfidential,
     });
     if (entryId) {
       analyzeEntry({
@@ -95,6 +97,7 @@ export default function JournalTimeline({ teenId }: JournalProps) {
     setContent("");
     setLeaderName("");
     setFollowUp(false);
+    setIsConfidential(false);
     setShowForm(false);
   };
 
@@ -274,6 +277,20 @@ export default function JournalTimeline({ teenId }: JournalProps) {
               </span>
             </span>
           </label>
+          <label className="flex items-center gap-2.5 cursor-pointer">
+            <input
+              type="checkbox"
+              checked={isConfidential}
+              onChange={(e) => setIsConfidential(e.target.checked)}
+              className="w-4 h-4 rounded border-ink/20 text-teal-600 focus:ring-teal-500"
+            />
+            <span className="text-sm text-ink/70">
+              <span className="font-semibold">Entrada confidencial</span>
+              <span className="text-xs text-ink/40 ml-1">
+                — solo visible para directores, coordinadores y pastores
+              </span>
+            </span>
+          </label>
           <button
             type="submit"
             className="w-full bg-ink text-white rounded-xl py-2.5 text-sm font-semibold"
@@ -339,6 +356,11 @@ export default function JournalTimeline({ teenId }: JournalProps) {
                         {entry.followUp && (
                           <span className="text-[10px] font-semibold text-coral-600 bg-coral-50 px-1.5 py-0.5 rounded-full">
                             📌 Seguimiento
+                          </span>
+                        )}
+                        {entry.isConfidential && (
+                          <span className="text-[10px] font-semibold text-teal-700 bg-teal-50 px-1.5 py-0.5 rounded-full">
+                            🔒 Confidencial
                           </span>
                         )}
                         {analysis && (
