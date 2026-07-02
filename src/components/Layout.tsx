@@ -100,7 +100,7 @@ export default function Layout({
         )}
       </aside>
 
-      <main className="flex-1 px-4 sm:px-6 lg:px-0 pt-5 lg:pt-0 pb-28 sm:pb-24 lg:pb-6">
+      <main className="flex-1 px-3 sm:px-6 lg:px-0 pt-5 lg:pt-0 pb-28 sm:pb-24 lg:pb-6">
         <header className="mb-5 space-y-3 lg:hidden">
           <div className="flex items-center justify-between gap-3">
             <div className="flex items-center gap-2 min-w-0">
