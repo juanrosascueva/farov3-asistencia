@@ -57,9 +57,8 @@ export default function Asistencia({
     setEditDateValue(selectedDate);
   }, [selectedDate]);
 
-  const recent = [
-    ...new Set([...lastNSundays(6), ...allDates]),
-  ].sort().slice(-10).filter(d => !deletedDates.includes(d));
+  // Solo mostrar fechas que tienen registros reales en la base de datos
+  const recent = [...allDates].sort().slice(-10);
 
   if (!attendanceMap[selectedDate]) {
     attendanceMap[selectedDate] = {};
