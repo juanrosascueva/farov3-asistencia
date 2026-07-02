@@ -29,6 +29,40 @@ function roleTitle(role: string | undefined): string {
   }
 }
 
+function severityLabel(value: string | undefined): string {
+  const labels: Record<string, string> = {
+    low: "Baja",
+    medium: "Media",
+    high: "Alta",
+    critical: "Crítica",
+  };
+  return labels[value || ""] || "Crítica";
+}
+
+function statusLabel(value: string | undefined): string {
+  const labels: Record<string, string> = {
+    unattended: "Abierta",
+    open: "Abierta",
+    in_progress: "En proceso",
+    attended: "Atendida",
+    referred: "Derivada",
+    follow_up: "Seguimiento",
+  };
+  return labels[value || ""] || "Abierta";
+}
+
+function taskStatusLabel(value: string | undefined): string {
+  const labels: Record<string, string> = {
+    pending: "Pendiente",
+    in_progress: "En proceso",
+    done: "Realizado",
+    rescheduled: "Reprogramado",
+    canceled: "Cancelado",
+    escalated: "Escalado",
+  };
+  return labels[value || ""] || "Pendiente";
+}
+
 interface DashboardProps {
   teens: Doc<"teens">[];
   attendanceMap: AttendanceMap;
@@ -40,7 +74,7 @@ export default function Dashboard({
   attendanceMap,
   onOpenProfile,
 }: DashboardProps) {
-  const { user } = useAuth();
+  const { user, token } = useAuth();
   const firstName = user?.name?.split(" ")[0] ?? "";
   const title = roleTitle(user?.role);
   const dates = Object.keys(attendanceMap).sort();
@@ -84,8 +118,9 @@ export default function Dashboard({
     return { d, pct: tot ? Math.round((pres / tot) * 100) : 0 };
   });
 
-  const crisisAlertsRaw = useQuery(api.crisis.getUnattendedAlerts) ?? [];
-  const markCrisisAttended = useMutation(api.crisis.markAttended);
+  const crisisAlertsRaw = useQuery(api.crisis.getUnattendedAlerts, token ? { token } : {}) ?? [];
+  const pastoralTasks = useQuery(api.pastoralTasks.listOpenForDashboard, token ? { token } : "skip") ?? [];
+  const updateCrisisStatus = useMutation(api.crisis.updateStatus);
   const dropoutPredictions = useQuery(api.ai.getAllDropoutPredictions) ?? [];
 
   const highDropout = (dropoutPredictions as any[])
@@ -104,6 +139,16 @@ export default function Dashboard({
       return { teen, alert };
     })
     .filter((x: any): x is NonNullable<typeof x> => x !== null);
+
+  const changeCrisisStatus = async (alertId: any, nextStatus: "in_progress" | "attended" | "referred" | "follow_up") => {
+    if (!token) return;
+    let notes: string | undefined;
+    if (nextStatus !== "in_progress") {
+      notes = window.prompt("Registra la nota de decisión o seguimiento:")?.trim();
+      if (!notes) return;
+    }
+    await updateCrisisStatus({ token, alertId, status: nextStatus, notes });
+  };
 
   const colorMap: Record<string, string> = {
     ink: "text-ink bg-ink/5 dark:text-ink/80 dark:bg-ink/10",
@@ -148,13 +193,31 @@ export default function Dashboard({
                 </div>
                 <div className="flex flex-wrap items-center gap-2 shrink-0 sm:justify-end">
                   <span className="text-[11px] font-bold text-red-700 bg-red-100 px-2 py-1 rounded-full">
-                    Atención inmediata
+                    {severityLabel(c.alert.severity)} · {statusLabel(c.alert.status)}
                   </span>
                   <button
-                    onClick={() => markCrisisAttended({ alertId: c.alert._id })}
+                    onClick={() => changeCrisisStatus(c.alert._id, "in_progress")}
+                    className="text-[10px] font-semibold text-amber-700 bg-amber-50 hover:bg-amber-100 border border-amber-200 px-2 py-1 rounded-full transition"
+                  >
+                    En proceso
+                  </button>
+                  <button
+                    onClick={() => changeCrisisStatus(c.alert._id, "attended")}
                     className="text-[10px] font-semibold text-green-700 bg-green-50 hover:bg-green-100 border border-green-200 px-2 py-1 rounded-full transition"
                   >
                     Atendida
+                  </button>
+                  <button
+                    onClick={() => changeCrisisStatus(c.alert._id, "referred")}
+                    className="text-[10px] font-semibold text-red-700 bg-red-50 hover:bg-red-100 border border-red-200 px-2 py-1 rounded-full transition"
+                  >
+                    Derivar
+                  </button>
+                  <button
+                    onClick={() => changeCrisisStatus(c.alert._id, "follow_up")}
+                    className="text-[10px] font-semibold text-teal-700 bg-teal-50 hover:bg-teal-100 border border-teal-200 px-2 py-1 rounded-full transition"
+                  >
+                    Seguimiento
                   </button>
                 </div>
               </div>
@@ -227,6 +290,53 @@ export default function Dashboard({
       </div>
 
       <div className="grid lg:grid-cols-3 2xl:grid-cols-4 gap-5">
+        <div className="lg:col-span-3 2xl:col-span-4 bg-card rounded-card shadow-soft p-4 sm:p-5">
+          <div className="flex flex-col gap-1 sm:flex-row sm:items-center sm:justify-between mb-4">
+            <h2 className="font-display font-semibold text-base">
+              Tareas pastorales pendientes
+            </h2>
+            <span className="text-xs text-ink/40">
+              {pastoralTasks.length} abierta{pastoralTasks.length === 1 ? "" : "s"}
+            </span>
+          </div>
+          {pastoralTasks.length === 0 ? (
+            <EmptyState
+              title="Sin tareas abiertas"
+              sub="Las tareas creadas desde el perfil, plan pastoral o crisis aparecerán aquí."
+            />
+          ) : (
+            <div className="grid md:grid-cols-2 xl:grid-cols-3 gap-3">
+              {pastoralTasks.slice(0, 9).map((task: any) => (
+                <div
+                  key={task._id}
+                  className="p-3 rounded-xl border border-ink/10 bg-ink/[0.02] cursor-pointer hover:bg-ink/[0.04] transition"
+                  onClick={() => onOpenProfile(task.teenId)}
+                >
+                  <div className="flex items-start gap-3">
+                    {task.teenPhoto ? (
+                      <img src={task.teenPhoto} alt="" className="w-9 h-9 rounded-full object-cover" />
+                    ) : (
+                      <div className="w-9 h-9 rounded-full bg-teal-50 text-teal-700 flex items-center justify-center text-xs font-bold">
+                        {String(task.teenName || "A").slice(0, 1)}
+                      </div>
+                    )}
+                    <div className="min-w-0 flex-1">
+                      <p className="text-sm font-semibold truncate">{esc(task.teenName)}</p>
+                      <p className="text-xs text-ink/70 truncate">{esc(task.title)}</p>
+                      <p className="text-[11px] text-ink/40 mt-1">
+                        {task.assignedName || "Sin responsable"} · {task.dueDate ? fmtDate(task.dueDate) : "Sin fecha"} · {taskStatusLabel(task.status)}
+                      </p>
+                    </div>
+                    <span className={`text-[10px] font-bold px-2 py-1 rounded-full ${task.priority === "critical" ? "bg-red-100 text-red-700" : task.priority === "high" ? "bg-coral-50 text-coral-700" : task.priority === "medium" ? "bg-amber-50 text-amber-700" : "bg-ink/5 text-ink/50"}`}>
+                      {severityLabel(task.priority)}
+                    </span>
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+
         <div className="lg:col-span-2 bg-card rounded-card shadow-soft p-3 sm:p-5 overflow-hidden">
           <div className="flex flex-col gap-1 sm:flex-row sm:items-center sm:justify-between mb-4">
             <h2 className="font-display font-semibold text-base">

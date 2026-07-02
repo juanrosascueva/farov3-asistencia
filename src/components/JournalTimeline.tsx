@@ -271,9 +271,9 @@ export default function JournalTimeline({ teenId }: JournalProps) {
               className="w-4 h-4 rounded border-ink/20 text-coral-600 focus:ring-coral-500"
             />
             <span className="text-sm text-ink/70">
-              <span className="font-semibold">Requiere seguimiento</span>
+              <span className="font-semibold">Marcar como seguimiento histórico</span>
               <span className="text-xs text-ink/40 ml-1">
-                — aparecerá en el panel de inicio
+                — para pendientes usa Tareas pastorales
               </span>
             </span>
           </label>

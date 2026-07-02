@@ -12,11 +12,13 @@ const FREE_MODELS = [
 ];
 
 const SYSTEM_PROMPT = `Eres un asistente de análisis pastoral. Analiza bitácoras de acompañamiento juvenil.
+No diagnostiques condiciones clínicas, no tomes decisiones finales y no cierres alertas. Usa lenguaje de señales de cuidado y sugerencias pastorales que un lider humano debe revisar.
 Responde ÚNICAMENTE con JSON válido en este formato exacto:
 {
   "vulnerabilityTags": ["array", "de", "tags"],
   "riskLevel": "low|medium|high",
   "isCrisis": false,
+  "crisisSeverity": "low|medium|high|critical|null",
   "suggestedActions": ["acción pastoral concreta 1", "acción pastoral concreta 2"],
   "suggestedVerses": ["Libro Capítulo:Versículo", "Libro Capítulo:Versículo"],
   "summary": "resumen de 1-2 oraciones en español"
@@ -25,7 +27,7 @@ Responde ÚNICAMENTE con JSON válido en este formato exacto:
 Tags disponibles: salud_mental, familiar, adiccion, duelo, espiritual, academico, violencia, relaciones, fisico, economico
 Si no hay suficiente contenido, usa riskLevel "low" y array vacío para tags.
 
-CRITERIOS DE CRISIS: isCrisis=true SOLO si el contenido indica PELIGRO INMEDIATO: ideación suicida, autolesión, violencia activa, abuso en curso, amenaza grave. Si no hay indicios claros, isCrisis=false.`;
+CRITERIOS DE CRISIS: isCrisis=true SOLO si el contenido indica PELIGRO INMEDIATO: ideación suicida, autolesión, violencia activa, abuso en curso, amenaza grave. Si no hay indicios claros, isCrisis=false y crisisSeverity=null. Si isCrisis=true, sugiere crisisSeverity, pero la decisión final corresponde al equipo pastoral.`;
 
 function buildPrompt(content: string, category: string): string {
   return `Categoría: ${category}
@@ -80,6 +82,7 @@ function parseAnalysis(raw: string): {
   vulnerabilityTags: string[];
   riskLevel: "low" | "medium" | "high";
   isCrisis: boolean;
+  crisisSeverity?: "low" | "medium" | "high" | "critical";
   suggestedActions: string[];
   suggestedVerses: string[];
   summary: string;
@@ -96,6 +99,7 @@ function parseAnalysis(raw: string): {
       vulnerabilityTags: Array.isArray(parsed.vulnerabilityTags) ? parsed.vulnerabilityTags : [],
       riskLevel,
       isCrisis: parsed.isCrisis === true,
+      crisisSeverity: ["low", "medium", "high", "critical"].includes(parsed.crisisSeverity) ? parsed.crisisSeverity : undefined,
       suggestedActions: Array.isArray(parsed.suggestedActions) ? parsed.suggestedActions : [],
       suggestedVerses: Array.isArray(parsed.suggestedVerses) ? parsed.suggestedVerses : [],
       summary: typeof parsed.summary === "string" ? parsed.summary : "",
@@ -207,10 +211,11 @@ export const analyzeJournalEntry = action({
       return { success: false, error: "All models failed" };
     }
 
+    const { crisisSeverity, ...analysisResult } = result;
     const analysisId = await ctx.runMutation(internal.ai.storeAnalysis, {
       entryId: args.entryId,
       teenId: args.teenId,
-      ...result,
+      ...analysisResult,
       modelUsed,
     });
 
@@ -219,6 +224,8 @@ export const analyzeJournalEntry = action({
         analysisId,
         teenId: args.teenId,
         summary: result.summary,
+        riskLevel: result.riskLevel,
+        severity: crisisSeverity,
       });
     }
 

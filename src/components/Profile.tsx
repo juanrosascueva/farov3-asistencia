@@ -21,6 +21,8 @@ import { fill } from "../lib/templates";
 import { useTemplates } from "../hooks/useTemplates";
 import WhatsAppModal from "./WhatsAppModal";
 import JournalTimeline from "./JournalTimeline";
+import PastoralPlanCard from "./PastoralPlanCard";
+import PastoralTasksCard from "./PastoralTasksCard";
 import BadgeGrid from "./BadgeGrid";
 import XpBar from "./XpBar";
 import { Avatar } from "./Layout";
@@ -438,6 +440,8 @@ export default function Profile({
         hasData={(analyses as any[]).length > 0 || s.total > 0}
       />
 
+      <PastoralPlanCard teenId={teen._id} />
+      <PastoralTasksCard teenId={teen._id} />
       <JournalTimeline teenId={teen._id} />
 
       <AiSuggestions teenId={teen._id} />

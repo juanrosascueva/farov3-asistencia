@@ -252,13 +252,87 @@ export default defineSchema({
     analysisId: v.id("journalAnalysis"),
     teenId: v.id("teens"),
     summary: v.string(),
-    status: v.union(v.literal("unattended"), v.literal("attended")),
+    severity: v.optional(v.union(v.literal("low"), v.literal("medium"), v.literal("high"), v.literal("critical"))),
+    assignedToUserId: v.optional(v.id("users")),
+    status: v.union(
+      v.literal("unattended"),
+      v.literal("open"),
+      v.literal("in_progress"),
+      v.literal("attended"),
+      v.literal("referred"),
+      v.literal("follow_up")
+    ),
+    decisionNotes: v.optional(v.string()),
     createdAt: v.string(),
+    lastActionAt: v.optional(v.string()),
+    closedAt: v.optional(v.string()),
     attendedAt: v.optional(v.string()),
     attendedBy: v.optional(v.string()),
   })
     .index("by_teenId", ["teenId"])
     .index("by_status", ["status"]),
+
+  crisisActions: defineTable({
+    alertId: v.id("crisisAlerts"),
+    actorUserId: v.optional(v.id("users")),
+    actionType: v.union(
+      v.literal("created"),
+      v.literal("assigned"),
+      v.literal("task_created"),
+      v.literal("attended"),
+      v.literal("referred"),
+      v.literal("follow_up"),
+      v.literal("note")
+    ),
+    notes: v.string(),
+    createdAt: v.string(),
+  })
+    .index("by_alertId", ["alertId"]),
+
+  pastoralPlans: defineTable({
+    teenId: v.id("teens"),
+    currentState: v.string(),
+    mainNeed: v.string(),
+    monthlyGoal: v.string(),
+    recommendedAction: v.string(),
+    assignedToUserId: v.optional(v.id("users")),
+    dueDate: v.optional(v.string()),
+    followUpResult: v.optional(v.string()),
+    priority: v.union(v.literal("low"), v.literal("medium"), v.literal("high"), v.literal("critical")),
+    status: v.union(v.literal("active"), v.literal("completed"), v.literal("paused")),
+    createdAt: v.string(),
+    updatedAt: v.string(),
+  })
+    .index("by_teenId", ["teenId"])
+    .index("by_teenId_status", ["teenId", "status"])
+    .index("by_priority", ["priority"]),
+
+  pastoralTasks: defineTable({
+    teenId: v.id("teens"),
+    source: v.union(v.literal("manual"), v.literal("plan"), v.literal("crisis"), v.literal("ai")),
+    title: v.string(),
+    description: v.optional(v.string()),
+    assignedToUserId: v.optional(v.id("users")),
+    dueDate: v.optional(v.string()),
+    priority: v.union(v.literal("low"), v.literal("medium"), v.literal("high"), v.literal("critical")),
+    status: v.union(
+      v.literal("pending"),
+      v.literal("in_progress"),
+      v.literal("done"),
+      v.literal("rescheduled"),
+      v.literal("canceled"),
+      v.literal("escalated")
+    ),
+    relatedPlanId: v.optional(v.id("pastoralPlans")),
+    relatedCrisisAlertId: v.optional(v.id("crisisAlerts")),
+    completedAt: v.optional(v.string()),
+    createdBy: v.optional(v.id("users")),
+    createdAt: v.string(),
+    updatedAt: v.string(),
+  })
+    .index("by_teenId", ["teenId"])
+    .index("by_status", ["status"])
+    .index("by_priority", ["priority"]),
 
   teenPpp: defineTable({
     teenId: v.id("teens"),
