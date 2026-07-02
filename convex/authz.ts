@@ -18,13 +18,30 @@ export interface EffectiveAccess {
   accessibleGroupIds: string[];
 }
 
+export function normalizeRole(role: string | undefined | null): string {
+  if (!role) return "ayudante";
+  const map: Record<string, string> = {
+    admin: "administrador",
+    administrador: "administrador",
+    pastor: "pastor",
+    director: "director",
+    coordinador: "coordinador",
+    leader: "lider",
+    lider: "lider",
+    líder: "lider",
+    helper: "ayudante",
+    ayudante: "ayudante",
+  };
+  return map[role.trim().toLowerCase()] || role.trim().toLowerCase();
+}
+
 const ROLE_HIERARCHY: Record<string, number> = {
-  admin: 120,
+  administrador: 120,
   pastor: 100,
   director: 80,
   coordinador: 60,
-  leader: 40,
-  helper: 20,
+  lider: 40,
+  ayudante: 20,
 };
 
 export async function getEffectiveAccess(
@@ -46,9 +63,11 @@ export async function getEffectiveAccess(
     groupId: s.groupId,
   }));
 
+  const normRole = normalizeRole(user.role);
+  const isGlobal = normRole === "administrador" || normRole === "pastor" || normRole === "director";
+
   // If no explicit scopes, use the user's base role as global
   if (scopes.length === 0) {
-    const isGlobal = user.role === "admin" || user.role === "pastor" || user.role === "director";
     return {
       user,
       scopes: [],
@@ -62,8 +81,6 @@ export async function getEffectiveAccess(
   const campusIds = [...new Set(scopes.filter(s => s.campusId).map(s => s.campusId!))];
   const ministryIds = [...new Set(scopes.filter(s => s.ministryId).map(s => s.ministryId!))];
   const groupIds = [...new Set(scopes.filter(s => s.groupId).map(s => s.groupId!))];
-
-  const isGlobal = user.role === "admin" || user.role === "pastor" || user.role === "director";
 
   return {
     user,
@@ -83,7 +100,8 @@ export async function requireAccess(
   const access = await getEffectiveAccess(ctx, token);
   if (!access) throw new Error("No autenticado");
 
-  let userLevel = ROLE_HIERARCHY[access.user.role] || 0;
+  const normalizedUserRole = normalizeRole(access.user.role);
+  let userLevel = ROLE_HIERARCHY[normalizedUserRole] || 0;
   if (userLevel === 0) {
     // Si no está en la jerarquía fija, buscar en customRoles
     const customRole = await ctx.db
@@ -95,7 +113,8 @@ export async function requireAccess(
     }
   }
 
-  const requiredLevel = ROLE_HIERARCHY[minRole] || 0;
+  const normalizedMinRole = normalizeRole(minRole);
+  const requiredLevel = ROLE_HIERARCHY[normalizedMinRole] || 0;
   if (userLevel < requiredLevel) {
     throw new Error(`Se requiere rol "${minRole}" o superior. Tu rol: ${access.user.role}`);
   }

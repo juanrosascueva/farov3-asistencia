@@ -58,6 +58,7 @@ export const login = mutation({
     password: v.string(),
   },
   handler: async (ctx, args) => {
+    await checkAndSeedRoles(ctx);
     const emailNormalized = args.email.trim().toLowerCase();
     const user = await ctx.db
       .query("users")
@@ -124,6 +125,7 @@ export const getMe = query({
   args: { token: v.optional(v.string()) },
   handler: async (ctx, args) => {
     if (!args.token) return null;
+    await checkAndSeedRoles(ctx);
     const user = await getUserFromToken(ctx, args.token);
     if (!user) return null;
     return {
@@ -216,19 +218,76 @@ export const updateUser = mutation({
   },
 });
 
+import { normalizeRole } from "./authz";
+
+async function checkAndSeedRoles(ctx: any) {
+  const existing = await ctx.db.query("customRoles").first();
+  if (!existing) {
+    const defaultRoles = [
+      { name: "Administrador", permissions: ["manage_users", "manage_settings", "write_teens", "delete_teens", "view_reports", "use_ai"] },
+      { name: "Pastor", permissions: ["manage_users", "manage_settings", "write_teens", "delete_teens", "view_reports", "use_ai"] },
+      { name: "Director", permissions: ["write_teens", "view_reports", "use_ai"] },
+      { name: "Coordinador", permissions: ["write_teens", "view_reports"] },
+      { name: "Líder", permissions: ["write_teens"] },
+      { name: "Ayudante", permissions: [] },
+    ];
+    for (const r of defaultRoles) {
+      await ctx.db.insert("customRoles", {
+        name: r.name,
+        permissions: r.permissions,
+        createdAt: new Date().toISOString(),
+      });
+    }
+  }
+}
+
 export async function getEffectivePermissions(ctx: any, role: string, userPermissions?: string[]): Promise<string[]> {
   if (userPermissions && userPermissions.length > 0) {
     return userPermissions;
   }
-  if (role === "admin" || role === "pastor") {
-    return ["manage_users", "manage_settings", "write_teens", "delete_teens", "view_reports", "use_ai"];
-  }
-  const customRole = await ctx.db
+  
+  // Normalizar el rol para dar compatibilidad tanto a registros viejos (inglés) como nuevos
+  const normRole = normalizeRole(role);
+
+  // Intentar buscar primero por su nombre original en customRoles
+  let customRole = await ctx.db
     .query("customRoles")
     .withIndex("by_name", (q: any) => q.eq("name", role))
     .first();
+
+  // Si no se encuentra, intentar buscar por la forma normalizada capitalizada en español
+  if (!customRole) {
+    const capitalizedMap: Record<string, string> = {
+      administrador: "Administrador",
+      pastor: "Pastor",
+      director: "Director",
+      coordinador: "Coordinador",
+      lider: "Líder",
+      ayudante: "Ayudante",
+    };
+    const lookupName = capitalizedMap[normRole] || role;
+    customRole = await ctx.db
+      .query("customRoles")
+      .withIndex("by_name", (q: any) => q.eq("name", lookupName))
+      .first();
+  }
+
   if (customRole) {
     return customRole.permissions;
+  }
+
+  // Fallback rígido por si ocurre un caso extremo
+  if (normRole === "administrador" || normRole === "pastor") {
+    return ["manage_users", "manage_settings", "write_teens", "delete_teens", "view_reports", "use_ai"];
+  }
+  if (normRole === "director") {
+    return ["write_teens", "view_reports", "use_ai"];
+  }
+  if (normRole === "coordinador") {
+    return ["write_teens", "view_reports"];
+  }
+  if (normRole === "lider") {
+    return ["write_teens"];
   }
   return [];
 }

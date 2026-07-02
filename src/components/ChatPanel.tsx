@@ -8,6 +8,8 @@ interface ChatMessage {
   role: "user" | "assistant";
   content: string;
   modelUsed?: string;
+  whatsappPhone?: string;
+  whatsappMessage?: string;
 }
 
 function sanitizeChatText(text: string): string {
@@ -21,7 +23,13 @@ function sanitizeChatText(text: string): string {
     .trim();
 }
 
-export default function ChatPanel({ onClose }: { onClose: () => void }) {
+export default function ChatPanel({
+  onClose,
+  onNavigate,
+}: {
+  onClose: () => void;
+  onNavigate?: (route: string, profileId?: string | null) => void;
+}) {
   const { token } = useAuth();
   const { scope } = useScope();
   const [messages, setMessages] = useState<ChatMessage[]>([]);
@@ -89,9 +97,53 @@ export default function ChatPanel({ onClose }: { onClose: () => void }) {
         conversationHistory: history,
       }) as any;
       if (result.success) {
-        const cleanAnswer = sanitizeChatText(result.answer || "");
-        setMessages((m) => [...m, { role: "assistant", content: cleanAnswer, modelUsed: result.modelUsed }]);
+        let answerText = result.answer || "";
+        let commandName: string | null = null;
+        let commandPayload: string | null = null;
+        let whatsappPhone: string | null = null;
+        let whatsappMessage: string | null = null;
+
+        // 1. Extraer comando: [COMMAND: action(payload)]
+        const commandRegex = /\[COMMAND:\s*(\w+)\(([^)]*)\)\]/i;
+        const commandMatch = answerText.match(commandRegex);
+        if (commandMatch) {
+          commandName = commandMatch[1];
+          commandPayload = commandMatch[2];
+          answerText = answerText.replace(commandRegex, "");
+        }
+
+        // 2. Extraer WhatsApp: [WHATSAPP_SUGGESTION: teléfono | mensaje]
+        const waRegex = /\[WHATSAPP_SUGGESTION:\s*([^|]+)\s*\|\s*([^\]]+)\]/i;
+        const waMatch = answerText.match(waRegex);
+        if (waMatch) {
+          whatsappPhone = waMatch[1].trim();
+          whatsappMessage = waMatch[2].trim();
+          answerText = answerText.replace(waRegex, "");
+        }
+
+        const cleanAnswer = sanitizeChatText(answerText);
+        setMessages((m) => [
+          ...m,
+          {
+            role: "assistant",
+            content: cleanAnswer,
+            modelUsed: result.modelUsed,
+            whatsappPhone: whatsappPhone || undefined,
+            whatsappMessage: whatsappMessage || undefined,
+          },
+        ]);
         await addMessage({ sessionId: sessionId as any, role: "assistant", content: cleanAnswer });
+
+        // 3. Ejecutar comando de navegación si corresponde
+        if (commandName && onNavigate) {
+          setTimeout(() => {
+            if (commandName === "open_profile" && commandPayload) {
+              onNavigate("jovenes", commandPayload);
+            } else if (commandName === "switch_tab" && commandPayload) {
+              onNavigate(commandPayload, null);
+            }
+          }, 1200);
+        }
       } else {
         const errMsg = "Lo siento, no pude procesar tu pregunta. Intenta de nuevo.";
         setMessages((m) => [...m, { role: "assistant", content: errMsg }]);
@@ -133,9 +185,22 @@ export default function ChatPanel({ onClose }: { onClose: () => void }) {
                 {msg.content}
               </div>
               {msg.role === "assistant" && msg.modelUsed && (
-                <span className="text-[9px] text-ink/30 mt-0.5 mb-1.5 ml-2 block self-start">
+                <span className="text-[9px] text-ink/30 mt-0.5 mb-0.5 ml-2 block self-start">
                   IA: {msg.modelUsed.split("/").pop()}
                 </span>
+              )}
+              {msg.role === "assistant" && msg.whatsappPhone && msg.whatsappMessage && (
+                <a
+                  href={`https://wa.me/${msg.whatsappPhone.replace(/\D/g, "")}?text=${encodeURIComponent(msg.whatsappMessage)}`}
+                  target="_blank"
+                  rel="noreferrer"
+                  className="mt-1.5 mb-2 ml-2 text-[11px] font-semibold bg-emerald-600 hover:bg-emerald-700 text-white px-3 py-1.5 rounded-full inline-flex items-center gap-1.5 self-start transition pressable shrink-0"
+                >
+                  <svg className="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                    <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z" />
+                  </svg>
+                  💬 Enviar WhatsApp
+                </a>
               )}
             </div>
           ))}
