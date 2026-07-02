@@ -23,7 +23,7 @@ const ROUTES = [
 
 interface LayoutProps {
   currentRoute: string;
-  onNavigate: (route: string) => void;
+  onNavigate: (route: string, profileId?: string | null) => void;
   children: React.ReactNode;
   dark?: boolean;
   setDark?: (v: boolean) => void;
@@ -238,7 +238,7 @@ export default function Layout({
         </ResponsiveSheet>
       )}
 
-      {chatOpen && <ChatPanel onClose={() => setChatOpen(false)} />}
+      {chatOpen && <ChatPanel onClose={() => setChatOpen(false)} onNavigate={onNavigate} />}
 
       <button
         onClick={() => setChatOpen(!chatOpen)}

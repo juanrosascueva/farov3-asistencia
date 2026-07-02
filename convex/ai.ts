@@ -364,6 +364,15 @@ export const getTeenData = internalQuery({
       lastJournalDate,
       lastContactDate,
       crisisCount: analyses.filter((a) => a.isCrisis).length,
+      recentJournals: journal.slice(0, 5).map((j) => ({
+        entryDate: j.entryDate,
+        category: j.category,
+        content: j.content,
+        leaderName: j.leaderName || "Líder",
+        isConfidential: j.isConfidential === true,
+      })),
+      telefono: teen?.telefono || "",
+      _id: args.teenId,
     };
   },
 });
@@ -375,6 +384,15 @@ interface TeenData {
   analysesCount: number; journalCount: number; contactCount: number;
   lastJournalDate: string | null; lastContactDate: string | null;
   crisisCount: number;
+  recentJournals: Array<{
+    entryDate: string;
+    category: string;
+    content: string;
+    leaderName: string;
+    isConfidential: boolean;
+  }>;
+  telefono: string;
+  _id: string;
 }
 
 interface MinistryOverviewData {
@@ -860,7 +878,13 @@ export const chatWithAI = action({
         ) {
           const teenDetail = await ctx.runQuery(internal.ai.getTeenData, { teenId: t._id as any });
           if (teenDetail) {
+            const journalsList = (teenDetail.recentJournals || [])
+              .map((j: any) => `  * [${j.entryDate} - ${j.category}] (por ${j.leaderName}): "${j.content}" ${j.isConfidential ? "(CONFIDENCIAL)" : ""}`)
+              .join("\n");
+
             specificTeenContext += `\n--- DETALLE DE ADOLESCENTE CONSULTADO (${t.nombre} ${t.apellido}) ---
+- ID de base de datos: ${teenDetail._id}
+- Teléfono de contacto: ${teenDetail.telefono || "no registrado"}
 - Asistencia: ${teenDetail.pct}% (${teenDetail.presentAttendance}/${teenDetail.totalAttendance} registros)
 - Faltas consecutivas: ${teenDetail.consecAbsences}
 - Nivel de Riesgo (Análisis IA): ${teenDetail.highRiskCount} de alto riesgo, ${teenDetail.crisisCount} alertas de crisis
@@ -869,6 +893,8 @@ export const chatWithAI = action({
 - Contactos registrados: ${teenDetail.contactCount}
 - Último contacto: ${teenDetail.lastContactDate || "nunca"}
 - Intereses/Gustos: ${teenDetail.gustos || "no registrados"}
+- Historial reciente de bitácoras (máx. 5 entradas):
+${journalsList || "  * No hay bitácoras registradas para este adolescente."}
 ------------------------------------------------------\n`;
           }
         }
@@ -927,6 +953,20 @@ Si te preguntan por el modelo o proveedor, redirige con amabilidad a tu funcion 
 NO compartas informacion de otras sedes, ministerios, grupos o personas fuera del alcance autorizado.
 Si una pregunta pide datos fuera del alcance, responde que solo puedes ayudar con la informacion autorizada del ministerio dentro de su alcance actual.
 Puedes hacer calculos simples con los datos (contar, sumar, promediar).
+
+INSTRUCCIONES DE COMANDOS INTERACTIVOS (NIVEL 2):
+1. Si el usuario te pide ver, abrir, mostrar, ir al perfil o ficha de un adolescente específico, debes incluir exactamente este comando en una sola línea al final de tu respuesta:
+   [COMMAND: open_profile(ID_DEL_ADOLESCENTE)]
+   Reemplaza ID_DEL_ADOLESCENTE con el ID de base de datos que se te proporciona en el detalle del adolescente.
+2. Si el usuario te pide ir a ver, abrir, navegar o cambiar a una pestaña o sección del sistema (dashboard, asistencia, jovenes, campana, ia, reportes, ajustes, accesos), debes incluir exactamente este comando en una sola línea al final de tu respuesta:
+   [COMMAND: switch_tab(tabId)]
+   Donde tabId es uno de estos: dashboard, asistencia, jovenes, campana, ia, reportes, ajustes, accesos.
+
+INSTRUCCIÓN DE SUGERENCIA DE WHATSAPP:
+3. Si el usuario te pregunta por el estado de un adolescente, te pide redactar un mensaje para él, o expresa interés en contactarlo, debes incluir una sugerencia de mensaje cálido y personalizado de 2-3 oraciones al final de tu respuesta en este formato exacto en una sola línea:
+   [WHATSAPP_SUGGESTION: teléfono | mensaje_redactado]
+   Reemplaza 'teléfono' con el número de teléfono del adolescente provisto en su detalle (con formato de dígitos, Ej: 8095550101). Reemplaza 'mensaje_redactado' con un mensaje cercano, pastoral y personalizado utilizando sus intereses/gustos y su situación pastoral (asistencia, racha, etc.).
+
 Alcance actual del usuario: ${scopeLabel}.
 Datos autorizados del ministerio:
 ${contextData}

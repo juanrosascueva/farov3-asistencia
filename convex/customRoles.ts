@@ -55,6 +55,14 @@ export const update = mutation({
     const cleanName = args.name.trim();
     if (!cleanName) throw new Error("El nombre del rol es requerido.");
 
+    const roleDoc = await ctx.db.get(args.id);
+    if (!roleDoc) throw new Error("Rol no encontrado.");
+
+    const isSystemRole = roleDoc.name === "Administrador" || roleDoc.name === "Pastor";
+    if (isSystemRole && cleanName !== roleDoc.name) {
+      throw new Error("No se permite cambiar el nombre del rol del sistema (" + roleDoc.name + ").");
+    }
+
     // Validar duplicado excluyendo sí mismo
     const existing = await ctx.db
       .query("customRoles")
@@ -82,6 +90,10 @@ export const remove = mutation({
     const roleDoc = await ctx.db.get(args.id);
     if (!roleDoc) return;
 
+    if (roleDoc.name === "Administrador" || roleDoc.name === "Pastor") {
+      throw new Error("No se permite eliminar el rol del sistema (" + roleDoc.name + ").");
+    }
+    
     await ctx.db.delete(args.id);
   },
 });
