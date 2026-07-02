@@ -40,9 +40,11 @@ export default function Asistencia({
   const [showNewDate, setShowNewDate] = useState(false);
   const [newDate, setNewDate] = useState(todayISO());
   const [showEditDate, setShowEditDate] = useState(false);
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const [editDateValue, setEditDateValue] = useState(selectedDate);
   const [searchQuery, setSearchQuery] = useState("");
   const [pendingCount, setPendingCount] = useState(0);
+  const [successMsg, setSuccessMsg] = useState<string | null>(null);
   const [celebration, setCelebration] = useState<{
     name: string;
     streakTier: ReturnType<typeof streakTier>;
@@ -104,16 +106,16 @@ export default function Asistencia({
 
   const handleDeleteDate = async () => {
     if (!token) return;
-    if (!confirm(`¿Estás seguro de que deseas eliminar por completo la fecha ${fmtDate(selectedDate)}? Se perderán todas las asistencias marcadas para este día.`)) {
-      return;
-    }
+    setShowDeleteConfirm(false);
     try {
       await deleteDateMut({ token, date: selectedDate });
-      alert("Fecha eliminada con éxito.");
       const remainingDates = allDates.filter((d) => d !== selectedDate);
       setSelectedDate(remainingDates[remainingDates.length - 1] || todayISO());
+      setSuccessMsg("Fecha eliminada con éxito.");
+      setTimeout(() => setSuccessMsg(null), 3000);
     } catch (err: any) {
-      alert("Error: " + err.message);
+      setSuccessMsg("Error: " + err.message);
+      setTimeout(() => setSuccessMsg(null), 4000);
     }
   };
 
@@ -125,11 +127,13 @@ export default function Asistencia({
     }
     try {
       await updateDateMut({ token, oldDate: selectedDate, newDate: editDateValue });
-      alert("Fecha modificada con éxito.");
       setSelectedDate(editDateValue);
       setShowEditDate(false);
+      setSuccessMsg("Fecha modificada con éxito.");
+      setTimeout(() => setSuccessMsg(null), 3000);
     } catch (err: any) {
-      alert("Error: " + err.message);
+      setSuccessMsg("Error: " + err.message);
+      setTimeout(() => setSuccessMsg(null), 4000);
     }
   };
 
@@ -159,7 +163,7 @@ export default function Asistencia({
                   <svg className="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round"><path d="M12 20h9" /><path d="M16.5 3.5a2.1 2.1 0 013 3L7 19l-4 1 1-4z" /></svg>
                 </button>
                 <button
-                  onClick={handleDeleteDate}
+                  onClick={() => setShowDeleteConfirm(true)}
                   className="p-1 rounded-full text-ink/40 hover:text-red-500 hover:bg-red-50 transition pressable"
                   title="Eliminar fecha completa"
                 >
@@ -397,6 +401,58 @@ export default function Asistencia({
             </div>
           </div>
         </Modal>
+      )}
+
+      {/* Modal custom de confirmación de eliminación */}
+      {showDeleteConfirm && (
+        <Modal title="Eliminar fecha" onClose={() => setShowDeleteConfirm(false)}>
+          <div className="space-y-4">
+            <div className="flex items-start gap-3 p-3.5 bg-red-50 dark:bg-red-950/20 rounded-xl border border-red-100 dark:border-red-900/30">
+              <div className="w-8 h-8 shrink-0 rounded-full bg-red-100 dark:bg-red-900/30 flex items-center justify-center">
+                <svg className="w-4 h-4 text-red-600 dark:text-red-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                  <path d="M12 9v4" /><path d="M12 17h.01" />
+                  <path d="M10.3 3.9L2.7 17a2 2 0 001.7 3h15.2a2 2 0 001.7-3L13.7 3.9a2 2 0 00-3.4 0z" />
+                </svg>
+              </div>
+              <div className="min-w-0">
+                <p className="text-sm font-bold text-red-800 dark:text-red-300">¿Eliminar la fecha {fmtDate(selectedDate)}?</p>
+                <p className="text-xs text-red-600/80 dark:text-red-400/80 mt-0.5 leading-relaxed">
+                  Esta acción es <strong>permanente e irreversible</strong>. Se borrarán todas las asistencias registradas para este día.
+                </p>
+              </div>
+            </div>
+            <div className="flex gap-2 justify-end pt-1">
+              <button
+                onClick={() => setShowDeleteConfirm(false)}
+                className="px-4 py-2 border border-ink/10 rounded-xl text-xs font-semibold text-ink/60 hover:bg-ink/5 transition"
+              >
+                Cancelar
+              </button>
+              <button
+                onClick={handleDeleteDate}
+                className="px-4 py-2 bg-red-600 hover:bg-red-700 text-white rounded-xl text-xs font-bold transition pressable"
+              >
+                Sí, eliminar fecha
+              </button>
+            </div>
+          </div>
+        </Modal>
+      )}
+
+      {/* Toast de éxito / error */}
+      {successMsg && (
+        <div className={`fixed bottom-24 left-1/2 -translate-x-1/2 z-50 px-4 py-3 rounded-2xl shadow-lg text-sm font-semibold flex items-center gap-2 ${
+          successMsg.startsWith("Error")
+            ? "bg-red-600 text-white"
+            : "bg-teal-600 text-white"
+        }`}>
+          {successMsg.startsWith("Error") ? (
+            <svg className="w-4 h-4 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><circle cx="12" cy="12" r="10"/><path d="M15 9l-6 6M9 9l6 6"/></svg>
+          ) : (
+            <svg className="w-4 h-4 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><path d="M20 6 9 17l-5-5"/></svg>
+          )}
+          {successMsg}
+        </div>
       )}
 
       {celebration && (
