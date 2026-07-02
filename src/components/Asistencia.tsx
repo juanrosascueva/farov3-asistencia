@@ -45,6 +45,7 @@ export default function Asistencia({
   const [searchQuery, setSearchQuery] = useState("");
   const [pendingCount, setPendingCount] = useState(0);
   const [successMsg, setSuccessMsg] = useState<string | null>(null);
+  const [deletedDates, setDeletedDates] = useState<string[]>([]);
   const [celebration, setCelebration] = useState<{
     name: string;
     streakTier: ReturnType<typeof streakTier>;
@@ -58,7 +59,7 @@ export default function Asistencia({
 
   const recent = [
     ...new Set([...lastNSundays(6), ...allDates]),
-  ].sort().slice(-10);
+  ].sort().slice(-10).filter(d => !deletedDates.includes(d));
 
   if (!attendanceMap[selectedDate]) {
     attendanceMap[selectedDate] = {};
@@ -107,11 +108,15 @@ export default function Asistencia({
   const handleDeleteDate = async () => {
     if (!token) return;
     setShowDeleteConfirm(false);
+    const dateToDelete = selectedDate;
     try {
-      await deleteDateMut({ token, date: selectedDate });
-      const remainingDates = allDates.filter((d) => d !== selectedDate);
-      setSelectedDate(remainingDates[remainingDates.length - 1] || todayISO());
-      setSuccessMsg("Fecha eliminada con éxito.");
+      await deleteDateMut({ token, date: dateToDelete });
+      // Marcar la fecha como eliminada localmente para que desaparezca del chip selector
+      setDeletedDates(prev => [...prev, dateToDelete]);
+      const remainingDates = allDates.filter((d) => d !== dateToDelete);
+      const nextDate = remainingDates[remainingDates.length - 1] || todayISO();
+      setSelectedDate(nextDate);
+      setSuccessMsg("✔ Fecha eliminada correctamente.");
       setTimeout(() => setSuccessMsg(null), 3000);
     } catch (err: any) {
       setSuccessMsg("Error: " + err.message);
@@ -143,73 +148,62 @@ export default function Asistencia({
 
   return (
     <div className="space-y-5">
-      <div className="flex items-center justify-between gap-3">
-        <div>
-          <p className="text-xs font-semibold text-teal-700 tracking-wide uppercase">
-            Tomar asistencia
-          </p>
-          <div className="flex items-center gap-2 mt-0.5">
-            <h1 className="font-display text-2xl font-bold">
-              {fmtDate(selectedDate)}
-            </h1>
-            
+      {/* Header: 2 filas limpias */}
+      <div className="space-y-2">
+        {/* Fila 1: label + botón Nueva Fecha */}
+        <div className="flex items-center justify-between">
+          <p className="text-xs font-semibold text-teal-700 tracking-wide uppercase">Tomar asistencia</p>
+          <button
+            onClick={() => setShowNewDate(true)}
+            className="text-xs font-semibold bg-ink dark:bg-teal-700 text-white rounded-full px-3.5 py-2 flex items-center gap-1.5 shrink-0 pressable"
+          >
+            <svg className="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+              <path d="M12 5v14M5 12h14" />
+            </svg>
+            Nueva fecha
+          </button>
+        </div>
+        {/* Fila 2: fecha grande + iconos de acción + badge guardado */}
+        <div className="flex items-end justify-between gap-2">
+          <h1 className="font-display text-2xl font-bold leading-tight">{fmtDate(selectedDate)}</h1>
+          <div className="flex items-center gap-2 pb-0.5 shrink-0">
             {(user?.role === "pastor" || user?.role === "admin") && (
-              <div className="flex items-center gap-1 shrink-0 ml-1">
+              <div className="flex items-center gap-1">
                 <button
                   onClick={() => setShowEditDate(true)}
-                  className="p-1 rounded-full text-ink/40 hover:text-teal-600 hover:bg-ink/5 transition pressable"
+                  className="w-7 h-7 rounded-full flex items-center justify-center text-ink/30 hover:text-teal-600 hover:bg-teal-50 transition pressable"
                   title="Editar fecha"
                 >
                   <svg className="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round"><path d="M12 20h9" /><path d="M16.5 3.5a2.1 2.1 0 013 3L7 19l-4 1 1-4z" /></svg>
                 </button>
                 <button
                   onClick={() => setShowDeleteConfirm(true)}
-                  className="p-1 rounded-full text-ink/40 hover:text-red-500 hover:bg-red-50 transition pressable"
+                  className="w-7 h-7 rounded-full flex items-center justify-center text-ink/30 hover:text-red-500 hover:bg-red-50 transition pressable"
                   title="Eliminar fecha completa"
                 >
                   <svg className="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round"><polyline points="3 6 5 6 21 6" /><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2" /></svg>
                 </button>
               </div>
             )}
-            
             {/* Indicador de sincronización */}
-            <div className="flex items-center gap-1 text-[11px] font-semibold transition-opacity duration-300">
+            <div className="text-[10px] font-semibold">
               {pendingCount > 0 ? (
-                <span className="flex items-center gap-1 text-amber-600 bg-amber-50 dark:bg-amber-950/20 dark:text-amber-400 px-2 py-0.5 rounded-full border border-amber-100 dark:border-amber-900/30 animate-pulse">
-                  <svg className="animate-spin h-3 w-3 text-amber-600 dark:text-amber-400" viewBox="0 0 24 24" fill="none">
+                <span className="flex items-center gap-1 text-amber-600 bg-amber-50 dark:bg-amber-950/20 dark:text-amber-400 px-2 py-0.5 rounded-full border border-amber-100 animate-pulse">
+                  <svg className="animate-spin h-2.5 w-2.5" viewBox="0 0 24 24" fill="none">
                     <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
                     <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
                   </svg>
-                  Sincronizando...
+                  Sync...
                 </span>
               ) : (
                 <span className="flex items-center gap-1 text-sage-600 bg-sage-50 dark:bg-green-950/20 dark:text-green-400 px-2 py-0.5 rounded-full border border-sage-100 dark:border-green-900/30">
-                  <svg className="w-3 h-3 text-sage-600 dark:text-green-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round">
-                    <path d="M20 6 9 17l-5-5" />
-                  </svg>
+                  <svg className="w-2.5 h-2.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><path d="M20 6 9 17l-5-5" /></svg>
                   Guardado
                 </span>
               )}
             </div>
           </div>
         </div>
-        <button
-          onClick={() => setShowNewDate(true)}
-          className="text-xs font-semibold bg-ink text-white rounded-full px-3.5 py-2 flex items-center gap-1.5 shrink-0 pressable"
-        >
-          <svg
-            className="w-3.5 h-3.5"
-            viewBox="0 0 24 24"
-            fill="none"
-            stroke="currentColor"
-            strokeWidth="1.8"
-            strokeLinecap="round"
-            strokeLinejoin="round"
-          >
-            <path d="M12 5v14M5 12h14" />
-          </svg>
-          Nueva fecha
-        </button>
       </div>
 
       <div className="flex gap-2 overflow-x-auto pb-1 -mx-4 px-4 sm:mx-0 sm:px-0 [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]">
@@ -421,16 +415,16 @@ export default function Asistencia({
                 </p>
               </div>
             </div>
-            <div className="flex gap-2 justify-end pt-1">
+            <div className="flex flex-col-reverse sm:flex-row gap-2 pt-1">
               <button
                 onClick={() => setShowDeleteConfirm(false)}
-                className="px-4 py-2 border border-ink/10 rounded-xl text-xs font-semibold text-ink/60 hover:bg-ink/5 transition"
+                className="flex-1 sm:flex-none px-4 py-2.5 border border-ink/10 rounded-xl text-xs font-semibold text-ink/60 hover:bg-ink/5 transition text-center"
               >
-                Cancelar
+                Cancelar, mantener fecha
               </button>
               <button
                 onClick={handleDeleteDate}
-                className="px-4 py-2 bg-red-600 hover:bg-red-700 text-white rounded-xl text-xs font-bold transition pressable"
+                className="flex-1 sm:flex-none px-4 py-2.5 bg-red-600 hover:bg-red-700 text-white rounded-xl text-xs font-bold transition pressable text-center"
               >
                 Sí, eliminar fecha
               </button>
