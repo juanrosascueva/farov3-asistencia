@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { useQuery, useAction } from "convex/react";
+import { useQuery, useAction, useMutation } from "convex/react";
 import { api } from "../../convex/_generated/api";
 import type { Doc } from "../../convex/_generated/dataModel";
 import type { AttendanceMap } from "../lib/types";
@@ -32,13 +32,21 @@ export default function AiPanel({ teens, attendanceMap, onOpenProfile }: AiPanel
   const { scope } = useScope();
   const allAnalyses = useQuery(api.ai.getAllAnalyses) ?? [];
   const allJournal = useQuery(api.journal.listAll) ?? [];
+
+  // Queries y mutations de persistencia en base de datos
+  const latestWeeklySummaryFromDb = useQuery(api.ai.getLatestWeeklySummary);
+  const saveWeeklySummary = useMutation(api.ai.storeWeeklySummary);
+
+  const recommendationsFromDb = useQuery(api.ai.getActivityRecommendations);
+  const saveRecommendations = useMutation(api.ai.storeActivityRecommendations);
+  const updateRecStatusDb = useMutation(api.ai.updateRecommendationStatus);
+
   const generateSummary = useAction(api.ai.generateWeeklySummary as any);
   const generateRecommendations = useAction(api.ai.generateActivityRecommendations as any);
   const [weeklySummary, setWeeklySummary] = useState<any>(null);
   const [generating, setGenerating] = useState(false);
   const [recommendations, setRecommendations] = useState<any>(null);
   const [recsLoading, setRecsLoading] = useState(false);
-  const [recStatus, setRecStatus] = useState<Record<number, "pending" | "implemented" | "dismissed">>({});
 
   const tagCounts: Record<string, number> = {};
   let riskDist = { low: 0, medium: 0, high: 0 };
@@ -79,8 +87,25 @@ export default function AiPanel({ teens, attendanceMap, onOpenProfile }: AiPanel
       setGenerating(false);
       return;
     }
-    const result = await generateSummary({ entries: recentEntries });
-    setWeeklySummary(result);
+    try {
+      const result: any = await generateSummary({ entries: recentEntries });
+      if (result && result.success && result.summary) {
+        await saveWeeklySummary({
+          totalEntries: result.summary.totalEntries,
+          mainConcerns: result.summary.mainConcerns,
+          emotionalClimate: result.summary.emotionalClimate,
+          riskDistribution: result.summary.riskDistribution || { low: 0, medium: 0, high: 0 },
+          topTags: result.summary.topTags || [],
+          recommendation: result.summary.recommendation,
+          modelUsed: result.modelUsed,
+        });
+        setWeeklySummary(null);
+      } else {
+        setWeeklySummary(result);
+      }
+    } catch (err: any) {
+      setWeeklySummary({ error: "Fallo al generar el resumen: " + err.message });
+    }
     setGenerating(false);
   };
 
@@ -207,44 +232,59 @@ export default function AiPanel({ teens, attendanceMap, onOpenProfile }: AiPanel
             )}
           </button>
         </div>
-        {!weeklySummary ? (
-          <p className="text-sm text-ink/40 text-center py-6">
-            Presiona "Generar resumen" para obtener un análisis semanal de las bitácoras.
-          </p>
-        ) : weeklySummary.error ? (
-          <p className="text-sm text-ink/40 text-center py-4">{weeklySummary.error}</p>
-        ) : weeklySummary.success && weeklySummary.summary ? (
-          <div className="space-y-3">
-            <div className="flex gap-4 text-sm">
-              <span className="text-ink/60">Total entradas: <strong className="text-ink">{weeklySummary.summary.totalEntries}</strong></span>
-            </div>
-            <div>
-              <p className="text-xs font-semibold text-ink/40 uppercase tracking-wide mb-1">Principales preocupaciones</p>
-              <p className="text-sm text-ink/80">{weeklySummary.summary.mainConcerns}</p>
-            </div>
-            <div>
-              <p className="text-xs font-semibold text-ink/40 uppercase tracking-wide mb-1">Clima emocional</p>
-              <p className="text-sm text-ink/80">{weeklySummary.summary.emotionalClimate}</p>
-            </div>
-            {weeklySummary.summary.topTags && weeklySummary.summary.topTags.length > 0 && (
-              <div>
-                <p className="text-xs font-semibold text-ink/40 uppercase tracking-wide mb-1">Temas principales</p>
-                <div className="flex flex-wrap gap-1.5">
-                  {weeklySummary.summary.topTags.map((tag: string) => (
-                    <span key={tag} className="text-xs font-medium bg-ink/5 text-ink/60 px-2 py-1 rounded-full">{tag}</span>
-                  ))}
+        {(() => {
+          const displaySummary = weeklySummary || (latestWeeklySummaryFromDb ? { success: true, summary: latestWeeklySummaryFromDb, modelUsed: latestWeeklySummaryFromDb.modelUsed } : null);
+          
+          if (generating) {
+            return <p className="text-sm text-ink/40 text-center py-6">Generando resumen ejecutivo con IA...</p>;
+          }
+          if (!displaySummary) {
+            return (
+              <p className="text-sm text-ink/40 text-center py-6">
+                Presiona "Generar resumen" para obtener un análisis semanal de las bitácoras.
+              </p>
+            );
+          }
+          if (displaySummary.error) {
+            return <p className="text-sm text-ink/40 text-center py-4">{displaySummary.error}</p>;
+          }
+          if (displaySummary.success && displaySummary.summary) {
+            return (
+              <div className="space-y-3">
+                <div className="flex gap-4 text-sm">
+                  <span className="text-ink/60">Total entradas: <strong className="text-ink">{displaySummary.summary.totalEntries}</strong></span>
+                  {displaySummary.summary.generatedAt && (
+                    <span className="text-ink/40 text-[10px] self-center">Generado el: {new Date(displaySummary.summary.generatedAt).toLocaleDateString()}</span>
+                  )}
                 </div>
+                <div>
+                  <p className="text-xs font-semibold text-ink/40 uppercase tracking-wide mb-1">Principales preocupaciones</p>
+                  <p className="text-sm text-ink/80">{displaySummary.summary.mainConcerns}</p>
+                </div>
+                <div>
+                  <p className="text-xs font-semibold text-ink/40 uppercase tracking-wide mb-1">Clima emocional</p>
+                  <p className="text-sm text-ink/80">{displaySummary.summary.emotionalClimate}</p>
+                </div>
+                {displaySummary.summary.topTags && displaySummary.summary.topTags.length > 0 && (
+                  <div>
+                    <p className="text-xs font-semibold text-ink/40 uppercase tracking-wide mb-1">Temas principales</p>
+                    <div className="flex flex-wrap gap-1.5">
+                      {displaySummary.summary.topTags.map((tag: string) => (
+                        <span key={tag} className="text-xs font-medium bg-ink/5 text-ink/60 px-2 py-1 rounded-full">{tag}</span>
+                      ))}
+                    </div>
+                  </div>
+                )}
+                <div>
+                  <p className="text-xs font-semibold text-ink/40 uppercase tracking-wide mb-1">Recomendación</p>
+                  <p className="text-sm text-ink/80 font-medium">{displaySummary.summary.recommendation}</p>
+                </div>
+                <p className="text-[10px] text-ink/30">Modelo: {displaySummary.modelUsed}</p>
               </div>
-            )}
-            <div>
-              <p className="text-xs font-semibold text-ink/40 uppercase tracking-wide mb-1">Recomendación</p>
-              <p className="text-sm text-ink/80 font-medium">{weeklySummary.summary.recommendation}</p>
-            </div>
-            <p className="text-[10px] text-ink/30">Modelo: {weeklySummary.modelUsed}</p>
-          </div>
-        ) : (
-          <p className="text-sm text-ink/40 text-center py-4">Error al generar resumen. Intenta de nuevo.</p>
-        )}
+            );
+          }
+          return <p className="text-sm text-ink/40 text-center py-4">Error al generar resumen. Intenta de nuevo.</p>;
+        })()}
       </div>
 
       <div className="bg-card rounded-card shadow-soft p-5">
@@ -255,15 +295,34 @@ export default function AiPanel({ teens, attendanceMap, onOpenProfile }: AiPanel
           <button
             onClick={async () => {
               setRecsLoading(true);
-              const result = await generateRecommendations({
-                token: token ?? undefined,
-                activeScope: {
-                  campusId: scope.campusId,
-                  ministryId: scope.ministryId,
-                  groupId: scope.groupId,
-                },
-              });
-              setRecommendations(result);
+              try {
+                const result: any = await generateRecommendations({
+                  token: token ?? undefined,
+                  activeScope: {
+                    campusId: scope.campusId,
+                    ministryId: scope.ministryId,
+                    groupId: scope.groupId,
+                  },
+                });
+                if (result && result.success && result.recommendations) {
+                  await saveRecommendations({
+                    recommendations: result.recommendations.map((r: any) => ({
+                      title: r.title,
+                      type: r.type,
+                      description: r.description,
+                      bibleVerse: r.bibleVerse,
+                      targetTags: r.targetTags,
+                      urgency: r.urgency,
+                    })),
+                    modelUsed: result.modelUsed,
+                  });
+                  setRecommendations(null);
+                } else {
+                  setRecommendations(result);
+                }
+              } catch (err: any) {
+                setRecommendations({ error: "Fallo al generar recomendaciones: " + err.message });
+              }
               setRecsLoading(false);
             }}
             disabled={recsLoading}
@@ -283,71 +342,87 @@ export default function AiPanel({ teens, attendanceMap, onOpenProfile }: AiPanel
             )}
           </button>
         </div>
-        {!recommendations ? (
-          <p className="text-sm text-ink/40 text-center py-6">
-            Genera recomendaciones de talleres, estudios y actividades basadas en las vulnerabilidades detectadas.
-          </p>
-        ) : recommendations.success ? (
-          <div className="space-y-3">
-            {recommendations.recommendations.map((r: any, i: number) => (
-              <div key={i} className={`p-4 rounded-xl border space-y-2 ${
-                recStatus[i] === "implemented" ? "border-green-200 bg-green-50/50" : recStatus[i] === "dismissed" ? "border-ink/5 bg-ink/[0.01] opacity-50" : "border-ink/10 bg-ink/[0.02]"
-              }`}>
-                <div className="flex items-start justify-between gap-2">
-                  <h3 className="font-semibold text-sm">{r.title}</h3>
-                  <span className={`text-[10px] font-semibold px-2 py-0.5 rounded-full shrink-0 ${
-                    r.urgency === "alta" ? "bg-red-50 text-red-600" : r.urgency === "media" ? "bg-amber-50 text-amber-600" : "bg-green-50 text-green-600"
+        {(() => {
+          const displayRecommendations = recommendationsFromDb && recommendationsFromDb.length > 0
+            ? { success: true, recommendations: recommendationsFromDb, modelUsed: recommendationsFromDb[0]?.modelUsed }
+            : recommendations;
+
+          if (recsLoading) {
+            return <p className="text-sm text-ink/40 text-center py-6">Generando recomendaciones con IA...</p>;
+          }
+          if (!displayRecommendations) {
+            return (
+              <p className="text-sm text-ink/40 text-center py-6">
+                Genera recomendaciones de talleres, estudios y actividades basadas en las vulnerabilidades detectadas.
+              </p>
+            );
+          }
+          if (displayRecommendations.error) {
+            return <p className="text-sm text-ink/40 text-center py-4">{displayRecommendations.error}</p>;
+          }
+          if (displayRecommendations.success && displayRecommendations.recommendations) {
+            return (
+              <div className="space-y-3">
+                {displayRecommendations.recommendations.map((r: any) => (
+                  <div key={r._id || r.title} className={`p-4 rounded-xl border space-y-2 ${
+                    r.status === "implemented" ? "border-green-200 bg-green-50/50" : r.status === "dismissed" ? "border-ink/5 bg-ink/[0.01] opacity-50" : "border-ink/10 bg-ink/[0.02]"
                   }`}>
-                    {r.urgency === "alta" ? "🔴" : r.urgency === "media" ? "🟡" : "🟢"} {r.urgency}
-                  </span>
-                </div>
-                <span className="text-[10px] font-semibold text-teal-600 bg-teal-50 px-2 py-0.5 rounded-full">
-                  {r.type}
-                </span>
-                <p className="text-sm text-ink/70">{r.description}</p>
-                {r.bibleVerse && (
-                  <p className="text-xs text-ink/40 font-medium">
-                    📖 {r.bibleVerse}
-                  </p>
-                )}
-                {r.targetTags && r.targetTags.length > 0 && (
-                  <div className="flex flex-wrap gap-1">
-                    {r.targetTags.map((tag: string) => (
-                      <span key={tag} className="text-[10px] font-medium bg-ink/5 text-ink/50 px-1.5 py-0.5 rounded-full">
-                        {tag}
+                    <div className="flex items-start justify-between gap-2">
+                      <h3 className="font-semibold text-sm">{r.title}</h3>
+                      <span className={`text-[10px] font-semibold px-2 py-0.5 rounded-full shrink-0 ${
+                        r.urgency === "alta" ? "bg-red-50 text-red-600" : r.urgency === "media" ? "bg-amber-50 text-amber-600" : "bg-green-50 text-green-600"
+                      }`}>
+                        {r.urgency === "alta" ? "🔴" : r.urgency === "media" ? "🟡" : "🟢"} {r.urgency}
                       </span>
-                    ))}
+                    </div>
+                    <span className="text-[10px] font-semibold text-teal-600 bg-teal-50 px-2 py-0.5 rounded-full">
+                      {r.type}
+                    </span>
+                    <p className="text-sm text-ink/70">{r.description}</p>
+                    {r.bibleVerse && (
+                      <p className="text-xs text-ink/40 font-medium">
+                        📖 {r.bibleVerse}
+                      </p>
+                    )}
+                    {r.targetTags && r.targetTags.length > 0 && (
+                      <div className="flex flex-wrap gap-1">
+                        {r.targetTags.map((tag: string) => (
+                          <span key={tag} className="text-[10px] font-medium bg-ink/5 text-ink/50 px-1.5 py-0.5 rounded-full">
+                            {tag}
+                          </span>
+                        ))}
+                      </div>
+                    )}
+                    {(r.status || "pending") === "pending" && (
+                      <div className="flex gap-2 pt-1">
+                        <button
+                          onClick={() => updateRecStatusDb({ id: r._id, status: "implemented" })}
+                          className="text-[10px] font-semibold text-green-700 bg-green-50 hover:bg-green-100 border border-green-200 px-2.5 py-1 rounded-full transition"
+                        >
+                          ✓ Implementado
+                        </button>
+                        <button
+                          onClick={() => updateRecStatusDb({ id: r._id, status: "dismissed" })}
+                          className="text-[10px] font-semibold text-ink/40 hover:text-coral-600 bg-ink/5 hover:bg-coral-50 px-2.5 py-1 rounded-full transition"
+                        >
+                          Descartar
+                        </button>
+                      </div>
+                    )}
+                    {r.status === "implemented" && (
+                      <p className="text-[10px] font-semibold text-green-600">✓ Implementado</p>
+                    )}
+                    {r.status === "dismissed" && (
+                      <p className="text-[10px] font-semibold text-ink/30">Descartado</p>
+                    )}
                   </div>
-                )}
-                {(recStatus[i] || "pending") === "pending" && (
-                  <div className="flex gap-2 pt-1">
-                    <button
-                      onClick={() => setRecStatus((s) => ({ ...s, [i]: "implemented" }))}
-                      className="text-[10px] font-semibold text-green-700 bg-green-50 hover:bg-green-100 border border-green-200 px-2.5 py-1 rounded-full transition"
-                    >
-                      ✓ Implementado
-                    </button>
-                    <button
-                      onClick={() => setRecStatus((s) => ({ ...s, [i]: "dismissed" }))}
-                      className="text-[10px] font-semibold text-ink/40 hover:text-coral-600 bg-ink/5 hover:bg-coral-50 px-2.5 py-1 rounded-full transition"
-                    >
-                      Descartar
-                    </button>
-                  </div>
-                )}
-                {recStatus[i] === "implemented" && (
-                  <p className="text-[10px] font-semibold text-green-600">✓ Implementado</p>
-                )}
-                {recStatus[i] === "dismissed" && (
-                  <p className="text-[10px] font-semibold text-ink/30">Descartado</p>
-                )}
+                ))}
+                <p className="text-[10px] text-ink/30">Modelo: {displayRecommendations.modelUsed}</p>
               </div>
-            ))}
-            <p className="text-[10px] text-ink/30">Modelo: {recommendations.modelUsed}</p>
-          </div>
-        ) : (
-          <p className="text-sm text-ink/40 text-center py-4">Error al generar recomendaciones. Intenta de nuevo.</p>
-        )}
+            );
+          }
+          return <p className="text-sm text-ink/40 text-center py-4">Error al generar recomendaciones. Intenta de nuevo.</p>;
+        })()}
       </div>
     </div>
   );

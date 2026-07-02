@@ -8,6 +8,7 @@ const FREE_MODELS = [
   "google/gemma-4-26b-a4b-it:free",
   "nvidia/nemotron-3-ultra-550b-a55b:free",
   "cohere/north-mini-code:free",
+  "google/gemini-2.5-flash", // Fallback premium
 ];
 
 const SYSTEM_PROMPT = `Eres un asistente de análisis pastoral. Analiza bitácoras de acompañamiento juvenil.
@@ -124,6 +125,51 @@ export const storeAnalysis = internalMutation({
   },
 });
 
+export const getJournalEntryData = internalQuery({
+  args: { entryId: v.id("journal") },
+  handler: async (ctx, args) => {
+    return await ctx.db.get(args.entryId);
+  },
+});
+
+function localConfidentialAnalysis(content: string, category: string) {
+  const text = content.toLowerCase();
+  const tags: string[] = [];
+  
+  if (/(suicid|matar|morir|autoles|cortar|hacerse daño)/.test(text)) {
+    return {
+      vulnerabilityTags: ["salud_mental"],
+      riskLevel: "high" as const,
+      isCrisis: true,
+      suggestedActions: ["Contactar urgentemente al pastor responsable", "Activar protocolo de acompañamiento profesional"],
+      suggestedVerses: ["Salmos 34:18"],
+      summary: "Entrada confidencial. Se detectaron indicadores críticos de salud mental que requieren atención inmediata.",
+    };
+  }
+
+  if (/(papá|mamá|padres|familia|hermano|tío|abuela)/.test(text)) tags.push("familiar");
+  if (/(alcohol|droga|vicio|adicto|tomar)/.test(text)) tags.push("adiccion");
+  if (/(triste|depre|llor|ansie|miedo|solo)/.test(text)) tags.push("salud_mental");
+  if (/(escuela|colegio|tarea|examen|reprob)/.test(text)) tags.push("academico");
+  if (/(golpe|pegar|violencia|abuso|maltrato)/.test(text)) tags.push("violencia");
+  if (/(dinero|pobre|trabajo|comprar|pagar)/.test(text)) tags.push("economico");
+
+  const isHighRisk = /(suicid|matar|morir|autoles|abuso|violenc)/.test(text);
+  const isMediumRisk = tags.length > 1 || /(triste|depre|ansie|alcohol|droga)/.test(text);
+
+  return {
+    vulnerabilityTags: tags.length > 0 ? tags : ["espiritual"],
+    riskLevel: (isHighRisk ? "high" : isMediumRisk ? "medium" : "low") as "low" | "medium" | "high",
+    isCrisis: isHighRisk,
+    suggestedActions: [
+      "Brindar escucha activa en confidencialidad.",
+      "Mantener en oración y programar una conversación de seguimiento."
+    ],
+    suggestedVerses: ["Filipenses 4:6-7"],
+    summary: "Entrada confidencial. Acompañamiento pastoral registrado de manera privada.",
+  };
+}
+
 export const analyzeJournalEntry = action({
   args: {
     entryId: v.id("journal"),
@@ -132,20 +178,28 @@ export const analyzeJournalEntry = action({
     category: v.string(),
   },
   handler: async (ctx, args) => {
-    const apiKey = process.env.OPENROUTER_API_KEY;
-    if (!apiKey) return { success: false, error: "No API key configured" };
-
-    const prompt = buildPrompt(args.content, args.category);
+    // 1. Verificar si la entrada es confidencial
+    const entry = await ctx.runQuery(internal.ai.getJournalEntryData, { entryId: args.entryId });
+    
     let result: ReturnType<typeof parseAnalysis> = null;
     let modelUsed = "";
 
-    for (const model of FREE_MODELS) {
-      const raw = await callModel(apiKey, model, prompt);
-      if (!raw) continue;
-      result = parseAnalysis(raw);
-      if (result) {
-        modelUsed = model;
-        break;
+    if (entry?.isConfidential) {
+      result = localConfidentialAnalysis(args.content, args.category);
+      modelUsed = "local-confidential-rules";
+    } else {
+      const apiKey = process.env.OPENROUTER_API_KEY;
+      if (!apiKey) return { success: false, error: "No API key configured" };
+
+      const prompt = buildPrompt(args.content, args.category);
+      for (const model of FREE_MODELS) {
+        const raw = await callModel(apiKey, model, prompt);
+        if (!raw) continue;
+        result = parseAnalysis(raw);
+        if (result) {
+          modelUsed = model;
+          break;
+        }
       }
     }
 
@@ -791,6 +845,36 @@ export const chatWithAI = action({
       activeScope: args.activeScope,
     }) as any;
 
+    // Buscar si la pregunta menciona a algún adolescente por su nombre
+    let specificTeenContext = "";
+    const questionLower = args.question.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "");
+    
+    if (data?.teens) {
+      for (const t of data.teens) {
+        const nombreNorm = t.nombre.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "");
+        const apellidoNorm = t.apellido.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "");
+        
+        if (
+          (nombreNorm.length > 2 && questionLower.includes(nombreNorm)) ||
+          (apellidoNorm.length > 2 && questionLower.includes(apellidoNorm))
+        ) {
+          const teenDetail = await ctx.runQuery(internal.ai.getTeenData, { teenId: t._id as any });
+          if (teenDetail) {
+            specificTeenContext += `\n--- DETALLE DE ADOLESCENTE CONSULTADO (${t.nombre} ${t.apellido}) ---
+- Asistencia: ${teenDetail.pct}% (${teenDetail.presentAttendance}/${teenDetail.totalAttendance} registros)
+- Faltas consecutivas: ${teenDetail.consecAbsences}
+- Nivel de Riesgo (Análisis IA): ${teenDetail.highRiskCount} de alto riesgo, ${teenDetail.crisisCount} alertas de crisis
+- Vulnerabilidades principales: ${teenDetail.topTags.join(", ") || "ninguna"}
+- Bitácoras escritas: ${teenDetail.journalCount}
+- Contactos registrados: ${teenDetail.contactCount}
+- Último contacto: ${teenDetail.lastContactDate || "nunca"}
+- Intereses/Gustos: ${teenDetail.gustos || "no registrados"}
+------------------------------------------------------\n`;
+          }
+        }
+      }
+    }
+
     if (!apiKey) {
       return {
         success: true,
@@ -836,8 +920,8 @@ export const chatWithAI = action({
 Tienes acceso SOLO a datos reales y AUTORIZADOS del ministerio en formato JSON.
 Responde unicamente basandote en los datos proporcionados y dentro del alcance permitido del usuario.
 SIEMPRE responde en espanol, con un tono pastoral y profesional.
-NO inventes datos que no esten en el JSON. Si no sabes algo, dilo honestamente.
-NO uses JSON en tu respuesta; responde en lenguaje natural.
+NO inventes datos que no esten en el JSON o en los detalles de adolescentes provistos. Si no sabes algo, dilo honestamente.
+NO uses JSON en tu respuesta; responde en lenguaje natural usando viñetas si ayuda a la legibilidad.
 NO reveles detalles tecnicos internos del modelo, proveedor, API, infraestructura o configuracion.
 Si te preguntan por el modelo o proveedor, redirige con amabilidad a tu funcion pastoral y ofrece ayuda con informacion del ministerio.
 NO compartas informacion de otras sedes, ministerios, grupos o personas fuera del alcance autorizado.
@@ -845,7 +929,8 @@ Si una pregunta pide datos fuera del alcance, responde que solo puedes ayudar co
 Puedes hacer calculos simples con los datos (contar, sumar, promediar).
 Alcance actual del usuario: ${scopeLabel}.
 Datos autorizados del ministerio:
-${contextData}`;
+${contextData}
+${specificTeenContext ? `\nInformación detallada sobre adolescentes consultados:\n${specificTeenContext}` : ""}`;
 
     const messages = [
       { role: "system", content: systemPrompt },
@@ -1047,5 +1132,91 @@ ${args.rawText}`;
       }
     }
     return structureTranscriptionFallback(args.rawText);
+  },
+});
+
+export const storeWeeklySummary = mutation({
+  args: {
+    totalEntries: v.number(),
+    mainConcerns: v.string(),
+    emotionalClimate: v.string(),
+    riskDistribution: v.object({
+      low: v.number(),
+      medium: v.number(),
+      high: v.number(),
+    }),
+    topTags: v.array(v.string()),
+    recommendation: v.string(),
+    modelUsed: v.string(),
+  },
+  handler: async (ctx, args) => {
+    return await ctx.db.insert("weeklySummaries", {
+      ...args,
+      generatedAt: new Date().toISOString(),
+    });
+  },
+});
+
+export const getLatestWeeklySummary = query({
+  handler: async (ctx) => {
+    return await ctx.db
+      .query("weeklySummaries")
+      .order("desc")
+      .first();
+  },
+});
+
+export const storeActivityRecommendations = mutation({
+  args: {
+    recommendations: v.array(v.object({
+      title: v.string(),
+      type: v.string(),
+      description: v.string(),
+      bibleVerse: v.optional(v.string()),
+      targetTags: v.optional(v.array(v.string())),
+      urgency: v.string(),
+    })),
+    modelUsed: v.string(),
+  },
+  handler: async (ctx, args) => {
+    const oldPending = await ctx.db
+      .query("activityRecommendations")
+      .withIndex("by_status", (q) => q.eq("status", "pending"))
+      .collect();
+    for (const r of oldPending) {
+      await ctx.db.delete(r._id);
+    }
+
+    const ids = [];
+    const generatedAt = new Date().toISOString();
+    for (const rec of args.recommendations) {
+      const id = await ctx.db.insert("activityRecommendations", {
+        ...rec,
+        status: "pending",
+        generatedAt,
+        modelUsed: args.modelUsed,
+      });
+      ids.push(id);
+    }
+    return ids;
+  },
+});
+
+export const updateRecommendationStatus = mutation({
+  args: {
+    id: v.id("activityRecommendations"),
+    status: v.union(v.literal("pending"), v.literal("implemented"), v.literal("dismissed")),
+  },
+  handler: async (ctx, args) => {
+    await ctx.db.patch(args.id, { status: args.status });
+  },
+});
+
+export const getActivityRecommendations = query({
+  handler: async (ctx) => {
+    return await ctx.db
+      .query("activityRecommendations")
+      .order("desc")
+      .collect();
   },
 });

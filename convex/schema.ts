@@ -272,4 +272,37 @@ export default defineSchema({
   })
     .index("by_teenId", ["teenId"])
     .index("by_ppp", ["ppp"]),
+
+  weeklySummaries: defineTable({
+    totalEntries: v.number(),
+    mainConcerns: v.string(),
+    emotionalClimate: v.string(),
+    riskDistribution: v.object({
+      low: v.number(),
+      medium: v.number(),
+      high: v.number(),
+    }),
+    topTags: v.array(v.string()),
+    recommendation: v.string(),
+    generatedAt: v.string(),
+    modelUsed: v.string(),
+  })
+    .index("by_generatedAt", ["generatedAt"]),
+
+  activityRecommendations: defineTable({
+    title: v.string(),
+    type: v.string(),
+    description: v.string(),
+    bibleVerse: v.optional(v.string()),
+    targetTags: v.optional(v.array(v.string())),
+    urgency: v.string(),
+    status: v.union(
+      v.literal("pending"),
+      v.literal("implemented"),
+      v.literal("dismissed")
+    ),
+    generatedAt: v.string(),
+    modelUsed: v.optional(v.string()),
+  })
+    .index("by_status", ["status"]),
 });

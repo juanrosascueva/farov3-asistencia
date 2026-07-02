@@ -7,6 +7,7 @@ import { useScope } from "../hooks/useScope";
 interface ChatMessage {
   role: "user" | "assistant";
   content: string;
+  modelUsed?: string;
 }
 
 function sanitizeChatText(text: string): string {
@@ -55,7 +56,7 @@ export default function ChatPanel({ onClose }: { onClose: () => void }) {
 
   useEffect(() => {
     if (savedMessages && savedMessages.length > 0) {
-      setMessages(savedMessages.map((m: any) => ({ role: m.role, content: sanitizeChatText(m.content) })));
+      setMessages(savedMessages.map((m: any) => ({ role: m.role, content: sanitizeChatText(m.content), modelUsed: m.modelUsed })));
     } else if (initialized && savedMessages && savedMessages.length === 0) {
       setMessages([
         { role: "assistant", content: "¡Hola! Soy tu asistente pastoral virtual. Pregúntame lo que necesites sobre el ministerio.\n\nEjemplos:\n• ¿Quiénes tienen riesgo alto?\n• ¿Cuántos adolescentes faltan seguido?\n• ¿Qué vulnerabilidades son más comunes?\n• ¿Quiénes no han sido contactados?" },
@@ -89,7 +90,7 @@ export default function ChatPanel({ onClose }: { onClose: () => void }) {
       }) as any;
       if (result.success) {
         const cleanAnswer = sanitizeChatText(result.answer || "");
-        setMessages((m) => [...m, { role: "assistant", content: cleanAnswer }]);
+        setMessages((m) => [...m, { role: "assistant", content: cleanAnswer, modelUsed: result.modelUsed }]);
         await addMessage({ sessionId: sessionId as any, role: "assistant", content: cleanAnswer });
       } else {
         const errMsg = "Lo siento, no pude procesar tu pregunta. Intenta de nuevo.";
@@ -125,12 +126,17 @@ export default function ChatPanel({ onClose }: { onClose: () => void }) {
 
         <div className="flex-1 overflow-y-auto px-4 py-3 space-y-3 min-h-[200px] max-h-[calc(100vh-14rem-env(safe-area-inset-bottom))] sm:max-h-[350px]">
           {messages.map((msg, i) => (
-            <div key={i} className={`flex ${msg.role === "user" ? "justify-end" : "justify-start"}`}>
+            <div key={i} className={`flex flex-col ${msg.role === "user" ? "items-end" : "items-start"}`}>
               <div className={`max-w-[85%] rounded-xl px-3.5 py-2.5 text-sm leading-relaxed whitespace-pre-line ${
                 msg.role === "user" ? "bg-teal-600 text-white rounded-br-md" : "bg-ink/5 text-ink/80 rounded-bl-md"
               }`}>
                 {msg.content}
               </div>
+              {msg.role === "assistant" && msg.modelUsed && (
+                <span className="text-[9px] text-ink/30 mt-0.5 mb-1.5 ml-2 block self-start">
+                  IA: {msg.modelUsed.split("/").pop()}
+                </span>
+              )}
             </div>
           ))}
           {sending && (

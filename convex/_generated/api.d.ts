@@ -17,6 +17,7 @@ import type * as campus from "../campus.js";
 import type * as chat from "../chat.js";
 import type * as contacts from "../contacts.js";
 import type * as crisis from "../crisis.js";
+import type * as crons from "../crons.js";
 import type * as customRoles from "../customRoles.js";
 import type * as group from "../group.js";
 import type * as images from "../images.js";
@@ -45,6 +46,7 @@ declare const fullApi: ApiFromModules<{
   chat: typeof chat;
   contacts: typeof contacts;
   crisis: typeof crisis;
+  crons: typeof crons;
   customRoles: typeof customRoles;
   group: typeof group;
   images: typeof images;
