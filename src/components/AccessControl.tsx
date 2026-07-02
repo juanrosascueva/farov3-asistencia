@@ -71,7 +71,7 @@ function UserManager() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [name, setName] = useState("");
-  const [role, setRole] = useState<string>("leader");
+  const [role, setRole] = useState<string>("");
   const [editingUser, setEditingUser] = useState<any | null>(null);
 
   const users = useQuery(api.users.listUsers, token ? { token } : "skip");
@@ -81,6 +81,13 @@ function UserManager() {
   const updateUser = useMutation(api.users.updateUser);
   const [migrating, setMigrating] = useState(false);
 
+  useEffect(() => {
+    if (customRoles.length > 0 && !role) {
+      const leaderRole = customRoles.find((r: any) => r.name.toLowerCase() === "líder" || r.name.toLowerCase() === "lider" || r.name.toLowerCase() === "leader");
+      setRole(leaderRole ? leaderRole.name : customRoles[0].name);
+    }
+  }, [customRoles, role]);
+
   const handleCreate = async () => {
     if (!email.trim() || !password.trim() || !name.trim()) return;
     setSubmitting(true);
@@ -89,7 +96,8 @@ function UserManager() {
       setEmail("");
       setPassword("");
       setName("");
-      setRole("leader");
+      const leaderRole = customRoles.find((r: any) => r.name.toLowerCase() === "líder" || r.name.toLowerCase() === "lider" || r.name.toLowerCase() === "leader");
+      setRole(leaderRole ? leaderRole.name : (customRoles[0]?.name || ""));
       setShowForm(false);
     } catch (err: any) {
       alert(err.message);
@@ -172,21 +180,9 @@ function UserManager() {
             <label className="text-xs font-semibold text-ink/50 mb-1 block">Rol</label>
             <select value={role} onChange={e => setRole(e.target.value)}
               className="w-full bg-card border border-ink/10 rounded-xl px-3.5 py-2 text-sm capitalize">
-              <optgroup label="Roles del sistema">
-                <option value="leader">Líder</option>
-                <option value="helper">Ayudante</option>
-                <option value="coordinador">Coordinador</option>
-                <option value="director">Director</option>
-                <option value="pastor">Pastor</option>
-                <option value="admin">Administrador</option>
-              </optgroup>
-              {customRoles.length > 0 && (
-                <optgroup label="Roles personalizados">
-                  {customRoles.map((cr: any) => (
-                    <option key={cr._id} value={cr.name}>{cr.name}</option>
-                  ))}
-                </optgroup>
-              )}
+              {(customRoles || []).map((cr: any) => (
+                <option key={cr._id} value={cr.name}>{cr.name}</option>
+              ))}
             </select>
           </div>
            <button
@@ -664,21 +660,9 @@ function UserPermissionsManager({ user }: { user: any }) {
           onChange={handleRoleChange}
           className="bg-ink/5 border-none rounded-xl px-3 py-1.5 text-xs font-semibold capitalize shrink-0 self-start sm:self-auto"
         >
-          <optgroup label="Roles del sistema">
-            <option value="leader">Líder</option>
-            <option value="helper">Ayudante</option>
-            <option value="coordinador">Coordinador</option>
-            <option value="director">Director</option>
-            <option value="pastor">Pastor</option>
-            <option value="admin">Administrador</option>
-          </optgroup>
-          {customRoles.length > 0 && (
-            <optgroup label="Roles personalizados">
-              {customRoles.map((cr: any) => (
-                <option key={cr._id} value={cr.name}>{cr.name}</option>
-              ))}
-            </optgroup>
-          )}
+          {(customRoles || []).map((cr: any) => (
+            <option key={cr._id} value={cr.name}>{cr.name}</option>
+          ))}
         </select>
       </div>
 
@@ -710,13 +694,14 @@ function UserPermissionsManager({ user }: { user: any }) {
 
 function UserScopesManager({ userId }: UserScopesManagerProps) {
   const { token, user } = useAuth();
-  const [selectedRole, setSelectedRole] = useState<string>("leader");
+  const [selectedRole, setSelectedRole] = useState<string>("");
   const [selectedCampusId, setSelectedCampusId] = useState<string>("");
   const [selectedMinistryId, setSelectedMinistryId] = useState<string>("");
   const [selectedGroupId, setSelectedGroupId] = useState<string>("");
   const [submitting, setSubmitting] = useState(false);
 
   const scopes = useQuery(api.userScopes.list, user && token ? { token, userId: userId as any } : "skip");
+  const customRoles = useQuery(api.customRoles.list, token ? { token } : "skip") || [];
   const campuses = useQuery(api.campus.list, user && token ? { token } : "skip");
   const ministries = useQuery(
     api.ministry.list,
@@ -726,6 +711,13 @@ function UserScopesManager({ userId }: UserScopesManagerProps) {
     api.group.list,
     user && token && selectedMinistryId ? { token, ministryId: selectedMinistryId as any } : "skip"
   );
+
+  useEffect(() => {
+    if (customRoles.length > 0 && !selectedRole) {
+      const leaderRole = customRoles.find((r: any) => r.name.toLowerCase() === "líder" || r.name.toLowerCase() === "lider" || r.name.toLowerCase() === "leader");
+      setSelectedRole(leaderRole ? leaderRole.name : customRoles[0].name);
+    }
+  }, [customRoles, selectedRole]);
 
   const createScope = useMutation(api.userScopes.create);
   const removeScope = useMutation(api.userScopes.remove);
@@ -790,12 +782,11 @@ function UserScopesManager({ userId }: UserScopesManagerProps) {
             <select
               value={selectedRole}
               onChange={(e) => setSelectedRole(e.target.value)}
-              className="w-full bg-card border border-ink/10 rounded-xl px-3 py-1.5 text-xs"
+              className="w-full bg-card border border-ink/10 rounded-xl px-3 py-1.5 text-xs capitalize"
             >
-              <option value="leader">Líder</option>
-              <option value="helper">Ayudante</option>
-              <option value="coordinador">Coordinador</option>
-              <option value="director">Director</option>
+              {(customRoles || []).map((cr: any) => (
+                <option key={cr._id} value={cr.name}>{cr.name}</option>
+              ))}
             </select>
           </div>
 
