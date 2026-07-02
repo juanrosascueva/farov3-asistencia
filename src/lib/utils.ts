@@ -114,6 +114,13 @@ export function riskScore(stats: StatsResult): RiskInfo {
   else if (stats.pct >= 40) M = 2;
   else if (stats.pct >= 20) M = 3;
   else M = 4;
+
+  // Suavizado para evitar falsos positivos de riesgo crítico/crisis cuando hay muy pocos registros
+  if (stats.total < 4) {
+    const scale = stats.total / 4;
+    M = Math.round(M * scale);
+  }
+
   const raw = I + M;
   const score = Math.min(5, Math.max(0, raw)) as 0 | 1 | 2 | 3 | 4 | 5;
   const levels: Record<number, { label: string; action: string; color: RiskInfo["color"] }> = {
