@@ -333,31 +333,46 @@ export default function Asistencia({
 
       {showNewDate && (
         <Modal title="Agregar nueva fecha" onClose={() => setShowNewDate(false)}>
-          <div className="space-y-4">
-            <p className="text-xs text-ink/60">
-              Selecciona una fecha del calendario para cargarla en la lista y empezar a tomar asistencia.
-            </p>
+          <div className="space-y-5">
+            {/* Ícono decorativo */}
+            <div className="flex items-center gap-3 p-3.5 bg-teal-50 dark:bg-teal-950/20 rounded-xl border border-teal-100 dark:border-teal-900/30">
+              <div className="w-9 h-9 shrink-0 rounded-xl bg-teal-100 dark:bg-teal-900/40 flex items-center justify-center">
+                <svg className="w-4.5 h-4.5 text-teal-700 dark:text-teal-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+                  <rect x="3" y="4" width="18" height="17" rx="2"/><path d="M8 2v4M16 2v4M3 10h18"/>
+                  <path d="M8.5 14.5l2 2 4-4"/>
+                </svg>
+              </div>
+              <p className="text-xs text-teal-800 dark:text-teal-300 leading-relaxed">
+                Elige la fecha de la reunión para registrar asistencia. Normalmente es el domingo de la semana en curso.
+              </p>
+            </div>
+
+            {/* Input de fecha */}
             <div>
-              <label className="text-xs font-semibold text-ink/50 mb-1.5 block">Fecha de Asistencia</label>
+              <label className="text-xs font-bold text-ink/60 uppercase tracking-wider mb-2 block">
+                Fecha de la reunión
+              </label>
               <input
                 type="date"
                 value={newDate}
                 onChange={(e) => setNewDate(e.target.value)}
-                className="w-full bg-card border border-ink/10 rounded-xl px-3.5 py-2.5 text-sm"
+                className="w-full bg-card border-2 border-ink/10 focus:border-teal-500 rounded-xl px-4 py-3 text-sm font-semibold outline-none transition-colors"
               />
             </div>
-            <div className="flex gap-2 justify-end pt-2">
-              <button
-                onClick={() => setShowNewDate(false)}
-                className="px-4 py-2 border border-ink/10 rounded-xl text-xs font-semibold text-ink/60 hover:bg-ink/5"
-              >
-                Cancelar
-              </button>
+
+            {/* Botones */}
+            <div className="flex flex-col gap-2 pt-1">
               <button
                 onClick={handleNewDate}
-                className="px-4 py-2 bg-ink text-white rounded-xl text-xs font-semibold hover:bg-ink/90"
+                className="w-full py-3 bg-teal-600 hover:bg-teal-700 text-white rounded-xl text-sm font-bold transition pressable"
               >
-                Cargar Fecha
+                Cargar fecha
+              </button>
+              <button
+                onClick={() => setShowNewDate(false)}
+                className="w-full py-2.5 border border-ink/10 rounded-xl text-xs font-semibold text-ink/50 hover:bg-ink/5 transition"
+              >
+                Cancelar
               </button>
             </div>
           </div>
@@ -365,32 +380,47 @@ export default function Asistencia({
       )}
 
       {showEditDate && (
-        <Modal title="Editar Fecha de Asistencia" onClose={() => setShowEditDate(false)}>
-          <div className="space-y-4">
-            <p className="text-xs text-ink/60">
-              Modifica la fecha para todos los registros de asistencia de este día.
-            </p>
+        <Modal title="Editar fecha de asistencia" onClose={() => setShowEditDate(false)}>
+          <div className="space-y-5">
+            {/* Advertencia */}
+            <div className="flex items-start gap-3 p-3.5 bg-amber-50 dark:bg-amber-950/20 rounded-xl border border-amber-100 dark:border-amber-900/30">
+              <div className="w-9 h-9 shrink-0 rounded-xl bg-amber-100 dark:bg-amber-900/40 flex items-center justify-center">
+                <svg className="w-4 h-4 text-amber-700 dark:text-amber-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                  <path d="M12 9v4"/><path d="M12 17h.01"/>
+                  <path d="M10.3 3.9L2.7 17a2 2 0 001.7 3h15.2a2 2 0 001.7-3L13.7 3.9a2 2 0 00-3.4 0z"/>
+                </svg>
+              </div>
+              <p className="text-xs text-amber-800 dark:text-amber-300 leading-relaxed">
+                Se actualizará la fecha de <strong>todos</strong> los registros de asistencia de este día. Esta acción no se puede deshacer.
+              </p>
+            </div>
+
+            {/* Input de fecha */}
             <div>
-              <label className="text-xs font-semibold text-ink/50 mb-1.5 block">Nueva Fecha</label>
+              <label className="text-xs font-bold text-ink/60 uppercase tracking-wider mb-2 block">
+                Nueva fecha
+              </label>
               <input
                 type="date"
                 value={editDateValue}
                 onChange={(e) => setEditDateValue(e.target.value)}
-                className="w-full bg-card border border-ink/10 rounded-xl px-3.5 py-2.5 text-sm"
+                className="w-full bg-card border-2 border-ink/10 focus:border-teal-500 rounded-xl px-4 py-3 text-sm font-semibold outline-none transition-colors"
               />
             </div>
-            <div className="flex gap-2 justify-end pt-2">
-              <button
-                onClick={() => setShowEditDate(false)}
-                className="px-4 py-2 border border-ink/10 rounded-xl text-xs font-semibold text-ink/60 hover:bg-ink/5"
-              >
-                Cancelar
-              </button>
+
+            {/* Botones */}
+            <div className="flex flex-col gap-2 pt-1">
               <button
                 onClick={handleSaveEditDate}
-                className="px-4 py-2 bg-ink text-white rounded-xl text-xs font-semibold hover:bg-ink/90"
+                className="w-full py-3 bg-teal-600 hover:bg-teal-700 text-white rounded-xl text-sm font-bold transition pressable"
               >
-                Guardar
+                Guardar cambios
+              </button>
+              <button
+                onClick={() => setShowEditDate(false)}
+                className="w-full py-2.5 border border-ink/10 rounded-xl text-xs font-semibold text-ink/50 hover:bg-ink/5 transition"
+              >
+                Cancelar
               </button>
             </div>
           </div>
