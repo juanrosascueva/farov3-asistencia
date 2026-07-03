@@ -91,6 +91,59 @@ function isArchivedTeen(teen: any): boolean {
   return Boolean(teen.archivedAt || teen.deletedAt || teen.estado === "archivado" || teen.estado === "eliminado");
 }
 
+async function syncFamilyRecords(ctx: any, teenId: any, payload: any, userId?: any) {
+  const now = new Date().toISOString();
+  const existingGuardian = await ctx.db
+    .query("guardians")
+    .withIndex("by_teenId", (q: any) => q.eq("teenId", teenId))
+    .first();
+  const guardianPatch = {
+    teenId,
+    name: payload.nombreEncargado || "Encargado sin nombre",
+    relationship: payload.parentescoEncargado,
+    phone: payload.telefonoPadre,
+    secondaryPhone: payload.telefonoSecundario,
+    emergencyName: payload.contactoEmergenciaNombre,
+    emergencyPhone: payload.contactoEmergenciaTelefono,
+    isPrimary: true,
+    canReceiveMessages: payload.permiteMensajes,
+    updatedAt: now,
+  };
+  let guardianId = existingGuardian?._id;
+  if (payload.nombreEncargado || payload.telefonoPadre || payload.contactoEmergenciaTelefono) {
+    if (existingGuardian) {
+      await ctx.db.patch(existingGuardian._id, guardianPatch);
+    } else {
+      guardianId = await ctx.db.insert("guardians", { ...guardianPatch, createdAt: now });
+    }
+  }
+
+  for (const consent of [
+    { type: "data" as const, granted: payload.consentimientoDatos },
+    { type: "photo" as const, granted: payload.consentimientoFoto },
+  ]) {
+    const existingConsent = await ctx.db
+      .query("consents")
+      .withIndex("by_teen_type", (q: any) => q.eq("teenId", teenId).eq("type", consent.type))
+      .first();
+    const consentPatch = {
+      teenId,
+      type: consent.type,
+      status: consent.granted ? "granted" as const : "pending" as const,
+      guardianName: payload.nombreEncargado,
+      guardianId,
+      grantedAt: consent.granted ? payload.fechaConsentimiento || now.slice(0, 10) : undefined,
+      recordedByUserId: userId,
+      updatedAt: now,
+    };
+    if (existingConsent) {
+      await ctx.db.patch(existingConsent._id, consentPatch);
+    } else {
+      await ctx.db.insert("consents", { ...consentPatch, createdAt: now });
+    }
+  }
+}
+
 function assertValidDate(value: string | undefined, fieldName: string, { allowFuture = false } = {}) {
   if (value === undefined || value === "") return;
   if (!/^\d{4}-\d{2}-\d{2}$/.test(value)) {
@@ -233,7 +286,7 @@ export const list = query({
     if (args.token) {
       const access = await getEffectiveAccess(ctx, args.token);
       if (access && !access.isGlobal) {
-        filtered = filterTeensByScope(access, all);
+        filtered = filterTeensByScope(access, filtered);
       }
     }
     const resolved = [];
@@ -315,6 +368,7 @@ export const create = mutation({
       throw new Error("No tienes permisos para crear adolescentes en este ámbito (Sede/Ministerio/Grupo).");
     }
     const id = await ctx.db.insert("teens", payload);
+    await syncFamilyRecords(ctx, id, payload, access.user._id);
     await logAudit(ctx, {
       token: args.token,
       action: "teen.created",
@@ -388,6 +442,7 @@ export const update = mutation({
     }
     
     await ctx.db.patch(args.id, payload);
+    await syncFamilyRecords(ctx, args.id, payload, access.user._id);
     if (String(current.groupId || "") !== String(payload.groupId || "")) {
       await ctx.db.insert("teenGroupHistory", {
         teenId: args.id,
@@ -500,6 +555,19 @@ export const migrateTeenProfiles = mutation({
         await ctx.db.patch(teen._id, patch);
         migrated++;
       }
+    }
+    return { migrated };
+  },
+});
+
+export const migrateFamilyRecords = mutation({
+  handler: async (ctx) => {
+    const teens = await ctx.db.query("teens").collect();
+    let migrated = 0;
+    for (const teen of teens) {
+      if (isArchivedTeen(teen)) continue;
+      await syncFamilyRecords(ctx, teen._id, teen);
+      migrated++;
     }
     return { migrated };
   },

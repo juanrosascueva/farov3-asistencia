@@ -178,6 +178,36 @@ export default defineSchema({
   })
     .index("by_teenId", ["teenId"]),
 
+  guardians: defineTable({
+    teenId: v.id("teens"),
+    name: v.string(),
+    relationship: v.optional(v.string()),
+    phone: v.optional(v.string()),
+    secondaryPhone: v.optional(v.string()),
+    emergencyName: v.optional(v.string()),
+    emergencyPhone: v.optional(v.string()),
+    isPrimary: v.boolean(),
+    canReceiveMessages: v.optional(v.boolean()),
+    createdAt: v.string(),
+    updatedAt: v.string(),
+  })
+    .index("by_teenId", ["teenId"]),
+
+  consents: defineTable({
+    teenId: v.id("teens"),
+    type: v.union(v.literal("data"), v.literal("photo")),
+    status: v.union(v.literal("granted"), v.literal("pending"), v.literal("declined")),
+    guardianName: v.optional(v.string()),
+    guardianId: v.optional(v.id("guardians")),
+    grantedAt: v.optional(v.string()),
+    recordedByUserId: v.optional(v.id("users")),
+    notes: v.optional(v.string()),
+    createdAt: v.string(),
+    updatedAt: v.string(),
+  })
+    .index("by_teenId", ["teenId"])
+    .index("by_teen_type", ["teenId", "type"]),
+
   meetingSessions: defineTable({
     date: v.string(),
     type: v.union(

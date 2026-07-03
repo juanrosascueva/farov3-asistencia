@@ -21,6 +21,7 @@ import type * as crons from "../crons.js";
 import type * as customRoles from "../customRoles.js";
 import type * as dashboard from "../dashboard.js";
 import type * as group from "../group.js";
+import type * as guardians from "../guardians.js";
 import type * as images from "../images.js";
 import type * as journal from "../journal.js";
 import type * as migration from "../migration.js";
@@ -53,6 +54,7 @@ declare const fullApi: ApiFromModules<{
   customRoles: typeof customRoles;
   dashboard: typeof dashboard;
   group: typeof group;
+  guardians: typeof guardians;
   images: typeof images;
   journal: typeof journal;
   migration: typeof migration;

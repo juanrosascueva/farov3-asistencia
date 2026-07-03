@@ -106,6 +106,8 @@ export default function Profile({
     onDeleted();
   };
 
+  const familyRecords = useQuery(api.guardians.listByTeen, token ? { teenId: teen._id as any, token } : "skip");
+
   const statusMap: Record<string, { label: string; cls: string }> = {
     present: { label: "Presente", cls: "bg-sage-50 text-sage-600" },
     absent: { label: "Ausente", cls: "bg-coral-50 text-coral-600" },
@@ -118,6 +120,15 @@ export default function Profile({
     amber: "bg-amber-50 border-amber-100 text-amber-700 dark:bg-amber-950/30 dark:border-amber-900/40 dark:text-amber-400",
     coral: "bg-coral-50 border-coral-100 text-coral-700 dark:bg-orange-950/30 dark:border-orange-900/40 dark:text-orange-400",
     red: "bg-red-50 border-red-200 text-red-700 dark:bg-red-950/30 dark:border-red-900/40 dark:text-red-400",
+  };
+  const consentLabel: Record<string, string> = {
+    data: "Datos personales",
+    photo: "Uso de fotografía",
+  };
+  const consentStatus: Record<string, string> = {
+    granted: "Otorgado",
+    pending: "Pendiente",
+    declined: "Rechazado",
   };
 
   return (
@@ -377,8 +388,42 @@ export default function Profile({
 
       <div className="bg-card rounded-card shadow-soft p-5 space-y-4">
         <h2 className="font-display font-semibold text-base">
-          Información de contacto
+          Guardianes y consentimientos
         </h2>
+        {familyRecords?.guardians?.length ? (
+          <div className="grid gap-2">
+            {familyRecords.guardians.map((guardian: any) => (
+              <div key={guardian._id} className="rounded-xl border border-ink/10 p-3 text-sm">
+                <div className="flex flex-wrap items-center justify-between gap-2">
+                  <p className="font-semibold text-ink">{esc(guardian.name)}</p>
+                  {guardian.isPrimary && (
+                    <span className="rounded-full bg-teal-50 px-2 py-0.5 text-[10px] font-semibold text-teal-700">
+                      Principal
+                    </span>
+                  )}
+                </div>
+                <div className="mt-2 grid sm:grid-cols-2 gap-2 text-xs text-ink/60">
+                  <span>{esc(guardian.relationship || "Sin parentesco")}</span>
+                  <span>{esc(guardian.phone || "Sin teléfono principal")}</span>
+                  {guardian.emergencyName && <span>Emergencia: {esc(guardian.emergencyName)}</span>}
+                  {guardian.emergencyPhone && <span>{esc(guardian.emergencyPhone)}</span>}
+                </div>
+              </div>
+            ))}
+          </div>
+        ) : (
+          <p className="text-sm text-ink/40">Sin guardianes formales registrados.</p>
+        )}
+        <div className="grid sm:grid-cols-2 gap-2">
+          {(familyRecords?.consents || []).map((consent: any) => (
+            <div key={consent._id} className="rounded-xl border border-ink/10 p-3 text-sm">
+              <p className="text-xs font-semibold text-ink/40 uppercase tracking-wide">{consentLabel[consent.type] || consent.type}</p>
+              <p className="font-semibold text-ink mt-1">{consentStatus[consent.status] || consent.status}</p>
+              {consent.grantedAt && <p className="text-xs text-ink/45 mt-1">{fmtDate(consent.grantedAt)}</p>}
+              {consent.guardianName && <p className="text-xs text-ink/45 mt-1">Por {esc(consent.guardianName)}</p>}
+            </div>
+          ))}
+        </div>
         <div className="grid sm:grid-cols-2 gap-3 text-sm">
           <InfoRow label="Teléfono del adolescente" value={teen.telefono} />
           <InfoRow label="Teléfono del encargado" value={teen.telefonoPadre} />
