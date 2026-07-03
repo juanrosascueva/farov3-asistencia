@@ -106,6 +106,8 @@ export default defineSchema({
         v.literal("seguimiento"),
         v.literal("inactivo"),
         v.literal("trasladado"),
+        v.literal("archivado"),
+        v.literal("eliminado"),
         v.literal("egresado")
       )
     ),
@@ -154,6 +156,11 @@ export default defineSchema({
     campusId: v.optional(v.id("campus")),
     ministryId: v.optional(v.id("ministry")),
     groupId: v.optional(v.id("group")),
+    archivedAt: v.optional(v.string()),
+    archivedBy: v.optional(v.id("users")),
+    deletedAt: v.optional(v.string()),
+    deletedBy: v.optional(v.id("users")),
+    deleteReason: v.optional(v.string()),
   })
     .index("by_campusId", ["campusId"])
     .index("by_ministryId", ["ministryId"])
@@ -321,6 +328,10 @@ export default defineSchema({
     targetId: v.optional(v.string()),
     previousValue: v.optional(v.string()),
     newValue: v.optional(v.string()),
+    changedFields: v.optional(v.array(v.string())),
+    sensitivityLevel: v.optional(v.union(v.literal("basic"), v.literal("contact"), v.literal("pastoral"), v.literal("sensitive"))),
+    redactedPreviousValue: v.optional(v.string()),
+    redactedNewValue: v.optional(v.string()),
     details: v.optional(v.string()),
     ip: v.optional(v.string()),
     userAgent: v.optional(v.string()),

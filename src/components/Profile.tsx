@@ -516,17 +516,17 @@ export default function Profile({
 
       {showDelete && (
         <Modal
-          title="Eliminar adolescente"
+          title="Archivar adolescente"
           onClose={() => setShowDelete(false)}
         >
           <div className="p-5">
             <p className="text-sm text-ink/70">
-              ¿Seguro que deseas eliminar a{" "}
+              ¿Seguro que deseas archivar a{" "}
               <strong>
                 {esc(teen.nombre)} {esc(teen.apellido)}
               </strong>
-              ? Se eliminará también su historial de asistencia. Esta acción no
-              se puede deshacer.
+              ? Su ficha saldrá de los listados activos, pero se conservará su
+              historial de asistencia, bitácora y auditoría.
             </p>
             <div className="flex gap-3 mt-5">
               <button
@@ -539,7 +539,7 @@ export default function Profile({
                 onClick={handleDelete}
                 className="flex-1 bg-coral-600 text-white rounded-xl py-2.5 text-sm font-semibold"
               >
-                Eliminar
+                Archivar
               </button>
             </div>
           </div>

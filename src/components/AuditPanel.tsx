@@ -9,6 +9,7 @@ const actionLabels: Record<string, string> = {
   "teen.updated": "Ficha editada",
   "teen.deactivated": "Estado de adolescente cambiado",
   "teen.deleted": "Ficha eliminada",
+  "teen.archived": "Ficha archivada",
   "journal.viewed": "Bitácora vista",
   "journal.created": "Bitácora creada",
   "journal.deleted": "Bitácora eliminada",
@@ -37,6 +38,14 @@ const actionLabels: Record<string, string> = {
   "crisis.attended": "Crisis atendida",
   "data.exported": "Datos exportados",
   "data.bulk_deleted": "Borrado masivo",
+  "data.bulk_archived": "Archivado masivo",
+};
+
+const sensitivityLabels: Record<string, string> = {
+  basic: "Básica",
+  contact: "Contacto",
+  pastoral: "Pastoral",
+  sensitive: "Sensible",
 };
 
 function shortDevice(value: string | undefined): string {
@@ -88,13 +97,15 @@ export default function AuditPanel() {
         </div>
 
         <div className="overflow-x-auto">
-          <table className="w-full text-sm min-w-[920px]">
+          <table className="w-full text-sm min-w-[1040px]">
             <thead>
               <tr className="text-left text-xs text-ink/40 border-b border-ink/10">
                 <th className="py-2 pr-3 font-semibold">Fecha</th>
                 <th className="py-2 pr-3 font-semibold">Usuario</th>
                 <th className="py-2 pr-3 font-semibold">Acción</th>
                 <th className="py-2 pr-3 font-semibold">Entidad</th>
+                <th className="py-2 pr-3 font-semibold">Sensibilidad</th>
+                <th className="py-2 pr-3 font-semibold">Campos</th>
                 <th className="py-2 pr-3 font-semibold">Dispositivo</th>
                 <th className="py-2 pr-3 font-semibold">IP</th>
                 <th className="py-2 pr-3 font-semibold">Detalle</th>
@@ -113,6 +124,12 @@ export default function AuditPanel() {
                   <td className="py-2 pr-3 text-xs text-ink/50">
                     {esc(log.entityType || log.targetType || "-")}
                     {log.entityId || log.targetId ? <span className="block font-mono text-[10px]">{esc(log.entityId || log.targetId)}</span> : null}
+                  </td>
+                  <td className="py-2 pr-3 text-xs text-ink/50 whitespace-nowrap">
+                    {esc(sensitivityLabels[log.sensitivityLevel] || log.sensitivityLevel || "-")}
+                  </td>
+                  <td className="py-2 pr-3 text-xs text-ink/50 max-w-[160px]">
+                    {Array.isArray(log.changedFields) && log.changedFields.length > 0 ? esc(log.changedFields.join(", ")) : "-"}
                   </td>
                   <td className="py-2 pr-3 text-xs text-ink/50 max-w-[180px]" title={log.userAgent || ""}>
                     {esc(shortDevice(log.userAgent))}

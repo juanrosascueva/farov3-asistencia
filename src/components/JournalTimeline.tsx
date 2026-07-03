@@ -45,12 +45,12 @@ const sourceLabel: Record<string, string> = {
 };
 
 export default function JournalTimeline({ teenId }: JournalProps) {
-  const entries = useQuery(api.journal.list, { teenId: teenId as any });
+  const { user, token } = useAuth();
+  const entries = useQuery(api.journal.list, { teenId: teenId as any, token: token ?? undefined });
   const createEntry = useMutation(api.journal.create);
   const deleteEntry = useMutation(api.journal.remove);
   const analyzeEntry = useAction(api.ai.analyzeJournalEntry as any);
   const allAnalyses = useQuery(api.ai.getAllAnalyses);
-  const { user, token } = useAuth();
   const recordJournalView = useMutation(api.auditLog.recordJournalView);
 
   const [showForm, setShowForm] = useState(false);
@@ -65,6 +65,7 @@ export default function JournalTimeline({ teenId }: JournalProps) {
   const structureAction = useAction(api.ai.structureTranscription as any);
   const recognitionRef = useRef<any>(null);
   const listeningTimeoutRef = useRef<number | null>(null);
+  const viewedAuditRef = useRef(false);
 
   const clearListeningState = () => {
     setListening(false);
@@ -76,7 +77,9 @@ export default function JournalTimeline({ teenId }: JournalProps) {
   };
 
   useEffect(() => {
-    if (token) {
+    const viewedConfidential = entries?.some((entry) => entry.isConfidential);
+    if (token && viewedConfidential && !viewedAuditRef.current) {
+      viewedAuditRef.current = true;
       recordJournalView({ token, teenId: teenId as any });
     }
     return () => {
@@ -91,7 +94,7 @@ export default function JournalTimeline({ teenId }: JournalProps) {
         window.clearTimeout(listeningTimeoutRef.current);
       }
     };
-  }, [recordJournalView, teenId, token]);
+  }, [entries, recordJournalView, teenId, token]);
 
   const handleSubmit = async (e: FormEvent) => {
     e.preventDefault();

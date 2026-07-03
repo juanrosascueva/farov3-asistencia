@@ -20,6 +20,7 @@ import { Avatar } from "./Layout";
 import TeenForm from "./TeenForm";
 import Modal from "./Modal";
 import TeenImportModal from "./TeenImportModal";
+import { useAuth } from "../hooks/useAuth";
 
 interface JovenesProps {
   teens: Doc<"teens">[];
@@ -52,6 +53,7 @@ export default function Jovenes({
   const [filtroEdad, setFiltroEdad] = useState<FilterEdad>("all");
 
   const deleteTeen = useMutation(api.teens.remove);
+  const { token } = useAuth();
   const recalcPpp = useAction(api.ppp.calculateAllPpp as any);
   const [pppRecalculating, setPppRecalculating] = useState(false);
 
@@ -150,9 +152,9 @@ export default function Jovenes({
 
   const handleDelete = useCallback(async () => {
     if (!deletingTeen) return;
-    await deleteTeen({ id: deletingTeen._id });
+    await deleteTeen({ id: deletingTeen._id, token: token ?? undefined });
     setDeletingTeen(null);
-  }, [deletingTeen, deleteTeen]);
+  }, [deletingTeen, deleteTeen, token]);
 
   return (
     <div className="space-y-5 overflow-hidden">
@@ -661,17 +663,17 @@ export default function Jovenes({
 
       {deletingTeen && (
         <Modal
-          title="Eliminar adolescente"
+          title="Archivar adolescente"
           onClose={() => setDeletingTeen(null)}
         >
           <div className="p-5">
             <p className="text-sm text-ink/70">
-              ¿Seguro que deseas eliminar a{" "}
+              ¿Seguro que deseas archivar a{" "}
               <strong>
                 {esc(deletingTeen.nombre)} {esc(deletingTeen.apellido)}
               </strong>
-              ? Se eliminará también su historial de asistencia. Esta acción no
-              se puede deshacer.
+              ? Su ficha saldrá de los listados activos, pero se conservará su
+              historial de asistencia, bitácora y auditoría.
             </p>
             <div className="flex gap-3 mt-5">
               <button
@@ -684,7 +686,7 @@ export default function Jovenes({
                 onClick={handleDelete}
                 className="flex-1 bg-coral-600 text-white rounded-xl py-2.5 text-sm font-semibold"
               >
-                Eliminar
+                Archivar
               </button>
             </div>
           </div>

@@ -1,7 +1,16 @@
 export type AttendanceStatus = "present" | "absent" | "excused";
 export type AttendanceMap = Record<string, Record<string, AttendanceStatus | undefined>>;
 
-export type TeenStatus = "activo" | "visitante" | "nuevo" | "seguimiento" | "inactivo" | "trasladado" | "egresado";
+export type TeenStatus =
+  | "activo"
+  | "visitante"
+  | "nuevo"
+  | "seguimiento"
+  | "inactivo"
+  | "trasladado"
+  | "archivado"
+  | "eliminado"
+  | "egresado";
 export type MeetingType = "culto_adolescentes" | "celula" | "discipulado" | "ensayo" | "evento_especial" | "campamento";
 export type SpiritualStage = "nuevo" | "conociendo" | "afirmando_fe" | "bautizado" | "sirviendo";
 

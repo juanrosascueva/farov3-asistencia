@@ -47,7 +47,7 @@ export default function TeenImportModal({ onClose, onSuccess }: TeenImportModalP
         if (data.nacimiento && !/^\d{4}-\d{2}-\d{2}$/.test(data.nacimiento)) errors.push("Fecha de nacimiento inválida");
         if (data.fechaIngreso && !/^\d{4}-\d{2}-\d{2}$/.test(data.fechaIngreso)) errors.push("Fecha de ingreso inválida");
         if (data.fechaConsentimiento && !/^\d{4}-\d{2}-\d{2}$/.test(data.fechaConsentimiento)) errors.push("Fecha de consentimiento inválida");
-        if (data.estado && !["activo", "seguimiento", "inactivo", "egresado"].includes(data.estado)) errors.push("Estado inválido");
+        if (data.estado && !["activo", "visitante", "nuevo", "seguimiento", "inactivo", "trasladado", "egresado"].includes(data.estado)) errors.push("Estado inválido");
         return { row: index + 2, data, errors };
       });
       setRows(preview);

@@ -10,6 +10,8 @@ const teenStatus = v.union(
   v.literal("seguimiento"),
   v.literal("inactivo"),
   v.literal("trasladado"),
+  v.literal("archivado"),
+  v.literal("eliminado"),
   v.literal("egresado")
 );
 
@@ -83,6 +85,10 @@ function isCompleteProfile(payload: any): boolean {
     payload.parentescoEncargado &&
     payload.nacimiento
   );
+}
+
+function isArchivedTeen(teen: any): boolean {
+  return Boolean(teen.archivedAt || teen.deletedAt || teen.estado === "archivado" || teen.estado === "eliminado");
 }
 
 function assertValidDate(value: string | undefined, fieldName: string, { allowFuture = false } = {}) {
@@ -205,7 +211,7 @@ async function findDuplicateMatches(ctx: any, args: any, excludeId?: string) {
   const teenPhoneDigits = (args.telefono || "").replace(/\D/g, "");
   const parentPhoneDigits = (args.telefonoPadre || "").replace(/\D/g, "");
   return all
-    .filter((teen: any) => !excludeId || String(teen._id) !== excludeId)
+    .filter((teen: any) => !isArchivedTeen(teen) && (!excludeId || String(teen._id) !== excludeId))
     .map((teen: any) => {
       const teenFullName = `${teen.nombre} ${teen.apellido}`.trim().toLowerCase();
       const teenDigits = (teen.telefono || "").replace(/\D/g, "");
@@ -220,10 +226,10 @@ async function findDuplicateMatches(ctx: any, args: any, excludeId?: string) {
 }
 
 export const list = query({
-  args: { token: v.optional(v.string()) },
+  args: { token: v.optional(v.string()), includeArchived: v.optional(v.boolean()) },
   handler: async (ctx, args) => {
     const all = await ctx.db.query("teens").collect();
-    let filtered = all;
+    let filtered = args.includeArchived ? all : all.filter((teen: any) => !isArchivedTeen(teen));
     if (args.token) {
       const access = await getEffectiveAccess(ctx, args.token);
       if (access && !access.isGlobal) {
@@ -428,32 +434,30 @@ export const detectDuplicates = query({
 });
 
 export const remove = mutation({
-  args: { id: v.id("teens"), token: v.optional(v.string()) },
+  args: { id: v.id("teens"), token: v.optional(v.string()), reason: v.optional(v.string()) },
   handler: async (ctx, args) => {
     const current = await ctx.db.get(args.id);
     if (!current) throw new Error("Ficha no encontrada");
     
     const access = await requireAccess(ctx, args.token, "helper");
     if (!canAccessTeen(access, current)) {
-      throw new Error("No tienes permisos para eliminar a este adolescente.");
+      throw new Error("No tienes permisos para archivar a este adolescente.");
     }
-    
-    for (const table of ["attendance", "journal"] as const) {
-      const records = await ctx.db
-        .query(table)
-        .withIndex("by_teenId", (q) => q.eq("teenId", args.id))
-        .collect();
-      for (const r of records) {
-        await ctx.db.delete(r._id);
-      }
-    }
-    await ctx.db.delete(args.id);
+    const patch = {
+      estado: "archivado" as const,
+      archivedAt: new Date().toISOString(),
+      archivedBy: access.user._id,
+      deleteReason: args.reason || "Archivado desde ficha pastoral",
+    };
+    await ctx.db.patch(args.id, patch);
     await logAudit(ctx, {
       token: args.token,
-      action: "teen.deleted",
+      action: "teen.archived",
       entityType: "teen",
       entityId: String(args.id),
-      previousValue: current,
+      previousValue: { estado: current.estado, archivedAt: current.archivedAt },
+      newValue: patch,
+      changedFields: ["estado", "archivedAt", "archivedBy", "deleteReason"],
       details: `${current.nombre} ${current.apellido}`,
     });
   },
@@ -504,23 +508,23 @@ export const migrateTeenProfiles = mutation({
 export const removeAll = mutation({
   args: { token: v.optional(v.string()) },
   handler: async (ctx, args) => {
-    const allJournal = await ctx.db.query("journal").collect();
-    for (const r of allJournal) {
-      await ctx.db.delete(r._id);
-    }
-    const allAttendance = await ctx.db.query("attendance").collect();
-    for (const r of allAttendance) {
-      await ctx.db.delete(r._id);
-    }
-    const allTeens = await ctx.db.query("teens").collect();
+    const access = await requireAccess(ctx, args.token, "pastor");
+    const now = new Date().toISOString();
+    const allTeens = (await ctx.db.query("teens").collect()).filter((teen: any) => !isArchivedTeen(teen));
     for (const t of allTeens) {
-      await ctx.db.delete(t._id);
+      await ctx.db.patch(t._id, {
+        estado: "archivado",
+        archivedAt: now,
+        archivedBy: access.user._id,
+        deleteReason: "Archivado masivo desde ajustes",
+      });
     }
     await logAudit(ctx, {
       token: args.token,
-      action: "data.bulk_deleted",
+      action: "data.bulk_archived",
       entityType: "system",
-      details: `Borrado masivo: ${allTeens.length} adolescentes, ${allAttendance.length} asistencias, ${allJournal.length} bitacoras.`,
+      changedFields: ["estado", "archivedAt", "archivedBy", "deleteReason"],
+      details: `Archivado masivo: ${allTeens.length} adolescentes. Asistencias y bitacoras se conservaron.`,
     });
   },
 });

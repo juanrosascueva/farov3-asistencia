@@ -561,7 +561,9 @@ export default function TeenForm({ teen, quickVisitor = false, onClose, onSucces
                 label="Estado"
                 value={form.estado}
                 onChange={set("estado")}
-                options={Object.entries(TEEN_STATUS_META).map(([value, meta]) => ({ value, label: meta.label }))}
+                options={Object.entries(TEEN_STATUS_META)
+                  .filter(([value]) => value !== "archivado" && value !== "eliminado")
+                  .map(([value, meta]) => ({ value, label: meta.label }))}
               />
             </div>
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">

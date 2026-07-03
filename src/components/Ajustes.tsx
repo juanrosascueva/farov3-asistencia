@@ -385,15 +385,15 @@ export default function Ajustes({ teens, attendanceMap, dark, setDark }: Ajustes
       </div>
 
       <div className="bg-coral-50 border border-coral-100 rounded-card p-4">
-        <p className="text-sm font-semibold text-coral-700">Reiniciar todos los datos</p>
-        <p className="text-xs text-coral-700/70 mt-0.5 mb-3">Esta acción borra permanentemente a todos los adolescentes y registros de asistencia.</p>
-        <button onClick={() => setShowReset(true)} className="text-xs font-semibold bg-coral-600 text-white rounded-full px-3.5 py-2">Borrar todo</button>
+        <p className="text-sm font-semibold text-coral-700">Archivar adolescentes activos</p>
+        <p className="text-xs text-coral-700/70 mt-0.5 mb-3">Esta acción oculta las fichas activas, pero conserva asistencia, bitácoras y auditoría.</p>
+        <button onClick={() => setShowReset(true)} className="text-xs font-semibold bg-coral-600 text-white rounded-full px-3.5 py-2">Archivar todo</button>
       </div>
 
       <p className="text-center text-[11px] text-ink/30 pt-2">Congregación Cristo Vive · Control de asistencia</p>
 
       {showReset && (
-        <Modal title="Borrar todos los datos" onClose={() => setShowReset(false)}>
+        <Modal title="Archivar adolescentes activos" onClose={() => setShowReset(false)}>
           <ResetForm onCancel={() => setShowReset(false)} />
         </Modal>
       )}
@@ -421,7 +421,7 @@ function ResetForm({ onCancel }: { onCancel: () => void }) {
   return (
     <div className="p-5">
       <p className="text-sm text-ink/70">
-        Esto eliminará permanentemente a todos los adolescentes y todo el historial de asistencia. No se puede deshacer.
+        Esto archivará todas las fichas activas. Los historiales de asistencia y bitácora se conservarán para auditoría.
       </p>
       <div className="flex gap-3 mt-5">
         <button
@@ -442,7 +442,7 @@ function ResetForm({ onCancel }: { onCancel: () => void }) {
               <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
             </svg>
           )}
-          {resetting ? "Borrando..." : "Borrar todo"}
+          {resetting ? "Archivando..." : "Archivar todo"}
         </button>
       </div>
     </div>

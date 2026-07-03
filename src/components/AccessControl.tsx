@@ -542,7 +542,7 @@ const PERMISSION_DEFS = [
   { id: "manage_users", label: "Administrar usuarios", desc: "Crear usuarios y modificar permisos" },
   { id: "manage_settings", label: "Ajustes globales", desc: "Ver pestaña Ajustes y configuración" },
   { id: "write_teens", label: "Editar adolescentes", desc: "Agregar o modificar perfiles" },
-  { id: "delete_teens", label: "Eliminar adolescentes", desc: "Permiso destructivo de borrado" },
+  { id: "delete_teens", label: "Archivar adolescentes", desc: "Permite archivar fichas y ocultarlas de listados activos" },
   { id: "view_reports", label: "Ver reportes", desc: "Acceso a las métricas del ministerio" },
   { id: "use_ai", label: "Usar IA Pastoral", desc: "Acceso al análisis de asistencia y chats" },
 ];

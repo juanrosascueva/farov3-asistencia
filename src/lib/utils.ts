@@ -20,6 +20,8 @@ export const TEEN_STATUS_META: Record<TeenStatus, { label: string; cls: string }
   seguimiento: { label: "Seguimiento", cls: "bg-amber-50 text-amber-700 border-amber-100" },
   inactivo: { label: "Inactivo", cls: "bg-slate-100 text-slate-700 border-slate-200" },
   trasladado: { label: "Trasladado", cls: "bg-purple-50 text-purple-700 border-purple-100" },
+  archivado: { label: "Archivado", cls: "bg-slate-100 text-slate-500 border-slate-200" },
+  eliminado: { label: "Eliminado", cls: "bg-red-50 text-red-700 border-red-100" },
   egresado: { label: "Egresado", cls: "bg-blue-50 text-blue-700 border-blue-100" },
 };
 
