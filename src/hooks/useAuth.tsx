@@ -30,6 +30,7 @@ interface AuthContextValue {
   canUseAi: boolean;
   canDeleteTeens: boolean;
   canWriteTeens: boolean;
+  canViewSensitivePastoral: boolean;
 }
 
 const AuthContext = createContext<AuthContextValue>(null!);
@@ -165,6 +166,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     canUseAi: user?.permissions?.includes("use_ai") ?? false,
     canDeleteTeens: user?.permissions?.includes("delete_teens") ?? false,
     canWriteTeens: user?.permissions?.includes("write_teens") ?? false,
+    canViewSensitivePastoral: user?.permissions?.includes("view_sensitive_pastoral") ?? false,
   };
 
   return (

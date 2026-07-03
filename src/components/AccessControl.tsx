@@ -545,6 +545,7 @@ const PERMISSION_DEFS = [
   { id: "delete_teens", label: "Archivar adolescentes", desc: "Permite archivar fichas y ocultarlas de listados activos" },
   { id: "view_reports", label: "Ver reportes", desc: "Acceso a las métricas del ministerio" },
   { id: "use_ai", label: "Usar IA Pastoral", desc: "Acceso al análisis de asistencia y chats" },
+  { id: "view_sensitive_pastoral", label: "Ver pastoral sensible", desc: "Acceso a bitácoras confidenciales y señales sensibles" },
 ];
 
 function UserPermissionsManager({ user }: { user: any }) {

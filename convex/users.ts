@@ -282,10 +282,10 @@ async function checkAndSeedRoles(ctx: any) {
   const existing = await ctx.db.query("customRoles").first();
   if (!existing) {
     const defaultRoles = [
-      { name: "Administrador", permissions: ["manage_users", "manage_settings", "write_teens", "delete_teens", "view_reports", "use_ai"] },
-      { name: "Pastor", permissions: ["manage_users", "manage_settings", "write_teens", "delete_teens", "view_reports", "use_ai"] },
-      { name: "Director", permissions: ["write_teens", "view_reports", "use_ai"] },
-      { name: "Coordinador", permissions: ["write_teens", "view_reports"] },
+      { name: "Administrador", permissions: ["manage_users", "manage_settings", "write_teens", "delete_teens", "view_reports", "use_ai", "view_sensitive_pastoral"] },
+      { name: "Pastor", permissions: ["manage_users", "manage_settings", "write_teens", "delete_teens", "view_reports", "use_ai", "view_sensitive_pastoral"] },
+      { name: "Director", permissions: ["write_teens", "view_reports", "use_ai", "view_sensitive_pastoral"] },
+      { name: "Coordinador", permissions: ["write_teens", "view_reports", "view_sensitive_pastoral"] },
       { name: "Líder", permissions: ["write_teens"] },
       { name: "Ayudante", permissions: [] },
     ];
@@ -336,13 +336,13 @@ export async function getEffectivePermissions(ctx: any, role: string, userPermis
 
   // Fallback rígido por si ocurre un caso extremo
   if (normRole === "administrador" || normRole === "pastor") {
-    return ["manage_users", "manage_settings", "write_teens", "delete_teens", "view_reports", "use_ai"];
+    return ["manage_users", "manage_settings", "write_teens", "delete_teens", "view_reports", "use_ai", "view_sensitive_pastoral"];
   }
   if (normRole === "director") {
-    return ["write_teens", "view_reports", "use_ai"];
+    return ["write_teens", "view_reports", "use_ai", "view_sensitive_pastoral"];
   }
   if (normRole === "coordinador") {
-    return ["write_teens", "view_reports"];
+    return ["write_teens", "view_reports", "view_sensitive_pastoral"];
   }
   if (normRole === "lider") {
     return ["write_teens"];

@@ -3,6 +3,14 @@ import { mutation, query } from "./_generated/server";
 import { getUserFromToken } from "./authHelper";
 import { logAudit } from "./auditLog";
 
+function canViewSensitivePastoral(user: any): boolean {
+  return Boolean(
+    user &&
+      (["admin", "administrador", "pastor", "director", "coordinador"].includes(user.role) ||
+        user.permissions?.includes("view_sensitive_pastoral"))
+  );
+}
+
 export const list = query({
   args: { teenId: v.id("teens"), token: v.optional(v.string()) },
   handler: async (ctx, args) => {
@@ -14,7 +22,7 @@ export const list = query({
     // Filter out confidential entries for unauthorized users
     if (!args.token) return entries.filter(e => !e.isConfidential);
     const user = await getUserFromToken(ctx, args.token);
-    if (!user || (user.role !== "pastor" && user.role !== "director" && user.role !== "coordinador")) {
+    if (!canViewSensitivePastoral(user)) {
       return entries.filter(e => !e.isConfidential);
     }
     return entries;
@@ -87,16 +95,18 @@ export const remove = mutation({
 
 export const listAll = query({
   handler: async (ctx) => {
-    return await ctx.db.query("journal").order("desc").collect();
+    const entries = await ctx.db.query("journal").order("desc").collect();
+    return entries.filter((entry) => !entry.isConfidential);
   },
 });
 
 export const listFollowUps = query({
   handler: async (ctx) => {
-    return await ctx.db
+    const entries = await ctx.db
       .query("journal")
       .withIndex("by_followUp", (q) => q.eq("followUp", true))
       .order("desc")
       .collect();
+    return entries.filter((entry) => !entry.isConfidential);
   },
 });
