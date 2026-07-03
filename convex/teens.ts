@@ -144,6 +144,52 @@ async function syncFamilyRecords(ctx: any, teenId: any, payload: any, userId?: a
   }
 }
 
+async function syncPersonEnrollment(ctx: any, teenId: any, payload: any, existingPersonId?: any) {
+  const now = new Date().toISOString();
+  const personPatch = {
+    firstName: payload.nombre,
+    lastName: payload.apellido,
+    birthDate: payload.nacimiento || undefined,
+    gender: payload.sexo,
+    primaryPhone: payload.telefono || payload.telefonoPadre || undefined,
+    secondaryPhone: payload.telefonoSecundario,
+    photoStorageId: payload.fotoStorageId,
+    status: isArchivedTeen(payload) ? "archived" as const : "active" as const,
+    updatedAt: now,
+  };
+  let personId = existingPersonId;
+  if (personId) {
+    await ctx.db.patch(personId, personPatch);
+  } else {
+    personId = await ctx.db.insert("people", { ...personPatch, createdAt: now });
+    await ctx.db.patch(teenId, { personId });
+  }
+
+  const existingEnrollment = await ctx.db
+    .query("ministryEnrollments")
+    .withIndex("by_teenId", (q: any) => q.eq("teenId", teenId))
+    .filter((q: any) => q.eq(q.field("status"), "active"))
+    .first();
+  const enrollmentPatch = {
+    personId,
+    teenId,
+    ministryKey: "teens" as const,
+    campusId: payload.campusId,
+    ministryId: payload.ministryId,
+    groupId: payload.groupId,
+    role: "participant" as const,
+    status: isArchivedTeen(payload) ? "archived" as const : "active" as const,
+    startedAt: payload.fechaIngreso,
+    updatedAt: now,
+  };
+  if (existingEnrollment) {
+    await ctx.db.patch(existingEnrollment._id, enrollmentPatch);
+  } else {
+    await ctx.db.insert("ministryEnrollments", { ...enrollmentPatch, createdAt: now });
+  }
+  return personId;
+}
+
 function assertValidDate(value: string | undefined, fieldName: string, { allowFuture = false } = {}) {
   if (value === undefined || value === "") return;
   if (!/^\d{4}-\d{2}-\d{2}$/.test(value)) {
@@ -368,6 +414,7 @@ export const create = mutation({
       throw new Error("No tienes permisos para crear adolescentes en este ámbito (Sede/Ministerio/Grupo).");
     }
     const id = await ctx.db.insert("teens", payload);
+    await syncPersonEnrollment(ctx, id, payload);
     await syncFamilyRecords(ctx, id, payload, access.user._id);
     await logAudit(ctx, {
       token: args.token,
@@ -442,6 +489,7 @@ export const update = mutation({
     }
     
     await ctx.db.patch(args.id, payload);
+    await syncPersonEnrollment(ctx, args.id, payload, current.personId);
     await syncFamilyRecords(ctx, args.id, payload, access.user._id);
     if (String(current.groupId || "") !== String(payload.groupId || "")) {
       await ctx.db.insert("teenGroupHistory", {
@@ -505,6 +553,7 @@ export const remove = mutation({
       deleteReason: args.reason || "Archivado desde ficha pastoral",
     };
     await ctx.db.patch(args.id, patch);
+    await syncPersonEnrollment(ctx, args.id, { ...current, ...patch }, current.personId);
     await logAudit(ctx, {
       token: args.token,
       action: "teen.archived",
@@ -573,6 +622,18 @@ export const migrateFamilyRecords = mutation({
   },
 });
 
+export const migratePeopleEnrollments = mutation({
+  handler: async (ctx) => {
+    const teens = await ctx.db.query("teens").collect();
+    let migrated = 0;
+    for (const teen of teens) {
+      await syncPersonEnrollment(ctx, teen._id, teen, teen.personId);
+      migrated++;
+    }
+    return { migrated };
+  },
+});
+
 export const removeAll = mutation({
   args: { token: v.optional(v.string()) },
   handler: async (ctx, args) => {
@@ -586,6 +647,7 @@ export const removeAll = mutation({
         archivedBy: access.user._id,
         deleteReason: "Archivado masivo desde ajustes",
       });
+      await syncPersonEnrollment(ctx, t._id, { ...t, estado: "archivado" }, t.personId);
     }
     await logAudit(ctx, {
       token: args.token,

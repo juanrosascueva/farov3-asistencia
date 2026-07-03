@@ -107,6 +107,7 @@ export default function Profile({
   };
 
   const familyRecords = useQuery(api.guardians.listByTeen, token ? { teenId: teen._id as any, token } : "skip");
+  const personRecord = useQuery(api.people.getByTeen, token ? { teenId: teen._id as any, token } : "skip");
 
   const statusMap: Record<string, { label: string; cls: string }> = {
     present: { label: "Presente", cls: "bg-sage-50 text-sage-600" },
@@ -365,6 +366,10 @@ export default function Profile({
         <div className="grid sm:grid-cols-2 gap-3 text-sm">
           <InfoRow label="Tutor principal" value={teen.nombreEncargado} />
           <InfoRow label="Parentesco" value={teen.parentescoEncargado} />
+          <InfoRow
+            label="Inscripción Teens"
+            value={personRecord?.enrollments?.some((enrollment: any) => enrollment.status === "active") ? "Activa" : "Pendiente"}
+          />
           <InfoRow label="Fecha de ingreso" value={teen.fechaIngreso ? fmtDate(teen.fechaIngreso) : ""} />
           <InfoRow label="Momento espiritual" value={teen.decisionEspiritual ? SPIRITUAL_STAGE_LABELS[teen.decisionEspiritual] : ""} />
           <InfoRow label="Colegio" value={teen.colegio} />

@@ -73,6 +73,7 @@ export default defineSchema({
     .index("by_name", ["name"]),
 
   teens: defineTable({
+    personId: v.optional(v.id("people")),
     nombre: v.string(),
     apellido: v.string(),
     nacimiento: v.string(),
@@ -167,6 +168,40 @@ export default defineSchema({
     .index("by_groupId", ["groupId"])
     .index("by_estado", ["estado"])
     .index("by_fechaIngreso", ["fechaIngreso"]),
+
+  people: defineTable({
+    firstName: v.string(),
+    lastName: v.string(),
+    birthDate: v.optional(v.string()),
+    gender: v.optional(v.union(v.literal("masculino"), v.literal("femenino"), v.literal("otro"), v.literal("prefiero_no_decir"))),
+    primaryPhone: v.optional(v.string()),
+    secondaryPhone: v.optional(v.string()),
+    photoStorageId: v.optional(v.id("_storage")),
+    status: v.union(v.literal("active"), v.literal("archived")),
+    createdAt: v.string(),
+    updatedAt: v.string(),
+  })
+    .index("by_name", ["firstName", "lastName"])
+    .index("by_status", ["status"]),
+
+  ministryEnrollments: defineTable({
+    personId: v.id("people"),
+    teenId: v.optional(v.id("teens")),
+    ministryKey: v.literal("teens"),
+    campusId: v.optional(v.id("campus")),
+    ministryId: v.optional(v.id("ministry")),
+    groupId: v.optional(v.id("group")),
+    role: v.literal("participant"),
+    status: v.union(v.literal("active"), v.literal("paused"), v.literal("transferred"), v.literal("graduated"), v.literal("archived")),
+    startedAt: v.optional(v.string()),
+    endedAt: v.optional(v.string()),
+    createdAt: v.string(),
+    updatedAt: v.string(),
+  })
+    .index("by_personId", ["personId"])
+    .index("by_teenId", ["teenId"])
+    .index("by_groupId", ["groupId"])
+    .index("by_status", ["status"]),
 
   teenGroupHistory: defineTable({
     teenId: v.id("teens"),

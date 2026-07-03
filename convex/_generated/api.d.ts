@@ -28,6 +28,7 @@ import type * as migration from "../migration.js";
 import type * as ministry from "../ministry.js";
 import type * as pastoralPlans from "../pastoralPlans.js";
 import type * as pastoralTasks from "../pastoralTasks.js";
+import type * as people from "../people.js";
 import type * as ppp from "../ppp.js";
 import type * as seed from "../seed.js";
 import type * as teens from "../teens.js";
@@ -61,6 +62,7 @@ declare const fullApi: ApiFromModules<{
   ministry: typeof ministry;
   pastoralPlans: typeof pastoralPlans;
   pastoralTasks: typeof pastoralTasks;
+  people: typeof people;
   ppp: typeof ppp;
   seed: typeof seed;
   teens: typeof teens;
