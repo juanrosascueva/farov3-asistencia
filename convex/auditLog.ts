@@ -24,6 +24,9 @@ export async function logAudit(ctx: any, args: {
   userAgent?: string;
 }) {
   const user = args.token ? await getUserFromToken(ctx, args.token) : null;
+  const session = args.token
+    ? await ctx.db.query("sessions").withIndex("by_token", (q: any) => q.eq("token", args.token)).first()
+    : null;
   await ctx.db.insert("auditLog", {
     action: args.action,
     userId: args.userId ?? user?._id,
@@ -35,8 +38,8 @@ export async function logAudit(ctx: any, args: {
     previousValue: toJson(args.previousValue),
     newValue: toJson(args.newValue),
     details: args.details,
-    ip: args.ip,
-    userAgent: args.userAgent,
+    ip: args.ip ?? session?.ip,
+    userAgent: args.userAgent ?? session?.userAgent,
     createdAt: new Date().toISOString(),
   });
 }
@@ -79,6 +82,8 @@ export const logInternal = internalMutation({
     previousValue: v.optional(v.any()),
     newValue: v.optional(v.any()),
     details: v.optional(v.string()),
+    ip: v.optional(v.string()),
+    userAgent: v.optional(v.string()),
   },
   handler: async (ctx, args) => {
     await logAudit(ctx, args);

@@ -39,6 +39,16 @@ const actionLabels: Record<string, string> = {
   "data.bulk_deleted": "Borrado masivo",
 };
 
+function shortDevice(value: string | undefined): string {
+  if (!value) return "-";
+  const parts = value.split("|").map((part) => part.trim()).filter(Boolean);
+  if (parts.length >= 3) return `${parts[0]} · ${parts[1]} · ${parts[2]}`;
+  if (/Chrome/i.test(value)) return "Chrome";
+  if (/Firefox/i.test(value)) return "Firefox";
+  if (/Safari/i.test(value)) return "Safari";
+  return value.slice(0, 60);
+}
+
 export default function AuditPanel() {
   const { token } = useAuth();
   const [action, setAction] = useState("");
@@ -78,13 +88,15 @@ export default function AuditPanel() {
         </div>
 
         <div className="overflow-x-auto">
-          <table className="w-full text-sm min-w-[760px]">
+          <table className="w-full text-sm min-w-[920px]">
             <thead>
               <tr className="text-left text-xs text-ink/40 border-b border-ink/10">
                 <th className="py-2 pr-3 font-semibold">Fecha</th>
                 <th className="py-2 pr-3 font-semibold">Usuario</th>
                 <th className="py-2 pr-3 font-semibold">Acción</th>
                 <th className="py-2 pr-3 font-semibold">Entidad</th>
+                <th className="py-2 pr-3 font-semibold">Dispositivo</th>
+                <th className="py-2 pr-3 font-semibold">IP</th>
                 <th className="py-2 pr-3 font-semibold">Detalle</th>
               </tr>
             </thead>
@@ -101,6 +113,12 @@ export default function AuditPanel() {
                   <td className="py-2 pr-3 text-xs text-ink/50">
                     {esc(log.entityType || log.targetType || "-")}
                     {log.entityId || log.targetId ? <span className="block font-mono text-[10px]">{esc(log.entityId || log.targetId)}</span> : null}
+                  </td>
+                  <td className="py-2 pr-3 text-xs text-ink/50 max-w-[180px]" title={log.userAgent || ""}>
+                    {esc(shortDevice(log.userAgent))}
+                  </td>
+                  <td className="py-2 pr-3 text-xs text-ink/50 whitespace-nowrap">
+                    {esc(log.ip || "-")}
                   </td>
                   <td className="py-2 pr-3 text-xs text-ink/60 max-w-sm">
                     {esc(log.details || "")}

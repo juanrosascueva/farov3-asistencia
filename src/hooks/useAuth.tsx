@@ -54,6 +54,25 @@ function clearToken() {
   localStorage.removeItem(AUTH_TOKEN_KEY);
 }
 
+function getDeviceInfo(): string {
+  const nav = navigator as Navigator & { userAgentData?: { platform?: string; mobile?: boolean } };
+  const platform = nav.userAgentData?.platform || navigator.platform || "unknown-platform";
+  const mobile = nav.userAgentData?.mobile ? "mobile" : "desktop";
+  const language = navigator.language || "unknown-language";
+  return `${platform} | ${mobile} | ${language} | ${navigator.userAgent}`;
+}
+
+async function getPublicIp(): Promise<string | undefined> {
+  try {
+    const res = await fetch("https://api.ipify.org?format=json", { cache: "no-store" });
+    if (!res.ok) return undefined;
+    const data = await res.json();
+    return typeof data.ip === "string" ? data.ip : undefined;
+  } catch {
+    return undefined;
+  }
+}
+
 export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [token, setToken] = useState<string | null>(loadToken);
   const [user, setUser] = useState<AuthUser | null>(null);
@@ -62,6 +81,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const loginMutation = useMutation(api.users.login);
   const registerMutation = useMutation(api.users.register);
   const logoutMutation = useMutation(api.users.logout);
+  const updateSessionDevice = useMutation(api.users.updateSessionDevice);
 
   // Fetch user data when token changes
   const userData = useQuery(api.users.getMe, token ? { token } : "skip");
@@ -82,14 +102,24 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     setLoading(false);
   }, [userData, token]);
 
+  useEffect(() => {
+    if (!token) return;
+    getPublicIp()
+      .then((ip) => updateSessionDevice({ token, userAgent: getDeviceInfo(), ip }))
+      .catch(() => updateSessionDevice({ token, userAgent: getDeviceInfo() }).catch(() => {}));
+  }, [token, updateSessionDevice]);
+
   const login = useCallback(async (email: string, password: string) => {
     try {
+      const ip = await getPublicIp();
       const result = await loginMutation({
         email: email.trim().toLowerCase(),
         password,
+        userAgent: getDeviceInfo(),
       });
       saveToken(result.token);
       setToken(result.token);
+      updateSessionDevice({ token: result.token, userAgent: getDeviceInfo(), ip }).catch(() => {});
     } catch (err) {
       throw err;
     }

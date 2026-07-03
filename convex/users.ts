@@ -65,6 +65,7 @@ export const login = mutation({
   args: {
     email: v.string(),
     password: v.string(),
+    userAgent: v.optional(v.string()),
   },
   handler: async (ctx, args) => {
     await checkAndSeedRoles(ctx);
@@ -98,6 +99,7 @@ export const login = mutation({
       userId: user._id,
       token,
       expiresAt: expires.toISOString(),
+      userAgent: args.userAgent,
       createdAt: new Date().toISOString(),
     });
 
@@ -251,6 +253,25 @@ export const updateUser = mutation({
         permissions: patch.permissions ?? current.permissions,
       },
       details: `Usuario actualizado: ${current.email}`,
+    });
+  },
+});
+
+export const updateSessionDevice = mutation({
+  args: {
+    token: v.string(),
+    userAgent: v.optional(v.string()),
+    ip: v.optional(v.string()),
+  },
+  handler: async (ctx, args) => {
+    const session = await ctx.db
+      .query("sessions")
+      .withIndex("by_token", q => q.eq("token", args.token))
+      .first();
+    if (!session) return;
+    await ctx.db.patch(session._id, {
+      userAgent: args.userAgent || session.userAgent,
+      ip: args.ip || session.ip,
     });
   },
 });

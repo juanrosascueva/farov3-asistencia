@@ -22,6 +22,8 @@ export default defineSchema({
     userId: v.id("users"),
     token: v.string(),
     expiresAt: v.string(),
+    ip: v.optional(v.string()),
+    userAgent: v.optional(v.string()),
     createdAt: v.string(),
   })
     .index("by_token", ["token"])
