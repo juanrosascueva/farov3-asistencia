@@ -276,11 +276,14 @@ export default defineSchema({
     ministryId: v.optional(v.id("ministry")),
     groupId: v.optional(v.id("group")),
     title: v.optional(v.string()),
+    checkInToken: v.optional(v.string()),
+    checkInEnabled: v.optional(v.boolean()),
     createdBy: v.optional(v.id("users")),
     createdAt: v.string(),
   })
     .index("by_date", ["date"])
     .index("by_groupId", ["groupId"])
+    .index("by_checkInToken", ["checkInToken"])
     .index("by_date_type", ["date", "type"]),
 
   attendance: defineTable({

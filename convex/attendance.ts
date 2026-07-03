@@ -26,6 +26,10 @@ function cleanText(value: string | undefined): string | undefined {
   return value.trim().replace(/\s+/g, " ");
 }
 
+function newCheckInToken(): string {
+  return crypto.randomUUID().replace(/-/g, "");
+}
+
 function canAccessScope(access: any, scope: { campusId?: any; ministryId?: any; groupId?: any }) {
   if (access.isGlobal) return true;
   if (scope.groupId) return access.accessibleGroupIds.includes(String(scope.groupId));
@@ -94,6 +98,8 @@ export const createSession = mutation({
     if (!canAccessScope(access, payload)) throw new Error("No tienes permisos para crear sesiones en este ámbito.");
     const id = await ctx.db.insert("meetingSessions", {
       ...payload,
+      checkInToken: newCheckInToken(),
+      checkInEnabled: true,
       createdBy: access.user._id,
       createdAt: new Date().toISOString(),
     });
@@ -106,6 +112,41 @@ export const createSession = mutation({
       details: `${payload.date} ${payload.type}`,
     });
     return id;
+  },
+});
+
+export const qrCheckIn = mutation({
+  args: {
+    sessionId: v.id("meetingSessions"),
+    token: v.string(),
+    teenId: v.id("teens"),
+  },
+  handler: async (ctx, args) => {
+    const session = await ctx.db.get(args.sessionId);
+    if (!session || !session.checkInEnabled || session.checkInToken !== args.token) {
+      throw new Error("Check-in no disponible para esta sesión.");
+    }
+    const teen = await ctx.db.get(args.teenId);
+    if (!teen) throw new Error("Adolescente no encontrado.");
+    if (session.groupId && String(teen.groupId || "") !== String(session.groupId)) {
+      throw new Error("La ficha no pertenece al grupo de esta sesión.");
+    }
+    const existing = await ctx.db
+      .query("attendance")
+      .withIndex("by_session_and_teen", (q) => q.eq("sessionId", args.sessionId).eq("teenId", args.teenId))
+      .first();
+    const patch = {
+      sessionId: args.sessionId,
+      date: session.date,
+      teenId: args.teenId,
+      status: "present" as const,
+      checkInMethod: "qr" as const,
+    };
+    if (existing) {
+      await ctx.db.patch(existing._id, patch);
+      return existing._id;
+    }
+    return await ctx.db.insert("attendance", patch);
   },
 });
 

@@ -278,10 +278,10 @@ export default function Asistencia({
           {selectedSessionId && (
             <button
               type="button"
-              onClick={() => navigator.clipboard?.writeText(`${location.origin}${location.pathname}?session=${selectedSessionId}`)}
+              onClick={() => navigator.clipboard?.writeText(`${location.origin}${location.pathname}?session=${selectedSessionId}&checkIn=${selectedSession?.checkInToken || ""}`)}
               className="mt-2 text-xs font-semibold text-teal-700 underline underline-offset-2"
             >
-              Copiar URL de check-in de sesión
+              Copiar URL segura de check-in
             </button>
           )}
         </div>
