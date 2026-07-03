@@ -136,6 +136,29 @@ function RoleDashboardSummary({ summary, onOpenProfile }: { summary: any; onOpen
           </div>
         </div>
       )}
+      {summary.groupHealth?.length > 0 && (
+        <div className="mt-4">
+          <p className="text-sm font-bold text-ink">Salud por grupo</p>
+          <div className="mt-2 grid gap-2 lg:grid-cols-2">
+            {summary.groupHealth.slice(0, 4).map((group: any) => (
+              <div key={String(group.groupId)} className="rounded-2xl border border-ink/10 bg-ink/[0.02] p-3">
+                <div className="flex items-center justify-between gap-2">
+                  <p className="text-sm font-semibold text-ink">{esc(group.groupName)}</p>
+                  <span className={`rounded-full px-2 py-0.5 text-[10px] font-bold ${group.healthScore < 55 ? "bg-red-50 text-red-700" : group.healthScore < 75 ? "bg-amber-50 text-amber-700" : "bg-teal-50 text-teal-700"}`}>
+                    {group.healthScore}%
+                  </span>
+                </div>
+                <p className="mt-1 text-xs text-ink/50">
+                  {group.teens} adolescentes · Asist. {group.attendancePct}% · Plan {group.planCoverage}%
+                </p>
+                <p className="mt-1 text-xs text-ink/45">
+                  {group.needsContact} contacto · {group.openTasks} tareas · {group.pendingCrisis} crisis
+                </p>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
     </section>
   );
 }

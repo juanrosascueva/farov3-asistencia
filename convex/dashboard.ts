@@ -31,6 +31,8 @@ export const getRoleSummary = query({
     const attendance = (await ctx.db.query("attendance").collect()).filter((a) => teenIds.has(String(a.teenId)));
     const tasks = (await ctx.db.query("pastoralTasks").collect()).filter((task) => teenIds.has(String(task.teenId)));
     const crisis = (await ctx.db.query("crisisAlerts").collect()).filter((alert) => teenIds.has(String(alert.teenId)));
+    const groups = await ctx.db.query("group").collect();
+    const activePlans = (await ctx.db.query("pastoralPlans").collect()).filter((plan) => teenIds.has(String(plan.teenId)) && plan.status === "active");
     const today = new Date().toISOString().slice(0, 10);
     const currentMonth = monthOf(today);
 
@@ -62,6 +64,36 @@ export const getRoleSummary = query({
       .filter(Boolean)
       .slice(0, 12);
 
+    const needsContactByTeenId = new Set(needsContact.map((item: any) => String(item.teenId)));
+    const activePlansByTeenId = new Set(activePlans.map((plan) => String(plan.teenId)));
+    const groupHealth = groups
+      .map((group) => {
+        const groupTeens = teens.filter((teen) => String(teen.groupId || "") === String(group._id));
+        if (groupTeens.length === 0) return null;
+        const groupTeenIds = new Set(groupTeens.map((teen) => String(teen._id)));
+        const groupAttendance = attendance.filter((a) => groupTeenIds.has(String(a.teenId)));
+        const groupPresent = groupAttendance.filter((a) => a.status === "present").length;
+        const groupOpenTasks = tasks.filter((task) => groupTeenIds.has(String(task.teenId)) && openTaskStatuses.has(task.status));
+        const groupPendingCrisis = crisis.filter((alert) => groupTeenIds.has(String(alert.teenId)) && ["open", "in_progress", "follow_up", "unattended"].includes(alert.status));
+        const contactCount = groupTeens.filter((teen) => needsContactByTeenId.has(String(teen._id))).length;
+        const planCoverage = Math.round((groupTeens.filter((teen) => activePlansByTeenId.has(String(teen._id))).length / groupTeens.length) * 100);
+        const attendancePct = groupAttendance.length ? Math.round((groupPresent / groupAttendance.length) * 100) : 0;
+        const healthScore = Math.max(0, Math.min(100, Math.round(attendancePct * 0.45 + planCoverage * 0.25 + Math.max(0, 100 - contactCount * 15) * 0.2 + Math.max(0, 100 - groupOpenTasks.length * 8 - groupPendingCrisis.length * 20) * 0.1)));
+        return {
+          groupId: group._id,
+          groupName: group.name,
+          teens: groupTeens.length,
+          attendancePct,
+          planCoverage,
+          openTasks: groupOpenTasks.length,
+          pendingCrisis: groupPendingCrisis.length,
+          needsContact: contactCount,
+          healthScore,
+        };
+      })
+      .filter(Boolean)
+      .sort((a: any, b: any) => a.healthScore - b.healthScore);
+
     const openTasks = tasks.filter((task) => openTaskStatuses.has(task.status));
     const overdueTasks = openTasks.filter((task) => task.dueDate && task.dueDate < today);
     const present = attendance.filter((a) => a.status === "present").length;
@@ -90,6 +122,7 @@ export const getRoleSummary = query({
         criticalCrisis: crisis.filter((c) => c.severity === "critical" && !["attended", "referred"].includes(c.status)).length,
       },
       needsContact,
+      groupHealth,
     };
   },
 });
