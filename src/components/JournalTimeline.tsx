@@ -29,6 +29,21 @@ const riskColors: Record<string, string> = {
   high: "bg-red-50 text-red-700 border-red-200",
 };
 
+const confidenceLabel: Record<string, string> = {
+  low: "Baja",
+  medium: "Media",
+  high: "Alta",
+};
+
+const sourceLabel: Record<string, string> = {
+  journal: "Bitácora",
+  attendance: "Asistencia",
+  teen_profile: "Ficha",
+  pastoral_plan: "Plan pastoral",
+  pastoral_tasks: "Tareas",
+  previous_ai_analysis: "IA previa",
+};
+
 export default function JournalTimeline({ teenId }: JournalProps) {
   const entries = useQuery(api.journal.list, { teenId: teenId as any });
   const createEntry = useMutation(api.journal.create);
@@ -371,7 +386,12 @@ export default function JournalTimeline({ teenId }: JournalProps) {
                         )}
                         {analysis && (
                           <span className={`text-[10px] font-semibold px-1.5 py-0.5 rounded-full border ${riskColors[analysis.riskLevel] || ""}`}>
-                            {analysis.riskLevel === "high" ? "🔴" : analysis.riskLevel === "medium" ? "🟡" : "🟢"} {analysis.riskLevel === "high" ? "Alto" : analysis.riskLevel === "medium" ? "Medio" : "Bajo"}
+                            {analysis.riskLevel === "high" ? "🔴" : analysis.riskLevel === "medium" ? "🟡" : "🟢"} Sugerido {analysis.riskLevel === "high" ? "Alto" : analysis.riskLevel === "medium" ? "Medio" : "Bajo"}
+                          </span>
+                        )}
+                        {analysis?.humanReviewRequired !== false && (
+                          <span className="text-[10px] font-bold text-purple-700 bg-purple-50 border border-purple-100 px-1.5 py-0.5 rounded-full">
+                            Requiere revisión humana
                           </span>
                         )}
                         {analysis?.isCrisis && (
@@ -396,6 +416,22 @@ export default function JournalTimeline({ teenId }: JournalProps) {
                               </span>
                             );
                           })}
+                        </div>
+                      )}
+                      {analysis && (
+                        <div className="mt-2 rounded-xl border border-purple-100 bg-purple-50/70 p-3 text-xs text-purple-900 space-y-1">
+                          <p className="font-semibold">IA pastoral: sugerencia, no diagnóstico</p>
+                          <p><span className="font-semibold">Confianza:</span> {confidenceLabel[analysis.confidence || "low"]}</p>
+                          {analysis.reasoningSummary && (
+                            <p><span className="font-semibold">Motivo:</span> {esc(analysis.reasoningSummary)}</p>
+                          )}
+                          {analysis.suggestedActions?.length > 0 && (
+                            <p><span className="font-semibold">Acción recomendada:</span> {esc(analysis.suggestedActions[0])}</p>
+                          )}
+                          {analysis.usedDataSources && analysis.usedDataSources.length > 0 && (
+                            <p><span className="font-semibold">Datos usados:</span> {analysis.usedDataSources.map((s) => sourceLabel[s] || s).join(", ")}</p>
+                          )}
+                          <p className="text-purple-800/80">{analysis.pastoralDisclaimer || "Esta sugerencia requiere revisión humana pastoral."}</p>
                         </div>
                       )}
                     </div>

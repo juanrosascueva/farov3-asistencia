@@ -784,6 +784,15 @@ function AiSuggestions({ teenId }: { teenId: string }) {
   const [expanded, setExpanded] = useState<string | null>(null);
   if ((analyses as any[]).length === 0) return null;
   const highRisk = (analyses as any[]).filter((a: any) => a.riskLevel === "high");
+  const confidenceLabel: Record<string, string> = { low: "Baja", medium: "Media", high: "Alta" };
+  const sourceLabel: Record<string, string> = {
+    journal: "Bitácora",
+    attendance: "Asistencia",
+    teen_profile: "Ficha",
+    pastoral_plan: "Plan pastoral",
+    pastoral_tasks: "Tareas",
+    previous_ai_analysis: "IA previa",
+  };
   return (
     <div className="bg-card rounded-card shadow-soft p-5">
       <div className="flex items-center justify-between mb-3">
@@ -806,7 +815,7 @@ function AiSuggestions({ teenId }: { teenId: string }) {
               <span className={`text-xs font-semibold px-2 py-0.5 rounded-full ${
                 a.riskLevel === "high" ? "bg-red-50 text-red-700" : a.riskLevel === "medium" ? "bg-amber-50 text-amber-700" : "bg-green-50 text-green-700"
               }`}>
-                {a.riskLevel === "high" ? "🔴" : a.riskLevel === "medium" ? "🟡" : "🟢"} {a.riskLevel === "high" ? "Alto" : a.riskLevel === "medium" ? "Medio" : "Bajo"}
+                {a.riskLevel === "high" ? "🔴" : a.riskLevel === "medium" ? "🟡" : "🟢"} Nivel sugerido: {a.riskLevel === "high" ? "Alto" : a.riskLevel === "medium" ? "Medio" : "Bajo"}
               </span>
               <span className="text-xs text-ink/40 flex-1 truncate">{a.summary}</span>
               <svg className={`w-3 h-3 text-ink/30 transition ${expanded === a._id ? "rotate-180" : ""}`} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
@@ -815,6 +824,15 @@ function AiSuggestions({ teenId }: { teenId: string }) {
             </button>
             {expanded === a._id && (
               <div className="mt-2 ml-6 p-3 rounded-lg bg-ink/[0.03] border border-ink/5 space-y-2">
+                <div className="rounded-xl border border-purple-100 bg-purple-50 p-3 text-xs text-purple-900 space-y-1">
+                  <p className="font-semibold">Requiere revisión humana: Sí</p>
+                  <p><span className="font-semibold">Confianza:</span> {confidenceLabel[a.confidence || "low"]}</p>
+                  {a.reasoningSummary && <p><span className="font-semibold">Motivo:</span> {a.reasoningSummary}</p>}
+                  {a.usedDataSources?.length > 0 && (
+                    <p><span className="font-semibold">Datos usados:</span> {(a.usedDataSources as string[]).map((s) => sourceLabel[s] || s).join(", ")}</p>
+                  )}
+                  <p>{a.pastoralDisclaimer || "Esta sugerencia no es un diagnóstico y no reemplaza la revisión pastoral."}</p>
+                </div>
                 {a.vulnerabilityTags?.length > 0 && (
                   <div className="flex flex-wrap gap-1">
                     {(a.vulnerabilityTags as string[]).map((tag: string) => {

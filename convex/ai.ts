@@ -2,6 +2,8 @@ import { v } from "convex/values";
 import { action, internalMutation, internalQuery, mutation, query } from "./_generated/server";
 import { internal } from "./_generated/api";
 import { getEffectiveAccess, filterTeensByScope } from "./authz";
+import { getUserFromToken } from "./authHelper";
+import { logAudit } from "./auditLog";
 
 const FREE_MODELS = [
   "google/gemma-4-31b-it:free",
@@ -11,17 +13,32 @@ const FREE_MODELS = [
   "google/gemini-2.5-flash", // Fallback premium
 ];
 
-const SYSTEM_PROMPT = `Eres un asistente de análisis pastoral. Analiza bitácoras de acompañamiento juvenil.
-No diagnostiques condiciones clínicas, no tomes decisiones finales y no cierres alertas. Usa lenguaje de señales de cuidado y sugerencias pastorales que un lider humano debe revisar.
+const PASTORAL_DISCLAIMER = "Esta sugerencia no es un diagnóstico y requiere revisión humana pastoral.";
+
+const SYSTEM_PROMPT = `Eres una herramienta de apoyo pastoral para líderes de adolescentes. Analiza bitácoras de acompañamiento juvenil.
+Límites obligatorios:
+- No diagnostiques condiciones clínicas.
+- No reemplaces al pastor, líder, coordinador ni apoderado.
+- No tomes decisiones finales, no cierres alertas y no derives casos.
+- No generes conclusiones absolutas.
+- Evita lenguaje alarmista.
+- Usa lenguaje de señales de cuidado, posibilidades y sugerencias prudentes.
+- Toda alerta o riesgo debe indicar que requiere revisión humana.
+- Explica por qué sugieres el nivel de riesgo y qué datos usaste.
 Responde ÚNICAMENTE con JSON válido en este formato exacto:
 {
   "vulnerabilityTags": ["array", "de", "tags"],
   "riskLevel": "low|medium|high",
+  "confidence": "low|medium|high",
+  "humanReviewRequired": true,
+  "reasoningSummary": "motivo breve de la sugerencia, sin diagnosticar",
+  "usedDataSources": ["journal"],
   "isCrisis": false,
   "crisisSeverity": "low|medium|high|critical|null",
   "suggestedActions": ["acción pastoral concreta 1", "acción pastoral concreta 2"],
   "suggestedVerses": ["Libro Capítulo:Versículo", "Libro Capítulo:Versículo"],
-  "summary": "resumen de 1-2 oraciones en español"
+  "summary": "resumen de 1-2 oraciones en español",
+  "pastoralDisclaimer": "${PASTORAL_DISCLAIMER}"
 }
 
 Tags disponibles: salud_mental, familiar, adiccion, duelo, espiritual, academico, violencia, relaciones, fisico, economico
@@ -78,14 +95,37 @@ function sanitizeModelText(text: string | null | undefined): string | null {
     .trim();
 }
 
+function sanitizePastoralAiText(text: string): string {
+  return text
+    .replace(/tiene depresi[oó]n/gi, "presenta señales de desánimo que requieren conversación y revisión humana")
+    .replace(/depresi[oó]n cl[ií]nica/gi, "señales de desánimo")
+    .replace(/trastorno/gi, "situación")
+    .replace(/diagn[oó]stico/gi, "sugerencia pastoral")
+    .replace(/ansiedad severa/gi, "preocupación intensa")
+    .replace(/est[aá] en peligro/gi, "requiere revisión cuidadosa")
+    .replace(/seguramente/gi, "podría")
+    .replace(/definitivamente/gi, "podría")
+    .replace(/requiere tratamiento/gi, "requiere acompañamiento y evaluación humana responsable")
+    .replace(/caso confirmado/gi, "señal por revisar");
+}
+
+function sanitizePastoralArray(values: string[]): string[] {
+  return values.map((value) => sanitizePastoralAiText(value)).filter(Boolean);
+}
+
 function parseAnalysis(raw: string): {
   vulnerabilityTags: string[];
   riskLevel: "low" | "medium" | "high";
+  confidence: "low" | "medium" | "high";
+  humanReviewRequired: boolean;
+  reasoningSummary: string;
+  usedDataSources: string[];
   isCrisis: boolean;
   crisisSeverity?: "low" | "medium" | "high" | "critical";
   suggestedActions: string[];
   suggestedVerses: string[];
   summary: string;
+  pastoralDisclaimer: string;
 } | null {
   try {
     const cleaned = raw
@@ -98,11 +138,16 @@ function parseAnalysis(raw: string): {
     return {
       vulnerabilityTags: Array.isArray(parsed.vulnerabilityTags) ? parsed.vulnerabilityTags : [],
       riskLevel,
+      confidence: ["low", "medium", "high"].includes(parsed.confidence) ? parsed.confidence : "low",
+      humanReviewRequired: true,
+      reasoningSummary: sanitizePastoralAiText(typeof parsed.reasoningSummary === "string" ? parsed.reasoningSummary : "La IA no explicó el motivo; requiere revisión humana."),
+      usedDataSources: Array.isArray(parsed.usedDataSources) ? parsed.usedDataSources.filter((s: any) => typeof s === "string") : ["journal"],
       isCrisis: parsed.isCrisis === true,
       crisisSeverity: ["low", "medium", "high", "critical"].includes(parsed.crisisSeverity) ? parsed.crisisSeverity : undefined,
-      suggestedActions: Array.isArray(parsed.suggestedActions) ? parsed.suggestedActions : [],
+      suggestedActions: Array.isArray(parsed.suggestedActions) ? sanitizePastoralArray(parsed.suggestedActions) : [],
       suggestedVerses: Array.isArray(parsed.suggestedVerses) ? parsed.suggestedVerses : [],
-      summary: typeof parsed.summary === "string" ? parsed.summary : "",
+      summary: sanitizePastoralAiText(typeof parsed.summary === "string" ? parsed.summary : ""),
+      pastoralDisclaimer: PASTORAL_DISCLAIMER,
     };
   } catch {
     return null;
@@ -116,6 +161,11 @@ export const storeAnalysis = internalMutation({
     vulnerabilityTags: v.array(v.string()),
     riskLevel: v.union(v.literal("low"), v.literal("medium"), v.literal("high")),
     isCrisis: v.optional(v.boolean()),
+    confidence: v.union(v.literal("low"), v.literal("medium"), v.literal("high")),
+    humanReviewRequired: v.boolean(),
+    reasoningSummary: v.string(),
+    usedDataSources: v.array(v.string()),
+    pastoralDisclaimer: v.string(),
     suggestedActions: v.array(v.string()),
     suggestedVerses: v.array(v.string()),
     summary: v.string(),
@@ -145,9 +195,14 @@ function localConfidentialAnalysis(content: string, category: string) {
       vulnerabilityTags: ["salud_mental"],
       riskLevel: "high" as const,
       isCrisis: true,
+      confidence: "medium" as const,
+      humanReviewRequired: true,
+      reasoningSummary: "La entrada contiene posibles señales de peligro inmediato que requieren revisión humana urgente.",
+      usedDataSources: ["journal"],
       suggestedActions: ["Contactar urgentemente al pastor responsable", "Activar protocolo de acompañamiento profesional"],
       suggestedVerses: ["Salmos 34:18"],
-      summary: "Entrada confidencial. Se detectaron indicadores críticos de salud mental que requieren atención inmediata.",
+      summary: "Entrada confidencial. Se observaron señales críticas que requieren revisión humana inmediata.",
+      pastoralDisclaimer: PASTORAL_DISCLAIMER,
     };
   }
 
@@ -165,12 +220,17 @@ function localConfidentialAnalysis(content: string, category: string) {
     vulnerabilityTags: tags.length > 0 ? tags : ["espiritual"],
     riskLevel: (isHighRisk ? "high" : isMediumRisk ? "medium" : "low") as "low" | "medium" | "high",
     isCrisis: isHighRisk,
+    confidence: tags.length > 0 ? "medium" as const : "low" as const,
+    humanReviewRequired: true,
+    reasoningSummary: tags.length > 0 ? `La bitácora contiene señales relacionadas con: ${tags.join(", ")}.` : "Hay poca información contextual; se requiere revisión humana.",
+    usedDataSources: ["journal"],
     suggestedActions: [
       "Brindar escucha activa en confidencialidad.",
       "Mantener en oración y programar una conversación de seguimiento."
     ],
     suggestedVerses: ["Filipenses 4:6-7"],
     summary: "Entrada confidencial. Acompañamiento pastoral registrado de manera privada.",
+    pastoralDisclaimer: PASTORAL_DISCLAIMER,
   };
 }
 
@@ -237,6 +297,10 @@ export const analyzeJournalEntry = action({
       newValue: {
         teenId: args.teenId,
         riskLevel: result.riskLevel,
+        confidence: result.confidence,
+        humanReviewRequired: true,
+        reasoningSummary: result.reasoningSummary,
+        usedDataSources: result.usedDataSources,
         isCrisis: result.isCrisis,
         modelUsed,
       },
@@ -629,6 +693,38 @@ export const generateTeenSummary = action({
     });
 
     return { success: true, ...result, modelUsed };
+  },
+});
+
+export const reviewAnalysis = mutation({
+  args: {
+    token: v.string(),
+    analysisId: v.id("journalAnalysis"),
+    notes: v.string(),
+  },
+  handler: async (ctx, args) => {
+    const user = await getUserFromToken(ctx, args.token);
+    if (!user) throw new Error("No autorizado");
+    const analysis = await ctx.db.get(args.analysisId);
+    if (!analysis) throw new Error("Análisis no encontrado.");
+    const notes = args.notes.trim();
+    if (!notes) throw new Error("Registra una nota de revisión.");
+    const patch = {
+      humanReviewRequired: false,
+      reviewedByUserId: user._id,
+      reviewedAt: new Date().toISOString(),
+      reviewNotes: notes,
+    };
+    await ctx.db.patch(args.analysisId, patch);
+    await logAudit(ctx, {
+      token: args.token,
+      action: "ai.analysis_reviewed",
+      entityType: "journalAnalysis",
+      entityId: String(args.analysisId),
+      previousValue: analysis,
+      newValue: { ...analysis, ...patch },
+      details: notes,
+    });
   },
 });
 

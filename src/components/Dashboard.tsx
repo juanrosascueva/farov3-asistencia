@@ -193,6 +193,7 @@ export default function Dashboard({
   const roleSummary = useQuery(api.dashboard.getRoleSummary, token ? { token } : "skip") as any;
   const pastoralTasks = useQuery(api.pastoralTasks.listOpenForDashboard, token ? { token } : "skip") ?? [];
   const updateCrisisStatus = useMutation(api.crisis.updateStatus);
+  const reviewCrisisAlert = useMutation(api.crisis.reviewAlert);
   const dropoutPredictions = useQuery(api.ai.getAllDropoutPredictions) ?? [];
 
   const highDropout = (dropoutPredictions as any[])
@@ -220,6 +221,16 @@ export default function Dashboard({
       if (!notes) return;
     }
     await updateCrisisStatus({ token, alertId, status: nextStatus, notes });
+  };
+
+  const reviewAlert = async (alert: any) => {
+    if (!token) return;
+    const suggested = alert.aiSuggestedSeverity || alert.severity || "medium";
+    const finalSeverity = window.prompt("Nivel final (low, medium, high, critical):", suggested)?.trim();
+    if (!["low", "medium", "high", "critical"].includes(finalSeverity || "")) return;
+    const notes = window.prompt("Nota de revisión humana:")?.trim();
+    if (!notes) return;
+    await reviewCrisisAlert({ token, alertId: alert._id, finalSeverity: finalSeverity as any, notes });
   };
 
   const colorMap: Record<string, string> = {
@@ -271,6 +282,17 @@ export default function Dashboard({
                   <span className="text-[11px] font-bold text-red-700 bg-red-100 px-2 py-1 rounded-full">
                     {severityLabel(c.alert.severity)} · {statusLabel(c.alert.status)}
                   </span>
+                  {c.alert.humanReviewRequired !== false && (
+                    <span className="text-[11px] font-bold text-purple-700 bg-purple-50 border border-purple-100 px-2 py-1 rounded-full">
+                      Revisión humana pendiente
+                    </span>
+                  )}
+                  <button
+                    onClick={() => reviewAlert(c.alert)}
+                    className="text-[10px] font-semibold text-purple-700 bg-purple-50 hover:bg-purple-100 border border-purple-200 px-2 py-1 rounded-full transition"
+                  >
+                    Revisar IA
+                  </button>
                   <button
                     onClick={() => changeCrisisStatus(c.alert._id, "in_progress")}
                     className="text-[10px] font-semibold text-amber-700 bg-amber-50 hover:bg-amber-100 border border-amber-200 px-2 py-1 rounded-full transition"

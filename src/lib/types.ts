@@ -27,6 +27,11 @@ export interface JournalAnalysis {
   teenId: string;
   vulnerabilityTags: string[];
   riskLevel: "low" | "medium" | "high";
+  confidence?: "low" | "medium" | "high";
+  humanReviewRequired?: boolean;
+  reasoningSummary?: string;
+  usedDataSources?: string[];
+  pastoralDisclaimer?: string;
   suggestedActions: string[];
   suggestedVerses: string[];
   summary: string;

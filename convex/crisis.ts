@@ -77,6 +77,10 @@ export const createAlert = internalMutation({
       analysisId: args.analysisId,
       teenId: args.teenId,
       summary: args.summary,
+      source: "ai",
+      humanReviewRequired: true,
+      aiSuggestedSeverity: alertSeverity,
+      finalSeverity: undefined,
       severity: alertSeverity,
       assignedToUserId,
       status: "open",
@@ -84,7 +88,7 @@ export const createAlert = internalMutation({
       lastActionAt: now,
     });
 
-    await insertAction(ctx, alertId, "created", `Alerta creada con severidad ${alertSeverity}.`);
+    await insertAction(ctx, alertId, "created", `Alerta sugerida por IA con severidad ${alertSeverity}; requiere revisión humana.`);
     if (assignedToUserId) {
       await insertAction(ctx, alertId, "assigned", "Asignada automaticamente al lider del grupo.", assignedToUserId);
     }
@@ -146,6 +150,44 @@ export const updateStatus = mutation({
       previousValue: alert,
       newValue: { ...alert, ...patch },
       details: notes || `Estado actualizado a ${nextStatus}.`,
+    });
+  },
+});
+
+export const reviewAlert = mutation({
+  args: {
+    token: v.string(),
+    alertId: v.id("crisisAlerts"),
+    finalSeverity: severity,
+    notes: v.string(),
+  },
+  handler: async (ctx, args) => {
+    const { access, alert } = await requireAlertAccess(ctx, args.token, args.alertId);
+    const notes = args.notes.trim();
+    if (!notes) throw new Error("Registra una nota de revisión humana.");
+    if (args.finalSeverity === "critical" && !elevatedRoles.has(access.user.role)) {
+      throw new Error("Solo coordinador, director, pastor o admin pueden confirmar una crisis critica.");
+    }
+    const now = new Date().toISOString();
+    const patch = {
+      finalSeverity: args.finalSeverity,
+      severity: args.finalSeverity,
+      humanReviewRequired: false,
+      reviewedByUserId: access.user._id,
+      reviewedAt: now,
+      reviewNotes: notes,
+      lastActionAt: now,
+    };
+    await ctx.db.patch(args.alertId, patch);
+    await insertAction(ctx, args.alertId, "note", `Revisión humana: ${notes}`, access.user._id);
+    await logAudit(ctx, {
+      token: args.token,
+      action: "ai.analysis_reviewed",
+      entityType: "crisisAlert",
+      entityId: String(args.alertId),
+      previousValue: alert,
+      newValue: { ...alert, ...patch },
+      details: notes,
     });
   },
 });
