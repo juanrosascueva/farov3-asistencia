@@ -38,6 +38,7 @@ export interface JournalAnalysis {
   riskLevel: "low" | "medium" | "high";
   confidence?: "low" | "medium" | "high";
   humanReviewRequired?: boolean;
+  reviewStatus?: "pending" | "reviewed" | "dismissed" | "escalated";
   reasoningSummary?: string;
   usedDataSources?: string[];
   pastoralDisclaimer?: string;

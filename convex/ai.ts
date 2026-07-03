@@ -174,6 +174,7 @@ export const storeAnalysis = internalMutation({
   handler: async (ctx, args) => {
     return await ctx.db.insert("journalAnalysis", {
       ...args,
+      reviewStatus: "pending",
       analyzedAt: new Date().toISOString(),
     });
   },
@@ -701,6 +702,7 @@ export const reviewAnalysis = mutation({
     token: v.string(),
     analysisId: v.id("journalAnalysis"),
     notes: v.string(),
+    status: v.optional(v.union(v.literal("reviewed"), v.literal("dismissed"), v.literal("escalated"))),
   },
   handler: async (ctx, args) => {
     const user = await getUserFromToken(ctx, args.token);
@@ -711,6 +713,7 @@ export const reviewAnalysis = mutation({
     if (!notes) throw new Error("Registra una nota de revisión.");
     const patch = {
       humanReviewRequired: false,
+      reviewStatus: args.status ?? "reviewed",
       reviewedByUserId: user._id,
       reviewedAt: new Date().toISOString(),
       reviewNotes: notes,

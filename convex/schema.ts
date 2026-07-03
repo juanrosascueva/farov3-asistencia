@@ -357,6 +357,7 @@ export default defineSchema({
     reasoningSummary: v.optional(v.string()),
     usedDataSources: v.optional(v.array(v.string())),
     pastoralDisclaimer: v.optional(v.string()),
+    reviewStatus: v.optional(v.union(v.literal("pending"), v.literal("reviewed"), v.literal("dismissed"), v.literal("escalated"))),
     reviewedByUserId: v.optional(v.id("users")),
     reviewedAt: v.optional(v.string()),
     reviewNotes: v.optional(v.string()),

@@ -44,12 +44,20 @@ const sourceLabel: Record<string, string> = {
   previous_ai_analysis: "IA previa",
 };
 
+const reviewStatusLabel: Record<string, string> = {
+  pending: "Revisión pendiente",
+  reviewed: "Revisado",
+  dismissed: "Desestimado",
+  escalated: "Escalado",
+};
+
 export default function JournalTimeline({ teenId }: JournalProps) {
   const { user, token } = useAuth();
   const entries = useQuery(api.journal.list, { teenId: teenId as any, token: token ?? undefined });
   const createEntry = useMutation(api.journal.create);
   const deleteEntry = useMutation(api.journal.remove);
   const analyzeEntry = useAction(api.ai.analyzeJournalEntry as any);
+  const reviewAnalysis = useMutation(api.ai.reviewAnalysis);
   const allAnalyses = useQuery(api.ai.getAllAnalyses);
   const recordJournalView = useMutation(api.auditLog.recordJournalView);
 
@@ -425,6 +433,7 @@ export default function JournalTimeline({ teenId }: JournalProps) {
                         <div className="mt-2 rounded-xl border border-purple-100 bg-purple-50/70 p-3 text-xs text-purple-900 space-y-1">
                           <p className="font-semibold">IA pastoral: sugerencia, no diagnóstico</p>
                           <p><span className="font-semibold">Confianza:</span> {confidenceLabel[analysis.confidence || "low"]}</p>
+                          <p><span className="font-semibold">Estado revisión:</span> {reviewStatusLabel[analysis.reviewStatus || (analysis.humanReviewRequired === false ? "reviewed" : "pending")]}</p>
                           {analysis.reasoningSummary && (
                             <p><span className="font-semibold">Motivo:</span> {esc(analysis.reasoningSummary)}</p>
                           )}
@@ -435,6 +444,19 @@ export default function JournalTimeline({ teenId }: JournalProps) {
                             <p><span className="font-semibold">Datos usados:</span> {analysis.usedDataSources.map((s) => sourceLabel[s] || s).join(", ")}</p>
                           )}
                           <p className="text-purple-800/80">{analysis.pastoralDisclaimer || "Esta sugerencia requiere revisión humana pastoral."}</p>
+                          {analysis.humanReviewRequired !== false && token && (
+                            <button
+                              type="button"
+                              onClick={async () => {
+                                const notes = window.prompt("Nota de revisión humana", "");
+                                if (!notes?.trim()) return;
+                                await reviewAnalysis({ token, analysisId: (analysis as any)._id, notes: notes.trim(), status: "reviewed" });
+                              }}
+                              className="mt-2 rounded-lg bg-purple-700 px-3 py-1.5 text-[11px] font-semibold text-white"
+                            >
+                              Marcar revisado
+                            </button>
+                          )}
                         </div>
                       )}
                     </div>
