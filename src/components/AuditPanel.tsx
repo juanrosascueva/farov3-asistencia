@@ -36,6 +36,9 @@ const actionLabels: Record<string, string> = {
   "crisis.status_changed": "Crisis actualizada",
   "crisis.referred": "Crisis derivada",
   "crisis.attended": "Crisis atendida",
+  "transition.created": "Transición creada",
+  "transition.completed": "Transición completada",
+  "transition.canceled": "Transición cancelada",
   "data.exported": "Datos exportados",
   "data.bulk_deleted": "Borrado masivo",
   "data.bulk_archived": "Archivado masivo",
@@ -70,7 +73,7 @@ export default function AuditPanel() {
   } : "skip") ?? [];
 
   const actions = useMemo(() => Object.entries(actionLabels).sort((a, b) => a[1].localeCompare(b[1])), []);
-  const entityTypes = ["teen", "journal", "user", "userScope", "customRole", "pastoralPlan", "pastoralTask", "crisisAlert", "export", "system"];
+  const entityTypes = ["teen", "journal", "user", "userScope", "customRole", "pastoralPlan", "pastoralTask", "crisisAlert", "ministryTransition", "export", "system"];
 
   return (
     <div className="space-y-5">

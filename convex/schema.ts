@@ -203,6 +203,25 @@ export default defineSchema({
     .index("by_groupId", ["groupId"])
     .index("by_status", ["status"]),
 
+  ministryTransitions: defineTable({
+    personId: v.id("people"),
+    teenId: v.id("teens"),
+    fromMinistryKey: v.literal("teens"),
+    toMinistryKey: v.string(),
+    fromGroupId: v.optional(v.id("group")),
+    toGroupId: v.optional(v.id("group")),
+    status: v.union(v.literal("planned"), v.literal("completed"), v.literal("canceled")),
+    reason: v.optional(v.string()),
+    targetDate: v.optional(v.string()),
+    completedAt: v.optional(v.string()),
+    createdByUserId: v.optional(v.id("users")),
+    createdAt: v.string(),
+    updatedAt: v.string(),
+  })
+    .index("by_teenId", ["teenId"])
+    .index("by_personId", ["personId"])
+    .index("by_status", ["status"]),
+
   teenGroupHistory: defineTable({
     teenId: v.id("teens"),
     previousGroupId: v.optional(v.id("group")),

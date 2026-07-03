@@ -32,6 +32,7 @@ import type * as people from "../people.js";
 import type * as ppp from "../ppp.js";
 import type * as seed from "../seed.js";
 import type * as teens from "../teens.js";
+import type * as transitions from "../transitions.js";
 import type * as userScopes from "../userScopes.js";
 import type * as users from "../users.js";
 
@@ -66,6 +67,7 @@ declare const fullApi: ApiFromModules<{
   ppp: typeof ppp;
   seed: typeof seed;
   teens: typeof teens;
+  transitions: typeof transitions;
   userScopes: typeof userScopes;
   users: typeof users;
 }>;
