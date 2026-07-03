@@ -152,13 +152,15 @@ export default function LoginPage() {
         </div>
 
         {showRequestAccess ? (
-          <form onSubmit={handleRequestAccess} className="space-y-4" onFocus={scrollIntoView}>
+          <form onSubmit={handleRequestAccess} className="space-y-4" onFocus={scrollIntoView} autoComplete="on">
             <p className="text-sm font-semibold text-center text-teal-700">Solicitud de Acceso / Registro</p>
             <p className="text-xs text-ink/40 text-center">Registra tus datos. Tu cuenta estará inactiva hasta que sea aprobada por el Pastor.</p>
             <div>
               <label className="text-xs font-semibold text-ink/50 mb-1 block">Nombre completo</label>
               <input
                 type="text"
+                name="name"
+                autoComplete="name"
                 value={requestName}
                 onChange={e => setRequestName(e.target.value)}
                 placeholder="Ej: Juan Rosas"
@@ -170,6 +172,8 @@ export default function LoginPage() {
               <label className="text-xs font-semibold text-ink/50 mb-1 block">Correo electrónico</label>
               <input
                 type="email"
+                name="email"
+                autoComplete="email"
                 value={requestEmail}
                 onChange={e => setRequestEmail(e.target.value)}
                 placeholder="correo@iglesia.com"
@@ -181,6 +185,8 @@ export default function LoginPage() {
               <label className="text-xs font-semibold text-ink/50 mb-1 block">Contraseña</label>
               <input
                 type="password"
+                name="new-password"
+                autoComplete="new-password"
                 value={requestPassword}
                 onChange={e => setRequestPassword(e.target.value)}
                 placeholder="••••••••"
@@ -220,13 +226,16 @@ export default function LoginPage() {
             </button>
           </form>
         ) : !showSetup ? (
-          <form onSubmit={handleLogin} className="space-y-4" onFocus={scrollIntoView}>
+          <form onSubmit={handleLogin} className="space-y-4" onFocus={scrollIntoView} autoComplete="on">
             <div>
               <label className="text-xs font-semibold text-ink/50 mb-1 block">
                 Correo electrónico
               </label>
               <input
                 type="email"
+                name="email"
+                autoComplete="username"
+                inputMode="email"
                 value={email}
                 onChange={e => setEmail(e.target.value)}
                 placeholder="correo@iglesia.com"
@@ -240,6 +249,8 @@ export default function LoginPage() {
               </label>
               <input
                 type="password"
+                name="password"
+                autoComplete="current-password"
                 value={password}
                 onChange={e => setPassword(e.target.value)}
                 placeholder="••••••••"
@@ -277,13 +288,15 @@ export default function LoginPage() {
             </div>
           </form>
         ) : (
-          <form onSubmit={handleSetup} className="space-y-4" onFocus={scrollIntoView}>
+          <form onSubmit={handleSetup} className="space-y-4" onFocus={scrollIntoView} autoComplete="on">
             <p className="text-sm font-semibold">Configurar primer usuario (Pastor)</p>
             <p className="text-xs text-ink/40">Esto solo funciona si no hay usuarios registrados.</p>
             <div>
               <label className="text-xs font-semibold text-ink/50 mb-1 block">Nombre</label>
               <input
                 type="text"
+                name="name"
+                autoComplete="name"
                 value={setupName}
                 onChange={e => setSetupName(e.target.value)}
                 placeholder="Ej: Juan Rosas"
@@ -294,6 +307,8 @@ export default function LoginPage() {
               <label className="text-xs font-semibold text-ink/50 mb-1 block">Correo</label>
               <input
                 type="email"
+                name="email"
+                autoComplete="email"
                 value={setupEmail}
                 onChange={e => setSetupEmail(e.target.value)}
                 placeholder="pastor@iglesia.com"
@@ -304,6 +319,8 @@ export default function LoginPage() {
               <label className="text-xs font-semibold text-ink/50 mb-1 block">Contraseña</label>
               <input
                 type="password"
+                name="new-password"
+                autoComplete="new-password"
                 value={setupPassword}
                 onChange={e => setSetupPassword(e.target.value)}
                 placeholder="••••••••"
