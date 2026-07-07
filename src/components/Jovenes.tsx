@@ -306,19 +306,19 @@ export default function Jovenes({
       {/* Overlay de filtros */}
       {showFilters && (
         <div
-          className="fixed inset-0 bg-ink/40 backdrop-blur-sm z-50 animate-overlay-in"
+          className="fixed inset-0 bg-ink/25 backdrop-blur-[2px] z-40 animate-overlay-in"
           onClick={() => setShowFilters(false)}
         />
       )}
 
-      {/* Panel lateral de filtros (Drawer) */}
+      {/* Panel de filtros */}
       <div
-        className={`fixed right-0 top-0 h-full w-full max-w-sm bg-card/95 dark:bg-card/98 shadow-2xl border-l border-ink/10 dark:border-white/5 z-50 p-4 sm:p-5 flex flex-col justify-between transition-transform duration-300 ease-out transform ${
-          showFilters ? "translate-x-0" : "translate-x-full"
+        className={`fixed inset-x-4 top-24 z-50 max-h-[calc(100vh-7rem)] overflow-hidden rounded-2xl border border-ink/10 bg-card shadow-2xl transition-all duration-200 ease-out sm:inset-auto sm:right-8 sm:top-36 sm:w-[360px] sm:max-h-[calc(100vh-10rem)] ${
+          showFilters ? "translate-y-0 opacity-100 sm:translate-x-0" : "-translate-y-2 opacity-0 pointer-events-none sm:translate-x-4 sm:translate-y-0"
         }`}
       >
-        <div className="flex flex-col flex-1 min-h-0">
-          <div className="flex items-center justify-between pb-4 border-b border-ink/5 mb-4">
+        <div className="flex max-h-[inherit] flex-col">
+          <div className="flex items-center justify-between border-b border-ink/5 px-4 py-3.5">
             <p className="text-sm font-bold text-ink flex items-center gap-1.5">
               <span>🎛️</span> Filtros de búsqueda
             </p>
@@ -332,7 +332,7 @@ export default function Jovenes({
             </button>
           </div>
 
-          <div className="flex-1 overflow-y-auto space-y-5 pr-1">
+          <div className="flex-1 overflow-y-auto space-y-5 px-4 py-4">
             <div>
               <p className="text-[11px] font-semibold text-ink/40 uppercase tracking-wide mb-2">Fidelidad</p>
               <div className="flex flex-wrap gap-1.5">
@@ -392,7 +392,7 @@ export default function Jovenes({
           </div>
         </div>
 
-        <div className="pt-4 border-t border-ink/5 flex gap-3 mt-4">
+        <div className="border-t border-ink/5 px-4 py-3 flex gap-3">
           <button
             onClick={() => {
               setFiltroFidelidad("all");
