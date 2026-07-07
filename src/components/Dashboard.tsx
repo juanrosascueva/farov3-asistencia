@@ -17,6 +17,7 @@ import { fill } from "../lib/templates";
 import { useTemplates } from "../hooks/useTemplates";
 import WhatsAppModal from "./WhatsAppModal";
 import { useAuth } from "../hooks/useAuth";
+import Modal from "./Modal";
 
 function roleTitle(role: string | undefined): string {
   switch (role) {
@@ -218,6 +219,16 @@ export default function Dashboard({
   const updateCrisisStatus = useMutation(api.crisis.updateStatus);
   const reviewCrisisAlert = useMutation(api.crisis.reviewAlert);
   const dropoutPredictions = useQuery(api.ai.getAllDropoutPredictions) ?? [];
+  const [crisisStatusDraft, setCrisisStatusDraft] = useState<{
+    alertId: any;
+    status: "attended" | "referred" | "follow_up";
+    notes: string;
+  } | null>(null);
+  const [crisisReviewDraft, setCrisisReviewDraft] = useState<{
+    alertId: any;
+    finalSeverity: "low" | "medium" | "high" | "critical";
+    notes: string;
+  } | null>(null);
 
   const highDropout = (dropoutPredictions as any[])
     .filter((d: any) => d.riskLevel === "high")
@@ -238,22 +249,18 @@ export default function Dashboard({
 
   const changeCrisisStatus = async (alertId: any, nextStatus: "in_progress" | "attended" | "referred" | "follow_up") => {
     if (!token) return;
-    let notes: string | undefined;
-    if (nextStatus !== "in_progress") {
-      notes = window.prompt("Registra la nota de decisión o seguimiento:")?.trim();
-      if (!notes) return;
+    if (nextStatus === "in_progress") {
+      await updateCrisisStatus({ token, alertId, status: nextStatus });
+      return;
     }
-    await updateCrisisStatus({ token, alertId, status: nextStatus, notes });
+    setCrisisStatusDraft({ alertId, status: nextStatus, notes: "" });
   };
 
   const reviewAlert = async (alert: any) => {
     if (!token) return;
-    const suggested = alert.aiSuggestedSeverity || alert.severity || "medium";
-    const finalSeverity = window.prompt("Nivel final (low, medium, high, critical):", suggested)?.trim();
-    if (!["low", "medium", "high", "critical"].includes(finalSeverity || "")) return;
-    const notes = window.prompt("Nota de revisión humana:")?.trim();
-    if (!notes) return;
-    await reviewCrisisAlert({ token, alertId: alert._id, finalSeverity: finalSeverity as any, notes });
+    const suggestedRaw = alert.aiSuggestedSeverity || alert.severity || "medium";
+    const suggested = (["low", "medium", "high", "critical"].includes(suggestedRaw) ? suggestedRaw : "medium") as "low" | "medium" | "high" | "critical";
+    setCrisisReviewDraft({ alertId: alert._id, finalSeverity: suggested, notes: "" });
   };
 
   const colorMap: Record<string, string> = {
@@ -616,6 +623,85 @@ export default function Dashboard({
           </div>
         )}
       </div>
+
+      {crisisStatusDraft && (
+        <Modal title="Registrar decisión de crisis" onClose={() => setCrisisStatusDraft(null)}>
+          <div className="p-5 space-y-4">
+            <p className="text-sm text-ink/60">
+              Esta acción requiere una nota para mantener trazabilidad pastoral.
+            </p>
+            <textarea
+              value={crisisStatusDraft.notes}
+              onChange={(event) => setCrisisStatusDraft({ ...crisisStatusDraft, notes: event.target.value })}
+              rows={4}
+              autoFocus
+              placeholder="Describe la decisión o el seguimiento realizado..."
+              className="w-full resize-none rounded-xl border border-ink/10 bg-card px-3.5 py-3 text-sm outline-none transition focus:border-teal-500 focus:ring-2 focus:ring-teal-500/20"
+            />
+            <div className="flex flex-col-reverse gap-2 sm:flex-row sm:justify-end">
+              <button onClick={() => setCrisisStatusDraft(null)} className="rounded-xl border border-ink/10 px-4 py-2.5 text-sm font-semibold text-ink/60 hover:bg-ink/5 transition">
+                Cancelar
+              </button>
+              <button
+                onClick={async () => {
+                  if (!token || !crisisStatusDraft.notes.trim()) return;
+                  await updateCrisisStatus({ token, alertId: crisisStatusDraft.alertId, status: crisisStatusDraft.status, notes: crisisStatusDraft.notes.trim() });
+                  setCrisisStatusDraft(null);
+                }}
+                className="rounded-xl bg-teal-600 px-4 py-2.5 text-sm font-bold text-white hover:bg-teal-700 transition pressable"
+              >
+                Guardar
+              </button>
+            </div>
+          </div>
+        </Modal>
+      )}
+
+      {crisisReviewDraft && (
+        <Modal title="Revisión humana de IA" onClose={() => setCrisisReviewDraft(null)}>
+          <div className="p-5 space-y-4">
+            <div>
+              <p className="text-xs font-bold text-ink/45 uppercase mb-2">Nivel final</p>
+              <div className="flex flex-wrap gap-2">
+                {(["low", "medium", "high", "critical"] as const).map((level) => (
+                  <button
+                    key={level}
+                    type="button"
+                    onClick={() => setCrisisReviewDraft({ ...crisisReviewDraft, finalSeverity: level })}
+                    className={`rounded-full px-3 py-1.5 text-xs font-semibold transition ${
+                      crisisReviewDraft.finalSeverity === level ? "bg-teal-600 text-white" : "bg-ink/5 text-ink/60 hover:bg-ink/10"
+                    }`}
+                  >
+                    {severityLabel(level)}
+                  </button>
+                ))}
+              </div>
+            </div>
+            <textarea
+              value={crisisReviewDraft.notes}
+              onChange={(event) => setCrisisReviewDraft({ ...crisisReviewDraft, notes: event.target.value })}
+              rows={4}
+              placeholder="Nota de revisión humana..."
+              className="w-full resize-none rounded-xl border border-ink/10 bg-card px-3.5 py-3 text-sm outline-none transition focus:border-teal-500 focus:ring-2 focus:ring-teal-500/20"
+            />
+            <div className="flex flex-col-reverse gap-2 sm:flex-row sm:justify-end">
+              <button onClick={() => setCrisisReviewDraft(null)} className="rounded-xl border border-ink/10 px-4 py-2.5 text-sm font-semibold text-ink/60 hover:bg-ink/5 transition">
+                Cancelar
+              </button>
+              <button
+                onClick={async () => {
+                  if (!token || !crisisReviewDraft.notes.trim()) return;
+                  await reviewCrisisAlert({ token, alertId: crisisReviewDraft.alertId, finalSeverity: crisisReviewDraft.finalSeverity, notes: crisisReviewDraft.notes.trim() });
+                  setCrisisReviewDraft(null);
+                }}
+                className="rounded-xl bg-teal-600 px-4 py-2.5 text-sm font-bold text-white hover:bg-teal-700 transition pressable"
+              >
+                Guardar revisión
+              </button>
+            </div>
+          </div>
+        </Modal>
+      )}
     </div>
   );
 }

@@ -273,7 +273,8 @@ export default function TeenForm({ teen, quickVisitor = false, onClose, onSucces
         confirmDuplicate,
       };
       if (teen) {
-        await updateTeen({ id: teen._id, ...(payload as any) });
+        const { confirmDuplicate: _confirmDuplicate, ...updatePayload } = payload;
+        await updateTeen({ id: teen._id, ...(updatePayload as any) });
       } else {
         await createTeen({
           ...(payload as any),

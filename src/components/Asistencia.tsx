@@ -62,6 +62,12 @@ export default function Asistencia({
   const [pendingCount, setPendingCount] = useState(0);
   const [successMsg, setSuccessMsg] = useState<string | null>(null);
   const [deletedDates, setDeletedDates] = useState<string[]>([]);
+  const [attendanceDetail, setAttendanceDetail] = useState<{
+    teenId: string;
+    teenName: string;
+    status: "absent" | "excused";
+    value: string;
+  } | null>(null);
   const [celebration, setCelebration] = useState<{
     name: string;
     streakTier: ReturnType<typeof streakTier>;
@@ -82,7 +88,7 @@ export default function Asistencia({
   }
   const dayMap = attendanceMap[selectedDate] || {};
 
-  const handleMark = async (teenId: string, status: AttendanceStatus) => {
+  const markAttendance = async (teenId: string, status: AttendanceStatus, detailText?: string) => {
     const teen = teens.find((t) => t._id === teenId);
     if (status === "present" && teen) {
       const old = statsFor(teenId, attendanceMap);
@@ -94,8 +100,8 @@ export default function Asistencia({
         status === "present"
           ? {}
           : status === "excused"
-          ? { excuseReason: window.prompt("Motivo de justificación", "") || undefined }
-          : { absenceComment: window.prompt("Comentario breve de ausencia", "") || undefined };
+          ? { excuseReason: detailText || undefined }
+          : { absenceComment: detailText || undefined };
       await markAtt({
         token: token ?? undefined,
         sessionId: selectedSessionId ? (selectedSessionId as any) : undefined,
@@ -110,6 +116,27 @@ export default function Asistencia({
     } finally {
       setPendingCount((c) => Math.max(0, c - 1));
     }
+  };
+
+  const handleMark = async (teenId: string, status: AttendanceStatus) => {
+    const teen = teens.find((t) => t._id === teenId);
+    if (status === "present") {
+      await markAttendance(teenId, status);
+      return;
+    }
+    setAttendanceDetail({
+      teenId,
+      teenName: teen ? `${teen.nombre} ${teen.apellido}`.trim() : "Adolescente",
+      status,
+      value: "",
+    });
+  };
+
+  const submitAttendanceDetail = async () => {
+    if (!attendanceDetail) return;
+    const { teenId, status, value } = attendanceDetail;
+    setAttendanceDetail(null);
+    await markAttendance(teenId, status, value.trim());
   };
 
   useEffect(() => {
@@ -556,6 +583,48 @@ export default function Asistencia({
                 className="flex-1 sm:flex-none px-4 py-2.5 bg-red-600 hover:bg-red-700 text-white rounded-xl text-xs font-bold transition pressable text-center"
               >
                 Sí, eliminar fecha
+              </button>
+            </div>
+          </div>
+        </Modal>
+      )}
+
+      {attendanceDetail && (
+        <Modal
+          title={attendanceDetail.status === "excused" ? "Justificar ausencia" : "Registrar ausencia"}
+          onClose={() => setAttendanceDetail(null)}
+        >
+          <div className="p-5 space-y-4">
+            <div>
+              <p className="text-sm font-semibold text-ink">{attendanceDetail.teenName}</p>
+              <p className="text-xs text-ink/45 mt-0.5">
+                {attendanceDetail.status === "excused"
+                  ? "Indica el motivo de justificación para dejarlo registrado."
+                  : "Agrega un comentario breve sobre la ausencia."}
+              </p>
+            </div>
+            <textarea
+              value={attendanceDetail.value}
+              onChange={(event) => setAttendanceDetail({ ...attendanceDetail, value: event.target.value })}
+              rows={4}
+              autoFocus
+              placeholder={attendanceDetail.status === "excused" ? "Ej. Enfermedad, viaje familiar..." : "Ej. No respondió, avisó el apoderado..."}
+              className="w-full resize-none rounded-xl border border-ink/10 bg-card px-3.5 py-3 text-sm outline-none transition focus:border-teal-500 focus:ring-2 focus:ring-teal-500/20"
+            />
+            <div className="flex flex-col-reverse gap-2 sm:flex-row sm:justify-end">
+              <button
+                type="button"
+                onClick={() => setAttendanceDetail(null)}
+                className="rounded-xl border border-ink/10 px-4 py-2.5 text-sm font-semibold text-ink/60 hover:bg-ink/5 transition"
+              >
+                Cancelar
+              </button>
+              <button
+                type="button"
+                onClick={submitAttendanceDetail}
+                className="rounded-xl bg-teal-600 px-4 py-2.5 text-sm font-bold text-white hover:bg-teal-700 transition pressable"
+              >
+                Guardar
               </button>
             </div>
           </div>

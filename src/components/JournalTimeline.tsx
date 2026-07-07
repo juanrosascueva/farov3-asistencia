@@ -6,6 +6,7 @@ import type { JournalAnalysis } from "../lib/types";
 import { VULNERABILITY_TAGS } from "../lib/types";
 import { fmtDate, esc } from "../lib/utils";
 import { useAuth } from "../hooks/useAuth";
+import Modal from "./Modal";
 
 interface JournalProps {
   teenId: string;
@@ -68,6 +69,7 @@ export default function JournalTimeline({ teenId }: JournalProps) {
   const [leaderName, setLeaderName] = useState(user?.name || "");
   const [followUp, setFollowUp] = useState(false);
   const [isConfidential, setIsConfidential] = useState(false);
+  const [reviewDraft, setReviewDraft] = useState<{ analysisId: string; notes: string } | null>(null);
   const [listening, setListening] = useState(false);
   const [structuring, setStructuring] = useState(false);
   const structureAction = useAction(api.ai.structureTranscription as any);
@@ -447,11 +449,7 @@ export default function JournalTimeline({ teenId }: JournalProps) {
                           {analysis.humanReviewRequired !== false && token && (
                             <button
                               type="button"
-                              onClick={async () => {
-                                const notes = window.prompt("Nota de revisión humana", "");
-                                if (!notes?.trim()) return;
-                                await reviewAnalysis({ token, analysisId: (analysis as any)._id, notes: notes.trim(), status: "reviewed" });
-                              }}
+                              onClick={() => setReviewDraft({ analysisId: String((analysis as any)._id), notes: "" })}
                               className="mt-2 rounded-lg bg-purple-700 px-3 py-1.5 text-[11px] font-semibold text-white"
                             >
                               Marcar revisado
@@ -483,6 +481,39 @@ export default function JournalTimeline({ teenId }: JournalProps) {
             })}
           </div>
         </div>
+      )}
+
+      {reviewDraft && (
+        <Modal title="Revisión humana de IA" onClose={() => setReviewDraft(null)}>
+          <div className="p-5 space-y-4">
+            <p className="text-sm text-ink/60">
+              Registra la nota de revisión para dejar constancia de que la sugerencia fue evaluada por una persona.
+            </p>
+            <textarea
+              value={reviewDraft.notes}
+              onChange={(event) => setReviewDraft({ ...reviewDraft, notes: event.target.value })}
+              rows={4}
+              autoFocus
+              placeholder="Nota de revisión humana..."
+              className="w-full resize-none rounded-xl border border-ink/10 bg-card px-3.5 py-3 text-sm outline-none transition focus:border-teal-500 focus:ring-2 focus:ring-teal-500/20"
+            />
+            <div className="flex flex-col-reverse gap-2 sm:flex-row sm:justify-end">
+              <button onClick={() => setReviewDraft(null)} className="rounded-xl border border-ink/10 px-4 py-2.5 text-sm font-semibold text-ink/60 hover:bg-ink/5 transition">
+                Cancelar
+              </button>
+              <button
+                onClick={async () => {
+                  if (!token || !reviewDraft.notes.trim()) return;
+                  await reviewAnalysis({ token, analysisId: reviewDraft.analysisId as any, notes: reviewDraft.notes.trim(), status: "reviewed" });
+                  setReviewDraft(null);
+                }}
+                className="rounded-xl bg-teal-600 px-4 py-2.5 text-sm font-bold text-white hover:bg-teal-700 transition pressable"
+              >
+                Guardar revisión
+              </button>
+            </div>
+          </div>
+        </Modal>
       )}
     </div>
   );

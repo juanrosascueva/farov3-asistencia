@@ -42,6 +42,7 @@ export default function Jovenes({
   const [editingTeen, setEditingTeen] = useState<Doc<"teens"> | null>(null);
   const [deletingTeen, setDeletingTeen] = useState<Doc<"teens"> | null>(null);
   const [sortMode, setSortMode] = useState<SortMode>("prioridad");
+  const [showSortMenu, setShowSortMenu] = useState(false);
 
   type FilterFidelidad = "all" | 1 | 2 | 3 | 4;
   type FilterPastoral = "all" | 0 | 1 | 2 | 3 | 4 | 5;
@@ -51,6 +52,11 @@ export default function Jovenes({
   const [filtroFidelidad, setFiltroFidelidad] = useState<FilterFidelidad>("all");
   const [filtroPastoral, setFiltroPastoral] = useState<FilterPastoral>("all");
   const [filtroEdad, setFiltroEdad] = useState<FilterEdad>("all");
+  const sortLabels: Record<SortMode, string> = {
+    prioridad: "Prioridad pastoral",
+    riesgo: "Nivel de riesgo",
+    nombre: "Nombre (A-Z)",
+  };
 
   const deleteTeen = useMutation(api.teens.remove);
   const { token } = useAuth();
@@ -222,27 +228,44 @@ export default function Jovenes({
             value={query}
             onChange={(e) => setQuery(e.target.value)}
             placeholder="Buscar por nombre..."
-            className="w-full bg-card border border-ink/10 rounded-xl pl-10 pr-4 py-2.5 text-sm"
+            className="w-full bg-card border border-ink/10 rounded-xl pl-10 pr-4 py-2.5 text-sm outline-none transition focus:border-teal-500 focus:ring-2 focus:ring-teal-500/20"
           />
         </div>
         <div className="flex flex-wrap items-center gap-2">
-          <div className="relative min-w-0 flex-1 flex items-center bg-card border border-ink/10 rounded-xl px-2.5 h-10 hover:border-ink/20 transition cursor-pointer">
+          <div className="relative min-w-0 flex-1">
+            <button
+              type="button"
+              onClick={() => setShowSortMenu((value) => !value)}
+              className="w-full flex items-center bg-card border border-ink/10 rounded-xl px-2.5 h-10 hover:border-ink/20 focus:border-teal-500 focus:ring-2 focus:ring-teal-500/20 outline-none transition text-left"
+            >
             <svg className="w-3.5 h-3.5 text-ink/40 mr-1.5 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
               <line x1="21" y1="10" x2="3" y2="10" /><line x1="21" y1="6" x2="3" y2="6" /><line x1="21" y1="14" x2="3" y2="14" /><line x1="21" y1="18" x2="3" y2="18" />
             </svg>
             <span className="text-xs text-ink/50 mr-1 hidden sm:inline">Ordenar:</span>
-            <select
-              value={sortMode}
-              onChange={(e) => setSortMode(e.target.value as SortMode)}
-              className="bg-transparent min-w-0 w-full text-xs font-semibold text-ink/75 hover:text-ink focus:outline-none pr-5 cursor-pointer appearance-none"
-            >
-              <option value="prioridad">Prioridad pastoral</option>
-              <option value="riesgo">Nivel de riesgo</option>
-              <option value="nombre">Nombre (A-Z)</option>
-            </select>
+            <span className="min-w-0 flex-1 truncate text-xs font-semibold text-ink/75">{sortLabels[sortMode]}</span>
             <svg className="w-3 h-3 absolute right-2 top-1/2 -translate-y-1/2 text-ink/40 pointer-events-none" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
               <path d="M6 9l6 6 6-6" />
             </svg>
+            </button>
+            {showSortMenu && (
+              <div className="absolute left-0 right-0 top-11 z-30 overflow-hidden rounded-xl border border-ink/10 bg-card shadow-lg">
+                {(["prioridad", "riesgo", "nombre"] as SortMode[]).map((mode) => (
+                  <button
+                    key={mode}
+                    type="button"
+                    onClick={() => {
+                      setSortMode(mode);
+                      setShowSortMenu(false);
+                    }}
+                    className={`w-full px-3 py-2 text-left text-xs font-semibold transition ${
+                      sortMode === mode ? "bg-teal-50 text-teal-700" : "text-ink/65 hover:bg-ink/5"
+                    }`}
+                  >
+                    {sortLabels[mode]}
+                  </button>
+                ))}
+              </div>
+            )}
           </div>
 
           <button
