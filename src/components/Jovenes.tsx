@@ -21,6 +21,8 @@ import TeenForm from "./TeenForm";
 import Modal from "./Modal";
 import TeenImportModal from "./TeenImportModal";
 import { useAuth } from "../hooks/useAuth";
+import { useScope } from "../hooks/useScope";
+import PublicRegistrationLinkModal from "./PublicRegistrationLinkModal";
 
 interface JovenesProps {
   teens: Doc<"teens">[];
@@ -38,6 +40,7 @@ export default function Jovenes({
   const [query, setQuery] = useState("");
   const [showForm, setShowForm] = useState(false);
   const [showQuickVisitor, setShowQuickVisitor] = useState(false);
+  const [showPublicLink, setShowPublicLink] = useState(false);
   const [showImport, setShowImport] = useState(false);
   const [editingTeen, setEditingTeen] = useState<Doc<"teens"> | null>(null);
   const [deletingTeen, setDeletingTeen] = useState<Doc<"teens"> | null>(null);
@@ -60,6 +63,7 @@ export default function Jovenes({
 
   const deleteTeen = useMutation(api.teens.remove);
   const { token } = useAuth();
+  const { scope, scopeLabel } = useScope();
   const recalcPpp = useAction(api.ppp.calculateAllPpp as any);
   const [pppRecalculating, setPppRecalculating] = useState(false);
 
@@ -189,6 +193,18 @@ export default function Jovenes({
               <path d="M12 5v14M5 12h14" />
             </svg>
             Visitante
+          </button>
+          <button
+            onClick={() => setShowPublicLink(true)}
+            className="text-xs font-semibold bg-card border border-ink/10 text-ink/65 rounded-full px-3.5 py-2 flex items-center justify-center gap-1.5 min-w-0"
+          >
+            <svg className="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+              <rect x="3" y="3" width="7" height="7" rx="1" />
+              <rect x="14" y="3" width="7" height="7" rx="1" />
+              <rect x="3" y="14" width="7" height="7" rx="1" />
+              <path d="M14 14h3v3h-3zM18 18h3v3h-3zM18 14h3M14 18v3" />
+            </svg>
+            Link QR
           </button>
           <button
             onClick={() => setShowForm(true)}
@@ -666,6 +682,19 @@ export default function Jovenes({
           quickVisitor
           onClose={() => setShowQuickVisitor(false)}
           onSuccess={() => setShowQuickVisitor(false)}
+        />
+      )}
+
+      {showPublicLink && (
+        <PublicRegistrationLinkModal
+          token={token}
+          scope={{
+            campusId: scope.campusId,
+            ministryId: scope.ministryId,
+            groupId: scope.groupId,
+            label: scopeLabel,
+          }}
+          onClose={() => setShowPublicLink(false)}
         />
       )}
 

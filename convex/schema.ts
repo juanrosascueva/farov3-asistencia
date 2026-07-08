@@ -232,6 +232,19 @@ export default defineSchema({
   })
     .index("by_teenId", ["teenId"]),
 
+  publicRegistrationLinks: defineTable({
+    token: v.string(),
+    campusId: v.optional(v.id("campus")),
+    ministryId: v.optional(v.id("ministry")),
+    groupId: v.optional(v.id("group")),
+    createdByUserId: v.optional(v.id("users")),
+    enabled: v.boolean(),
+    createdAt: v.string(),
+    updatedAt: v.string(),
+  })
+    .index("by_token", ["token"])
+    .index("by_createdByUserId", ["createdByUserId"]),
+
   guardians: defineTable({
     teenId: v.id("teens"),
     name: v.string(),

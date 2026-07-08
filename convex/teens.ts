@@ -50,6 +50,11 @@ const optionalCampusId = v.optional(v.union(v.id("campus"), v.literal("")));
 const optionalMinistryId = v.optional(v.union(v.id("ministry"), v.literal("")));
 const optionalGroupId = v.optional(v.union(v.id("group"), v.literal("")));
 
+function newPublicToken(): string {
+  const uuid = typeof crypto !== "undefined" && "randomUUID" in crypto ? crypto.randomUUID() : `${Date.now()}-${Math.random()}`;
+  return `reg_${uuid.replace(/[^a-zA-Z0-9]/g, "").slice(0, 32)}`;
+}
+
 function cleanText(value: string | undefined): string | undefined {
   if (value === undefined) return undefined;
   return value.trim().replace(/\s+/g, " ");
@@ -533,6 +538,143 @@ export const detectDuplicates = query({
   },
   handler: async (ctx, args) => {
     return await findDuplicateMatches(ctx, args, args.excludeId ? String(args.excludeId) : undefined);
+  },
+});
+
+export const createPublicRegistrationLink = mutation({
+  args: {
+    token: v.string(),
+    campusId: optionalCampusId,
+    ministryId: optionalMinistryId,
+    groupId: optionalGroupId,
+  },
+  handler: async (ctx, args) => {
+    const access = await requireAccess(ctx, args.token, "helper");
+    const scope = {
+      campusId: cleanOptionalId(args.campusId),
+      ministryId: cleanOptionalId(args.ministryId),
+      groupId: cleanOptionalId(args.groupId),
+    };
+    await validateScopeConsistency(ctx, scope.campusId, scope.ministryId, scope.groupId);
+    if ((scope.campusId || scope.ministryId || scope.groupId) && !canAccessTeen(access, scope)) {
+      throw new Error("No tienes permisos para crear enlaces de registro en este ámbito.");
+    }
+
+    const now = new Date().toISOString();
+    const publicToken = newPublicToken();
+    const id = await ctx.db.insert("publicRegistrationLinks", {
+      campusId: scope.campusId as any,
+      ministryId: scope.ministryId as any,
+      groupId: scope.groupId as any,
+      token: publicToken,
+      createdByUserId: access.user._id,
+      enabled: true,
+      createdAt: now,
+      updatedAt: now,
+    });
+    await logAudit(ctx, {
+      token: args.token,
+      action: "public_registration_link.created",
+      entityType: "publicRegistrationLink",
+      entityId: String(id),
+      newValue: scope,
+      details: "Enlace público de registro creado.",
+    });
+    return { id, token: publicToken };
+  },
+});
+
+export const getPublicRegistrationLink = query({
+  args: { publicToken: v.string() },
+  handler: async (ctx, args) => {
+    const link = await ctx.db
+      .query("publicRegistrationLinks")
+      .withIndex("by_token", (q) => q.eq("token", args.publicToken))
+      .first();
+    if (!link || !link.enabled) return null;
+    const campus = link.campusId ? await ctx.db.get(link.campusId) : null;
+    const ministry = link.ministryId ? await ctx.db.get(link.ministryId) : null;
+    const group = link.groupId ? await ctx.db.get(link.groupId) : null;
+    return {
+      token: link.token,
+      campusName: campus?.name,
+      ministryName: ministry?.name,
+      groupName: group?.name,
+    };
+  },
+});
+
+export const submitPublicRegistration = mutation({
+  args: {
+    publicToken: v.string(),
+    nombre: v.string(),
+    apellido: v.string(),
+    nacimiento: v.optional(v.string()),
+    edadAproximada: v.optional(v.string()),
+    telefono: v.optional(v.string()),
+    telefonoPadre: v.string(),
+    nombreEncargado: v.optional(v.string()),
+    parentescoEncargado: v.optional(v.string()),
+    invitadoPor: v.optional(v.string()),
+    fuenteIngreso: v.optional(sourceType),
+    observacionInicial: v.optional(v.string()),
+    consentimientoDatos: v.optional(v.boolean()),
+    consentimientoFoto: v.optional(v.boolean()),
+  },
+  handler: async (ctx, args) => {
+    const link = await ctx.db
+      .query("publicRegistrationLinks")
+      .withIndex("by_token", (q) => q.eq("token", args.publicToken))
+      .first();
+    if (!link || !link.enabled) throw new Error("El enlace de registro no está disponible.");
+
+    const today = new Date().toISOString().slice(0, 10);
+    const payload = await buildTeenPayload(ctx, {
+      nombre: args.nombre,
+      apellido: args.apellido,
+      nacimiento: args.nacimiento || "",
+      telefono: args.telefono || "",
+      telefonoPadre: args.telefonoPadre,
+      nombreEncargado: args.nombreEncargado,
+      parentescoEncargado: args.parentescoEncargado,
+      invitadoPor: args.invitadoPor,
+      fuenteIngreso: args.fuenteIngreso || "otro",
+      observacionInicial: args.observacionInicial,
+      consentimientoDatos: args.consentimientoDatos,
+      consentimientoFoto: args.consentimientoFoto,
+      fechaConsentimiento: args.consentimientoDatos || args.consentimientoFoto ? today : "",
+      campusId: link.campusId,
+      ministryId: link.ministryId,
+      groupId: link.groupId,
+      estado: "visitante",
+      nivelIntegracion: "nuevo",
+      registroRapido: true,
+      fichaCompleta: false,
+      primeraVisita: today,
+      fechaIngreso: today,
+      edadAproximada: args.edadAproximada,
+      gustos: "",
+      notas: "",
+      foto: "",
+    });
+    const duplicates = await findDuplicateMatches(ctx, payload);
+    if (duplicates.length > 0) {
+      throw new Error("Ya existe una ficha similar. Por favor confirma tus datos con un líder.");
+    }
+
+    const id = await ctx.db.insert("teens", { ...payload, fichaCompleta: false });
+    await syncPersonEnrollment(ctx, id, payload);
+    await syncFamilyRecords(ctx, id, payload, link.createdByUserId);
+    await logAudit(ctx, {
+      userId: link.createdByUserId,
+      userName: "Registro público",
+      action: "teen.public_registered",
+      entityType: "teen",
+      entityId: String(id),
+      newValue: { ...payload, fichaCompleta: false },
+      details: `${payload.nombre} ${payload.apellido}`,
+    });
+    return { id };
   },
 });
 

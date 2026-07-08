@@ -16,10 +16,39 @@ import AiPanel from "./components/AiPanel";
 import LoginPage from "./components/LoginPage";
 import AccessControl from "./components/AccessControl";
 import AuditPanel from "./components/AuditPanel";
+import PublicTeenRegistration from "./components/PublicTeenRegistration";
 
 const DARK_KEY = "cristovive_dark_mode";
 
 function AppContent() {
+  const publicRegistrationToken = new URLSearchParams(window.location.search).get("t");
+  const isPublicRegistration = window.location.pathname === "/registro-adolescente";
+
+  if (isPublicRegistration) {
+    return <PublicTeenRegistration publicToken={publicRegistrationToken || ""} />;
+  }
+
+  const { user, loading: authLoading } = useAuth();
+
+  if (authLoading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-paper">
+        <div className="text-center">
+          <div className="w-12 h-12 mx-auto rounded-full bg-ink/5 animate-pulse mb-3" />
+          <p className="text-sm text-ink/50">Cargando...</p>
+        </div>
+      </div>
+    );
+  }
+
+  if (!user) {
+    return <LoginPage />;
+  }
+
+  return <AuthenticatedApp />;
+}
+
+function AuthenticatedApp() {
   const [currentRoute, setCurrentRoute] = useState("dashboard");
   const [currentProfileId, setCurrentProfileId] = useState<string | null>(null);
   const [dark, setDark] = useState(() => localStorage.getItem(DARK_KEY) === "true");
@@ -29,7 +58,7 @@ function AppContent() {
     localStorage.setItem(DARK_KEY, String(dark));
   }, [dark]);
 
-  const { user, token, loading: authLoading } = useAuth();
+  const { token } = useAuth();
   const { scope } = useScope();
   const allTeens = useQuery(api.teens.list, token ? { token } : {});
   
@@ -49,7 +78,7 @@ function AppContent() {
     setCurrentProfileId(profileId ?? null);
   }, []);
 
-  if (authLoading || teens === undefined || attendanceMap === undefined) {
+  if (teens === undefined || attendanceMap === undefined) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-paper">
         <div className="text-center">
@@ -58,10 +87,6 @@ function AppContent() {
         </div>
       </div>
     );
-  }
-
-  if (!user) {
-    return <LoginPage />;
   }
 
   const profileTeen = currentProfileId
