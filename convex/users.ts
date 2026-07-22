@@ -190,6 +190,7 @@ export const updateUser = mutation({
     password: v.optional(v.string()),
     permissions: v.optional(v.array(v.string())),
     avatarStorageId: v.optional(v.id("_storage")),
+    pastoralCapacity: v.optional(v.number()),
   },
   handler: async (ctx, args) => {
     const requester = await getUserFromToken(ctx, args.token);
@@ -222,6 +223,7 @@ export const updateUser = mutation({
     if (args.isActive !== undefined) patch.isActive = args.isActive;
     if (args.permissions !== undefined) patch.permissions = args.permissions;
     if (args.avatarStorageId !== undefined) patch.avatarStorageId = args.avatarStorageId;
+    if (args.pastoralCapacity !== undefined) patch.pastoralCapacity = Math.max(0, Math.floor(args.pastoralCapacity));
     if (args.password) {
       const salt = generateSalt();
       patch.salt = salt;

@@ -43,7 +43,8 @@ export const getRoleSummary = query({
     const tasks = (await ctx.db.query("pastoralTasks").collect()).filter((task) => teenIds.has(String(task.teenId)));
     const crisis = (await ctx.db.query("crisisAlerts").collect()).filter((alert) => teenIds.has(String(alert.teenId)));
     const groups = await ctx.db.query("group").collect();
-    const users = new Map((await ctx.db.query("users").collect()).map((user) => [String(user._id), user.name]));
+    const userDocs = await ctx.db.query("users").collect();
+    const users = new Map(userDocs.map((user) => [String(user._id), user.name]));
     const groupLeaderById = new Map(groups.map((group) => [String(group._id), group.leaderId]));
     const effectiveLeaderByTeenId = new Map(teens.map((teen) => [
       String(teen._id),
@@ -159,6 +160,12 @@ export const getRoleSummary = query({
       .filter((task) => task.priority === "critical" || task.priority === "high" || task.status === "escalated" || (task.dueDate && task.dueDate < today))
       .map(taskView)
       .sort((a, b) => (b.priority === "critical" ? 1 : 0) - (a.priority === "critical" ? 1 : 0) || Number(Boolean(b.dueDate && b.dueDate < today)) - Number(Boolean(a.dueDate && a.dueDate < today)));
+    const teamCoverage = isSupervisor ? userDocs.map((user) => {
+      const assigned = teens.filter(teen => String(effectiveLeaderByTeenId.get(String(teen._id))?.userId || "") === String(user._id)).length;
+      const userTasks = openTasks.filter(task => String(task.assignedToUserId || "") === String(user._id));
+      if (!assigned && !userTasks.length) return null;
+      return { userId: user._id, name: user.name, assigned, capacity: user.pastoralCapacity || 12, openTasks: userTasks.length, overdue: userTasks.filter(task => task.dueDate && task.dueDate < today).length };
+    }).filter(Boolean) : [];
 
     return {
       role: access.user.role,
@@ -171,6 +178,7 @@ export const getRoleSummary = query({
       },
       metrics: {
         totalTeens: teens.length,
+        teamCoverage,
         activeTeens: teens.filter((t: any) => !["inactivo", "egresado", "trasladado"].includes(t.estado)).length,
         visitors: teens.filter((t: any) => t.estado === "visitante").length,
         newTeens: teens.filter((t: any) => t.estado === "nuevo" || t.nivelIntegracion === "nuevo").length,
