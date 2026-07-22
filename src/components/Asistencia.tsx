@@ -44,7 +44,7 @@ export default function Asistencia({
   const deleteDateMut = useMutation(api.attendance.deleteDate);
   const updateDateMut = useMutation(api.attendance.updateDate);
   const { user, token } = useAuth();
-  const { scope } = useScope();
+  const { scope, scopeLabel } = useScope();
   const sessions = useQuery(api.attendance.listSessions, token ? { token } : {}) ?? [];
   const needsContact = useQuery(api.attendance.getNeedsContact, token ? { token } : {}) ?? [];
 
@@ -443,18 +443,17 @@ export default function Asistencia({
       )}
 
       {showNewDate && (
-        <Modal title="Agregar nueva fecha" onClose={() => setShowNewDate(false)}>
-          <div className="space-y-5">
-            {/* Ícono decorativo */}
-            <div className="flex items-center gap-3 p-3.5 bg-teal-50 dark:bg-teal-950/20 rounded-xl border border-teal-100 dark:border-teal-900/30">
-              <div className="w-9 h-9 shrink-0 rounded-xl bg-teal-100 dark:bg-teal-900/40 flex items-center justify-center">
+        <Modal title="Crear sesión de asistencia" onClose={() => setShowNewDate(false)}>
+          <div className="space-y-5 p-4 sm:p-5">
+            <div className="flex items-center gap-3 rounded-lg border border-ink/5 bg-ink/[0.03] px-3 py-2.5">
+              <div className="size-8 shrink-0 rounded-lg bg-teal-50 dark:bg-teal-900/40 flex items-center justify-center">
                 <svg className="w-4.5 h-4.5 text-teal-700 dark:text-teal-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
                   <rect x="3" y="4" width="18" height="17" rx="2"/><path d="M8 2v4M16 2v4M3 10h18"/>
                   <path d="M8.5 14.5l2 2 4-4"/>
                 </svg>
               </div>
-              <p className="text-xs text-teal-800 dark:text-teal-300 leading-relaxed">
-                Elige la fecha de la reunión para registrar asistencia. Normalmente es el domingo de la semana en curso.
+              <p className="text-xs text-ink/65 leading-relaxed">
+                Selecciona la fecha y el tipo de reunión.
               </p>
             </div>
 
@@ -467,7 +466,7 @@ export default function Asistencia({
                 type="date"
                 value={newDate}
                 onChange={(e) => setNewDate(e.target.value)}
-                className="w-full bg-card border-2 border-ink/10 focus:border-teal-500 rounded-xl px-4 py-3 text-sm font-semibold outline-none transition-colors"
+                className="w-full bg-card border border-ink/10 focus:border-teal-500 rounded-lg px-4 py-3 text-sm font-semibold outline-none transition-colors"
               />
             </div>
 
@@ -478,27 +477,31 @@ export default function Asistencia({
               <select
                 value={newMeetingType}
                 onChange={(e) => setNewMeetingType(e.target.value as MeetingType)}
-                className="w-full bg-card border-2 border-ink/10 focus:border-teal-500 rounded-xl px-4 py-3 text-sm font-semibold outline-none transition-colors"
+                className="w-full bg-card border border-ink/10 focus:border-teal-500 rounded-lg px-4 py-3 text-sm font-semibold outline-none transition-colors"
               >
                 {Object.entries(MEETING_LABELS).map(([value, label]) => (
                   <option key={value} value={value}>{label}</option>
                 ))}
               </select>
+              <p className="mt-2 text-xs text-ink/45">
+                Se registrará en: <span className="font-semibold text-ink/65">{scopeLabel}</span>
+              </p>
             </div>
 
-            {/* Botones */}
-            <div className="flex flex-col gap-2 pt-1">
+            <div className="flex flex-col-reverse gap-2 pt-2 sm:flex-row sm:justify-end">
               <button
-                onClick={handleNewDate}
-                className="w-full py-3 bg-teal-600 hover:bg-teal-700 text-white rounded-xl text-sm font-bold transition pressable"
-              >
-                Cargar fecha
-              </button>
-              <button
+                type="button"
                 onClick={() => setShowNewDate(false)}
-                className="w-full py-2.5 border border-ink/10 rounded-xl text-xs font-semibold text-ink/50 hover:bg-ink/5 transition"
+                className="rounded-lg border border-ink/10 px-4 py-3 text-sm font-semibold text-ink/55 hover:bg-ink/5 transition"
               >
                 Cancelar
+              </button>
+              <button
+                type="button"
+                onClick={handleNewDate}
+                className="rounded-lg bg-teal-600 px-4 py-3 text-sm font-bold text-white hover:bg-teal-700 transition pressable"
+              >
+                Crear sesión y tomar asistencia
               </button>
             </div>
           </div>
