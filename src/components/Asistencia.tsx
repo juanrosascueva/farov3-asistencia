@@ -45,8 +45,13 @@ export default function Asistencia({
   const updateDateMut = useMutation(api.attendance.updateDate);
   const { user, token } = useAuth();
   const { scope, scopeLabel } = useScope();
-  const sessions = useQuery(api.attendance.listSessions, token ? { token } : {}) ?? [];
-  const needsContact = useQuery(api.attendance.getNeedsContact, token ? { token } : {}) ?? [];
+  const activeScopeArgs = {
+    campusId: scope.campusId as any,
+    ministryId: scope.ministryId as any,
+    groupId: scope.groupId as any,
+  };
+  const sessions = useQuery(api.attendance.listSessions, token ? { token, ...activeScopeArgs } : {}) ?? [];
+  const needsContact = useQuery(api.attendance.getNeedsContact, token ? { token, ...activeScopeArgs } : {}) ?? [];
 
   const [selectedDate, setSelectedDate] = useState(
     allDates[allDates.length - 1] || todayISO()

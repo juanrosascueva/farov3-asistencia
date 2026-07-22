@@ -38,6 +38,13 @@ function canAccessScope(access: any, scope: { campusId?: any; ministryId?: any; 
   return false;
 }
 
+function matchesActiveScope(record: { campusId?: any; ministryId?: any; groupId?: any }, scope: { campusId?: any; ministryId?: any; groupId?: any }) {
+  if (scope.groupId) return String(record.groupId || "") === String(scope.groupId);
+  if (scope.ministryId) return String(record.ministryId || "") === String(scope.ministryId);
+  if (scope.campusId) return String(record.campusId || "") === String(scope.campusId);
+  return true;
+}
+
 function monthOf(date: string) {
   return date.slice(0, 7);
 }
@@ -49,28 +56,40 @@ function daysBetween(from: string, to: string) {
 }
 
 export const list = query({
-  args: { token: v.optional(v.string()) },
+  args: { token: v.optional(v.string()), campusId: optionalCampusId, ministryId: optionalMinistryId, groupId: optionalGroupId },
   handler: async (ctx, args) => {
     const all = await ctx.db.query("attendance").collect();
-    if (!args.token) return all;
+    if (!args.token) return [];
     const access = await getEffectiveAccess(ctx, args.token);
-    if (!access || access.isGlobal) return all;
+    if (!access) return [];
     const teens = await ctx.db.query("teens").collect();
-    const allowedIds = new Set(filterTeensByScope(access, teens).map((t) => String(t._id)));
+    const authorizedTeens = access.isGlobal ? teens : filterTeensByScope(access, teens);
+    const activeScope = {
+      campusId: cleanOptionalId(args.campusId),
+      ministryId: cleanOptionalId(args.ministryId),
+      groupId: cleanOptionalId(args.groupId),
+    };
+    const allowedIds = new Set(authorizedTeens.filter((teen) => matchesActiveScope(teen, activeScope)).map((t) => String(t._id)));
     return all.filter((r) => allowedIds.has(String(r.teenId)));
   },
 });
 
 export const listSessions = query({
-  args: { token: v.optional(v.string()), date: v.optional(v.string()) },
+  args: { token: v.optional(v.string()), date: v.optional(v.string()), campusId: optionalCampusId, ministryId: optionalMinistryId, groupId: optionalGroupId },
   handler: async (ctx, args) => {
     const sessions = args.date
       ? await ctx.db.query("meetingSessions").withIndex("by_date", (q) => q.eq("date", args.date!)).collect()
       : await ctx.db.query("meetingSessions").collect();
-    if (!args.token) return sessions;
+    if (!args.token) return [];
     const access = await getEffectiveAccess(ctx, args.token);
-    if (!access || access.isGlobal) return sessions;
-    return sessions.filter((session) => canAccessScope(access, session));
+    if (!access) return [];
+    const authorizedSessions = access.isGlobal ? sessions : sessions.filter((session) => canAccessScope(access, session));
+    const activeScope = {
+      campusId: cleanOptionalId(args.campusId),
+      ministryId: cleanOptionalId(args.ministryId),
+      groupId: cleanOptionalId(args.groupId),
+    };
+    return authorizedSessions.filter((session) => matchesActiveScope(session, activeScope));
   },
 });
 
@@ -237,11 +256,19 @@ export const mark = mutation({
 });
 
 export const getNeedsContact = query({
-  args: { token: v.optional(v.string()) },
+  args: { token: v.optional(v.string()), campusId: optionalCampusId, ministryId: optionalMinistryId, groupId: optionalGroupId },
   handler: async (ctx, args) => {
-    const access = args.token ? await getEffectiveAccess(ctx, args.token) : null;
+    if (!args.token) return [];
+    const access = await getEffectiveAccess(ctx, args.token);
+    if (!access) return [];
     const allTeens = await ctx.db.query("teens").collect();
-    const teens = access && !access.isGlobal ? filterTeensByScope(access, allTeens) : allTeens;
+    const authorizedTeens = access.isGlobal ? allTeens : filterTeensByScope(access, allTeens);
+    const activeScope = {
+      campusId: cleanOptionalId(args.campusId),
+      ministryId: cleanOptionalId(args.ministryId),
+      groupId: cleanOptionalId(args.groupId),
+    };
+    const teens = authorizedTeens.filter((teen) => matchesActiveScope(teen, activeScope));
     const allowedIds = new Set(teens.map((t) => String(t._id)));
     const allAttendance = (await ctx.db.query("attendance").collect()).filter((a) => allowedIds.has(String(a.teenId)));
     const today = new Date().toISOString().slice(0, 10);
