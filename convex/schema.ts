@@ -14,6 +14,7 @@ export default defineSchema({
     avatarStorageId: v.optional(v.id("_storage")),
     phone: v.optional(v.string()),
     birthDate: v.optional(v.string()),
+    pastoralCapacity: v.optional(v.number()),
     createdAt: v.string(),
   })
     .index("by_email", ["email"]),
@@ -293,6 +294,11 @@ export default defineSchema({
     ministryId: v.optional(v.id("ministry")),
     groupId: v.optional(v.id("group")),
     title: v.optional(v.string()),
+    objective: v.optional(v.string()),
+    expectedAttendance: v.optional(v.number()),
+    status: v.optional(v.union(v.literal("planned"), v.literal("completed"), v.literal("canceled"))),
+    resultNotes: v.optional(v.string()),
+    completedAt: v.optional(v.string()),
     checkInToken: v.optional(v.string()),
     checkInEnabled: v.optional(v.boolean()),
     createdBy: v.optional(v.id("users")),
@@ -360,6 +366,27 @@ export default defineSchema({
     .index("by_weekStart", ["weekStart"])
     .index("by_teenId", ["teenId"])
     .index("by_weekStart_and_teenId", ["weekStart", "teenId"]),
+
+  integrationMilestones: defineTable({
+    teenId: v.id("teens"),
+    type: v.union(v.literal("registered"), v.literal("guardian_confirmed"), v.literal("first_attendance"), v.literal("group_assigned"), v.literal("first_contact"), v.literal("three_attendances"), v.literal("pastoral_conversation"), v.literal("discipleship_or_service")),
+    completedAt: v.string(),
+    completedByUserId: v.optional(v.id("users")),
+    notes: v.optional(v.string()),
+  }).index("by_teenId", ["teenId"]).index("by_teen_type", ["teenId", "type"]),
+
+  contactLogs: defineTable({
+    teenId: v.id("teens"),
+    guardianId: v.optional(v.id("guardians")),
+    channel: v.union(v.literal("whatsapp"), v.literal("call"), v.literal("visit"), v.literal("other")),
+    outcome: v.union(v.literal("prepared"), v.literal("contacted"), v.literal("no_response"), v.literal("rescheduled"), v.literal("not_applicable")),
+    contactDate: v.string(),
+    notes: v.optional(v.string()),
+    nextAction: v.optional(v.string()),
+    relatedTaskId: v.optional(v.id("pastoralTasks")),
+    createdByUserId: v.optional(v.id("users")),
+    createdAt: v.string(),
+  }).index("by_teenId", ["teenId"]).index("by_contactDate", ["contactDate"]),
 
   journalAnalysis: defineTable({
     entryId: v.id("journal"),
@@ -494,6 +521,16 @@ export default defineSchema({
     createdAt: v.string(),
   })
     .index("by_alertId", ["alertId"]),
+
+  pastoralCases: defineTable({
+    teenId: v.id("teens"), title: v.string(), priority: v.union(v.literal("low"), v.literal("medium"), v.literal("high"), v.literal("critical")),
+    status: v.union(v.literal("open"), v.literal("in_progress"), v.literal("referred"), v.literal("review_pending"), v.literal("closed")),
+    assignedToUserId: v.optional(v.id("users")), supervisorUserId: v.optional(v.id("users")), reviewDueDate: v.optional(v.string()), relatedCrisisAlertId: v.optional(v.id("crisisAlerts")),
+    createdByUserId: v.id("users"), createdAt: v.string(), updatedAt: v.string(), closedAt: v.optional(v.string()),
+  }).index("by_teenId", ["teenId"]).index("by_status", ["status"]),
+  pastoralCaseActions: defineTable({
+    caseId: v.id("pastoralCases"), actorUserId: v.id("users"), type: v.union(v.literal("note"), v.literal("assigned"), v.literal("reviewed"), v.literal("referred"), v.literal("closed")), notes: v.string(), createdAt: v.string(),
+  }).index("by_caseId", ["caseId"]),
 
   pastoralPlans: defineTable({
     teenId: v.id("teens"),
