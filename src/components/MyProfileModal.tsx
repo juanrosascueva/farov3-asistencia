@@ -1,4 +1,4 @@
-import { useState, useRef } from "react";
+import { useState } from "react";
 import { useAuth } from "../hooks/useAuth";
 import { useMutation, useQuery } from "convex/react";
 import { api } from "../../convex/_generated/api";
@@ -9,6 +9,7 @@ export default function MyProfileModal({ onClose }: { onClose: () => void }) {
   const { user, token } = useAuth();
   const updateMe = useMutation(api.users.updateMe);
   const myScopes = useQuery(api.userScopes.myScopes, token ? { token } : "skip");
+  const assignMe = useMutation(api.userScopes.assignMe);
   
   const [view, setView] = useState<"main" | "personal" | "security" | "ministries">("main");
   
@@ -19,6 +20,21 @@ export default function MyProfileModal({ onClose }: { onClose: () => void }) {
   const [avatarStorageId, setAvatarStorageId] = useState<string>("");
   const [password, setPassword] = useState("");
   const [saving, setSaving] = useState(false);
+  const [showAssignScope, setShowAssignScope] = useState(false);
+  const [scopeRole, setScopeRole] = useState<"pastor" | "director" | "coordinador" | "leader" | "helper">("pastor");
+  const [scopeCampusId, setScopeCampusId] = useState("");
+  const [scopeMinistryId, setScopeMinistryId] = useState("");
+  const [scopeGroupId, setScopeGroupId] = useState("");
+
+  const campuses = useQuery(api.campus.list, user && token && showAssignScope ? { token } : "skip");
+  const ministries = useQuery(
+    api.ministry.list,
+    user && token && showAssignScope && scopeCampusId ? { token, campusId: scopeCampusId as any } : "skip"
+  );
+  const groups = useQuery(
+    api.group.list,
+    user && token && showAssignScope && scopeMinistryId ? { token, ministryId: scopeMinistryId as any } : "skip"
+  );
 
   if (!user) return null;
 
@@ -54,6 +70,33 @@ export default function MyProfileModal({ onClose }: { onClose: () => void }) {
       alert("Contraseña actualizada con éxito.");
       setPassword("");
       setView("main");
+    } catch (e: any) {
+      alert("Error: " + e.message);
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const handleAssignScope = async () => {
+    if (!token) return;
+    if (!scopeCampusId && !scopeMinistryId && !scopeGroupId) {
+      alert("Selecciona al menos una sede, ministerio o grupo.");
+      return;
+    }
+    setSaving(true);
+    try {
+      await assignMe({
+        token,
+        role: scopeRole,
+        campusId: scopeCampusId ? (scopeCampusId as any) : undefined,
+        ministryId: scopeMinistryId ? (scopeMinistryId as any) : undefined,
+        groupId: scopeGroupId ? (scopeGroupId as any) : undefined,
+      });
+      setScopeCampusId("");
+      setScopeMinistryId("");
+      setScopeGroupId("");
+      setShowAssignScope(false);
+      alert("Ministerio asignado correctamente.");
     } catch (e: any) {
       alert("Error: " + e.message);
     } finally {
@@ -252,12 +295,89 @@ export default function MyProfileModal({ onClose }: { onClose: () => void }) {
           <div className="p-5 animate-slide-in-right">
             <div className="flex items-center justify-between mb-4">
               <h3 className="text-sm font-bold text-ink/90">Mis Ministerios</h3>
-              {user.role === "pastor" && (
-                <button className="text-xs font-bold text-teal-600 bg-teal-50 px-3 py-1.5 rounded-full hover:bg-teal-100 transition-colors">
+              {(user.role === "pastor" || user.role === "admin") && (
+                <button
+                  onClick={() => setShowAssignScope((value) => !value)}
+                  className="text-xs font-bold text-teal-600 bg-teal-50 px-3 py-1.5 rounded-full hover:bg-teal-100 transition-colors"
+                >
                   + Asignar Nuevo
                 </button>
               )}
             </div>
+
+            {showAssignScope && (
+              <div className="bg-white border border-teal-100 rounded-2xl p-4 shadow-sm mb-4 space-y-3">
+                <div>
+                  <label className="block text-[11px] font-bold text-ink/50 uppercase tracking-wide mb-1">Rol</label>
+                  <select
+                    value={scopeRole}
+                    onChange={(e) => setScopeRole(e.target.value as any)}
+                    className="w-full bg-white border border-ink/10 rounded-xl px-3 py-2 text-sm"
+                  >
+                    <option value="pastor">Pastor</option>
+                    <option value="director">Director</option>
+                    <option value="coordinador">Coordinador</option>
+                    <option value="leader">Líder</option>
+                    <option value="helper">Ayudante</option>
+                  </select>
+                </div>
+                <div>
+                  <label className="block text-[11px] font-bold text-ink/50 uppercase tracking-wide mb-1">Sede</label>
+                  <select
+                    value={scopeCampusId}
+                    onChange={(e) => {
+                      setScopeCampusId(e.target.value);
+                      setScopeMinistryId("");
+                      setScopeGroupId("");
+                    }}
+                    className="w-full bg-white border border-ink/10 rounded-xl px-3 py-2 text-sm"
+                  >
+                    <option value="">Selecciona una sede</option>
+                    {(campuses || []).map((campus: any) => (
+                      <option key={campus._id} value={campus._id}>{campus.name}</option>
+                    ))}
+                  </select>
+                </div>
+                <div>
+                  <label className="block text-[11px] font-bold text-ink/50 uppercase tracking-wide mb-1">Ministerio</label>
+                  <select
+                    value={scopeMinistryId}
+                    onChange={(e) => {
+                      setScopeMinistryId(e.target.value);
+                      setScopeGroupId("");
+                    }}
+                    disabled={!scopeCampusId}
+                    className="w-full bg-white border border-ink/10 rounded-xl px-3 py-2 text-sm disabled:opacity-50"
+                  >
+                    <option value="">Toda la sede</option>
+                    {(ministries || []).map((ministry: any) => (
+                      <option key={ministry._id} value={ministry._id}>{ministry.name}</option>
+                    ))}
+                  </select>
+                </div>
+                <div>
+                  <label className="block text-[11px] font-bold text-ink/50 uppercase tracking-wide mb-1">Grupo</label>
+                  <select
+                    value={scopeGroupId}
+                    onChange={(e) => setScopeGroupId(e.target.value)}
+                    disabled={!scopeMinistryId}
+                    className="w-full bg-white border border-ink/10 rounded-xl px-3 py-2 text-sm disabled:opacity-50"
+                  >
+                    <option value="">Todo el ministerio</option>
+                    {(groups || []).map((group: any) => (
+                      <option key={group._id} value={group._id}>{group.name}</option>
+                    ))}
+                  </select>
+                </div>
+                <button
+                  onClick={handleAssignScope}
+                  disabled={saving || !scopeCampusId}
+                  className="w-full bg-teal-600 hover:bg-teal-700 disabled:opacity-50 text-white font-bold rounded-xl py-2.5 text-sm"
+                >
+                  {saving ? "Asignando..." : "Guardar asignación"}
+                </button>
+              </div>
+            )}
             
             {!myScopes ? (
               <div className="text-center py-8">
