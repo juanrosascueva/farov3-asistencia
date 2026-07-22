@@ -237,8 +237,8 @@ function assertValidDate(value: string | undefined, fieldName: string, { allowFu
   if (!/^\d{4}-\d{2}-\d{2}$/.test(value)) {
     throw new Error(`El campo ${fieldName} debe usar formato AAAA-MM-DD.`);
   }
-  const date = new Date(`${value}T00:00:00`);
-  if (Number.isNaN(date.getTime())) {
+  const date = new Date(`${value}T00:00:00Z`);
+  if (Number.isNaN(date.getTime()) || date.toISOString().slice(0, 10) !== value) {
     throw new Error(`El campo ${fieldName} no tiene una fecha válida.`);
   }
   if (!allowFuture) {
@@ -781,6 +781,18 @@ export const submitPublicRegistration = mutation({
 
     const scopeMode = link.scopeMode || "fixed";
     const completedBy = args.completedBy || "teen";
+    if (!args.fuenteIngreso) throw new Error("Selecciona cómo conoció el ministerio.");
+    if (args.edadAproximada !== undefined && args.edadAproximada !== "") {
+      const age = Number(args.edadAproximada);
+      if (!/^\d+$/.test(args.edadAproximada) || !Number.isInteger(age) || age < 1 || age > 99) {
+        throw new Error("La edad aproximada debe ser un número entre 1 y 99.");
+      }
+    }
+    if (completedBy === "guardian") {
+      if (!args.nombreEncargado?.trim()) throw new Error("Ingresa el nombre del apoderado.");
+      if (!args.parentescoEncargado?.trim()) throw new Error("Indica el parentesco del apoderado.");
+      if (!args.consentimientoDatos) throw new Error("El apoderado debe autorizar el tratamiento de datos.");
+    }
     const selectedScope = {
       campusId: cleanOptionalId(args.campusId),
       ministryId: cleanOptionalId(args.ministryId),
@@ -802,8 +814,8 @@ export const submitPublicRegistration = mutation({
       telefonoPadre: args.telefonoPadre,
       nombreEncargado: args.nombreEncargado,
       parentescoEncargado: args.parentescoEncargado,
-      invitadoPor: args.invitadoPor,
-      fuenteIngreso: args.fuenteIngreso || "otro",
+      invitadoPor: args.fuenteIngreso === "amigo" || args.fuenteIngreso === "familiar" ? args.invitadoPor : undefined,
+      fuenteIngreso: args.fuenteIngreso,
       observacionInicial: args.observacionInicial,
       consentimientoDatos: canRecordConsent ? args.consentimientoDatos : false,
       consentimientoFoto: canRecordConsent ? args.consentimientoFoto : false,

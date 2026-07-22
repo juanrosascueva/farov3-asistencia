@@ -6,6 +6,7 @@
   "scripts": {
     "dev": "vite",
     "build": "tsc -b && vite build",
+    "check:public-registration": "node scripts/check-public-registration.mjs",
     "check:design": "node scripts/check-design.mjs",
     "preview": "vite preview"
   },
