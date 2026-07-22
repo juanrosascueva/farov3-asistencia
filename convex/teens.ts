@@ -49,10 +49,46 @@ const teenGender = v.union(
 const optionalCampusId = v.optional(v.union(v.id("campus"), v.literal("")));
 const optionalMinistryId = v.optional(v.union(v.id("ministry"), v.literal("")));
 const optionalGroupId = v.optional(v.union(v.id("group"), v.literal("")));
+const publicRegistrationScopeMode = v.union(v.literal("general"), v.literal("fixed"));
+const publicRegistrationCompletedBy = v.union(v.literal("teen"), v.literal("guardian"), v.literal("leader"));
 
 function newPublicToken(): string {
   const uuid = typeof crypto !== "undefined" && "randomUUID" in crypto ? crypto.randomUUID() : `${Date.now()}-${Math.random()}`;
   return `reg_${uuid.replace(/[^a-zA-Z0-9]/g, "").slice(0, 32)}`;
+}
+
+function newPublicShortCode(): string {
+  const uuid = typeof crypto !== "undefined" && "randomUUID" in crypto ? crypto.randomUUID() : `${Date.now()}-${Math.random()}`;
+  return uuid.replace(/[^a-zA-Z0-9]/g, "").slice(0, 8).toLowerCase();
+}
+
+async function createUniquePublicShortCode(ctx: any): Promise<string> {
+  for (let attempt = 0; attempt < 6; attempt += 1) {
+    const shortCode = newPublicShortCode();
+    const existing = await ctx.db
+      .query("publicRegistrationLinks")
+      .withIndex("by_shortCode", (q: any) => q.eq("shortCode", shortCode))
+      .first();
+    if (!existing) return shortCode;
+  }
+  throw new Error("No se pudo generar un código corto. Intenta nuevamente.");
+}
+
+async function resolvePublicRegistrationLink(ctx: any, publicToken?: string, shortCode?: string) {
+  if (shortCode) {
+    const byShortCode = await ctx.db
+      .query("publicRegistrationLinks")
+      .withIndex("by_shortCode", (q: any) => q.eq("shortCode", shortCode.toLowerCase()))
+      .first();
+    if (byShortCode) return byShortCode;
+  }
+  if (publicToken) {
+    return await ctx.db
+      .query("publicRegistrationLinks")
+      .withIndex("by_token", (q: any) => q.eq("token", publicToken))
+      .first();
+  }
+  return null;
 }
 
 function cleanText(value: string | undefined): string | undefined {
@@ -299,6 +335,7 @@ async function buildTeenPayload(ctx: any, args: any, currentTeen?: any) {
     consentimientoDatos: args.consentimientoDatos === undefined ? currentTeen?.consentimientoDatos : args.consentimientoDatos,
     consentimientoFoto: args.consentimientoFoto === undefined ? currentTeen?.consentimientoFoto : args.consentimientoFoto,
     fechaConsentimiento,
+    completedBy: args.completedBy === undefined ? currentTeen?.completedBy : args.completedBy,
     campusId,
     ministryId,
     groupId,
@@ -544,29 +581,40 @@ export const detectDuplicates = query({
 export const createPublicRegistrationLink = mutation({
   args: {
     token: v.string(),
+    scopeMode: v.optional(publicRegistrationScopeMode),
     campusId: optionalCampusId,
     ministryId: optionalMinistryId,
     groupId: optionalGroupId,
   },
   handler: async (ctx, args) => {
     const access = await requireAccess(ctx, args.token, "helper");
+    const scopeMode = args.scopeMode || "fixed";
     const scope = {
       campusId: cleanOptionalId(args.campusId),
       ministryId: cleanOptionalId(args.ministryId),
       groupId: cleanOptionalId(args.groupId),
     };
+    if (scopeMode === "general" && !access.isGlobal) {
+      throw new Error("Solo administradores, pastores o directores pueden crear un enlace general.");
+    }
+    if (scopeMode === "fixed" && (!scope.campusId || !scope.ministryId)) {
+      throw new Error("Selecciona una sede y un ministerio para crear un QR dirigido.");
+    }
     await validateScopeConsistency(ctx, scope.campusId, scope.ministryId, scope.groupId);
-    if ((scope.campusId || scope.ministryId || scope.groupId) && !canAccessTeen(access, scope)) {
+    if (scopeMode === "fixed" && (scope.campusId || scope.ministryId || scope.groupId) && !canAccessTeen(access, scope)) {
       throw new Error("No tienes permisos para crear enlaces de registro en este ámbito.");
     }
 
     const now = new Date().toISOString();
     const publicToken = newPublicToken();
+    const shortCode = await createUniquePublicShortCode(ctx);
     const id = await ctx.db.insert("publicRegistrationLinks", {
       campusId: scope.campusId as any,
       ministryId: scope.ministryId as any,
       groupId: scope.groupId as any,
       token: publicToken,
+      shortCode,
+      scopeMode,
       createdByUserId: access.user._id,
       enabled: true,
       createdAt: now,
@@ -577,36 +625,69 @@ export const createPublicRegistrationLink = mutation({
       action: "public_registration_link.created",
       entityType: "publicRegistrationLink",
       entityId: String(id),
-      newValue: scope,
+      newValue: { ...scope, scopeMode, shortCode },
       details: "Enlace público de registro creado.",
     });
-    return { id, token: publicToken };
+    return { id, token: publicToken, shortCode, scopeMode };
   },
 });
 
 export const getPublicRegistrationLink = query({
-  args: { publicToken: v.string() },
+  args: { publicToken: v.optional(v.string()), shortCode: v.optional(v.string()) },
   handler: async (ctx, args) => {
-    const link = await ctx.db
-      .query("publicRegistrationLinks")
-      .withIndex("by_token", (q) => q.eq("token", args.publicToken))
-      .first();
+    const link = await resolvePublicRegistrationLink(ctx, args.publicToken, args.shortCode);
     if (!link || !link.enabled) return null;
     const campus = link.campusId ? await ctx.db.get(link.campusId) : null;
     const ministry = link.ministryId ? await ctx.db.get(link.ministryId) : null;
     const group = link.groupId ? await ctx.db.get(link.groupId) : null;
     return {
       token: link.token,
-      campusName: campus?.name,
-      ministryName: ministry?.name,
-      groupName: group?.name,
+      shortCode: link.shortCode,
+      scopeMode: link.scopeMode || "fixed",
+      campusName: (campus as any)?.name,
+      ministryName: (ministry as any)?.name,
+      groupName: (group as any)?.name,
     };
+  },
+});
+
+export const listPublicRegistrationCampuses = query({
+  args: { publicToken: v.optional(v.string()), shortCode: v.optional(v.string()) },
+  handler: async (ctx, args) => {
+    const link = await resolvePublicRegistrationLink(ctx, args.publicToken, args.shortCode);
+    if (!link || !link.enabled || (link.scopeMode || "fixed") !== "general") return [];
+    return (await ctx.db.query("campus").collect()).map((campus: any) => ({ _id: campus._id, name: campus.name }));
+  },
+});
+
+export const listPublicRegistrationMinistries = query({
+  args: { publicToken: v.optional(v.string()), shortCode: v.optional(v.string()), campusId: v.id("campus") },
+  handler: async (ctx, args) => {
+    const link = await resolvePublicRegistrationLink(ctx, args.publicToken, args.shortCode);
+    if (!link || !link.enabled || (link.scopeMode || "fixed") !== "general") return [];
+    return (await ctx.db.query("ministry").withIndex("by_campusId", (q: any) => q.eq("campusId", args.campusId)).collect())
+      .map((ministry: any) => ({ _id: ministry._id, name: ministry.name }));
+  },
+});
+
+export const listPublicRegistrationGroups = query({
+  args: { publicToken: v.optional(v.string()), shortCode: v.optional(v.string()), ministryId: v.id("ministry") },
+  handler: async (ctx, args) => {
+    const link = await resolvePublicRegistrationLink(ctx, args.publicToken, args.shortCode);
+    if (!link || !link.enabled || (link.scopeMode || "fixed") !== "general") return [];
+    return (await ctx.db.query("group").withIndex("by_ministryId", (q: any) => q.eq("ministryId", args.ministryId)).collect())
+      .map((group: any) => ({ _id: group._id, name: group.name }));
   },
 });
 
 export const submitPublicRegistration = mutation({
   args: {
-    publicToken: v.string(),
+    publicToken: v.optional(v.string()),
+    shortCode: v.optional(v.string()),
+    campusId: optionalCampusId,
+    ministryId: optionalMinistryId,
+    groupId: optionalGroupId,
+    completedBy: v.optional(publicRegistrationCompletedBy),
     nombre: v.string(),
     apellido: v.string(),
     nacimiento: v.optional(v.string()),
@@ -622,11 +703,22 @@ export const submitPublicRegistration = mutation({
     consentimientoFoto: v.optional(v.boolean()),
   },
   handler: async (ctx, args) => {
-    const link = await ctx.db
-      .query("publicRegistrationLinks")
-      .withIndex("by_token", (q) => q.eq("token", args.publicToken))
-      .first();
+    const link = await resolvePublicRegistrationLink(ctx, args.publicToken, args.shortCode);
     if (!link || !link.enabled) throw new Error("El enlace de registro no está disponible.");
+
+    const scopeMode = link.scopeMode || "fixed";
+    const completedBy = args.completedBy || "teen";
+    const selectedScope = {
+      campusId: cleanOptionalId(args.campusId),
+      ministryId: cleanOptionalId(args.ministryId),
+      groupId: cleanOptionalId(args.groupId),
+    };
+    const scope = scopeMode === "general"
+      ? selectedScope
+      : { campusId: link.campusId, ministryId: link.ministryId, groupId: link.groupId };
+    if (!scope.campusId || !scope.ministryId) throw new Error("Selecciona una sede y un ministerio para continuar.");
+    await validateScopeConsistency(ctx, scope.campusId, scope.ministryId, scope.groupId);
+    const canRecordConsent = completedBy === "guardian";
 
     const today = new Date().toISOString().slice(0, 10);
     const payload = await buildTeenPayload(ctx, {
@@ -640,12 +732,13 @@ export const submitPublicRegistration = mutation({
       invitadoPor: args.invitadoPor,
       fuenteIngreso: args.fuenteIngreso || "otro",
       observacionInicial: args.observacionInicial,
-      consentimientoDatos: args.consentimientoDatos,
-      consentimientoFoto: args.consentimientoFoto,
-      fechaConsentimiento: args.consentimientoDatos || args.consentimientoFoto ? today : "",
-      campusId: link.campusId,
-      ministryId: link.ministryId,
-      groupId: link.groupId,
+      consentimientoDatos: canRecordConsent ? args.consentimientoDatos : false,
+      consentimientoFoto: canRecordConsent ? args.consentimientoFoto : false,
+      fechaConsentimiento: canRecordConsent && (args.consentimientoDatos || args.consentimientoFoto) ? today : "",
+      campusId: scope.campusId,
+      ministryId: scope.ministryId,
+      groupId: scope.groupId,
+      completedBy,
       estado: "visitante",
       nivelIntegracion: "nuevo",
       registroRapido: true,
@@ -672,7 +765,7 @@ export const submitPublicRegistration = mutation({
       entityType: "teen",
       entityId: String(id),
       newValue: { ...payload, fichaCompleta: false },
-      details: `${payload.nombre} ${payload.apellido}`,
+      details: `${payload.nombre} ${payload.apellido} · ${scopeMode} · completado por ${completedBy}`,
     });
     return { id };
   },

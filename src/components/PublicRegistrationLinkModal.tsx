@@ -3,6 +3,7 @@ import QRCode from "qrcode";
 import { useMutation } from "convex/react";
 import { api } from "../../convex/_generated/api";
 import Modal from "./Modal";
+import { useAuth } from "../hooks/useAuth";
 
 interface PublicRegistrationLinkModalProps {
   token: string | null;
@@ -17,16 +18,20 @@ interface PublicRegistrationLinkModalProps {
 
 export default function PublicRegistrationLinkModal({ token, scope, onClose }: PublicRegistrationLinkModalProps) {
   const createLink = useMutation(api.teens.createPublicRegistrationLink);
-  const [publicToken, setPublicToken] = useState("");
+  const { user } = useAuth();
+  const [shortCode, setShortCode] = useState("");
+  const [scopeMode, setScopeMode] = useState<"fixed" | "general">("fixed");
   const [qrDataUrl, setQrDataUrl] = useState("");
   const [copied, setCopied] = useState(false);
   const [error, setError] = useState("");
   const [creating, setCreating] = useState(false);
 
   const publicUrl = useMemo(() => {
-    if (!publicToken) return "";
-    return `${window.location.origin}/registro-adolescente?t=${encodeURIComponent(publicToken)}`;
-  }, [publicToken]);
+    if (!shortCode) return "";
+    return `${window.location.origin}/r/${shortCode}`;
+  }, [shortCode]);
+  const canCreateGeneral = ["admin", "administrador", "pastor", "director"].includes((user?.role || "").toLowerCase());
+  const canCreateFixed = Boolean(scope.campusId && scope.ministryId);
 
   useEffect(() => {
     if (!publicUrl) {
@@ -45,11 +50,12 @@ export default function PublicRegistrationLinkModal({ token, scope, onClose }: P
     try {
       const result = await createLink({
         token,
-        campusId: scope.campusId as any,
-        ministryId: scope.ministryId as any,
-        groupId: scope.groupId as any,
+        scopeMode,
+        campusId: scopeMode === "fixed" ? scope.campusId as any : undefined,
+        ministryId: scopeMode === "fixed" ? scope.ministryId as any : undefined,
+        groupId: scopeMode === "fixed" ? scope.groupId as any : undefined,
       });
-      setPublicToken(result.token);
+      setShortCode(result.shortCode);
     } catch (err) {
       setError(err instanceof Error ? err.message : "No se pudo crear el enlace.");
     } finally {
@@ -67,14 +73,23 @@ export default function PublicRegistrationLinkModal({ token, scope, onClose }: P
   return (
     <Modal title="Registro por link o QR" onClose={onClose} panelClassName="sm:max-w-lg">
       <div className="p-4 sm:p-5 space-y-4">
-        <div className="rounded-xl border border-amber-100 bg-amber-50 px-3 py-2 text-sm text-amber-800">
-          Este enlace permite registrar visitantes sin iniciar sesión. La ficha queda incompleta y asociada a: <strong>{scope.label}</strong>.
-        </div>
+        {!shortCode && (
+          <>
+            <div className="flex rounded-xl bg-ink/[0.03] p-1 gap-1" role="tablist" aria-label="Tipo de enlace">
+              <button type="button" role="tab" aria-selected={scopeMode === "fixed"} onClick={() => setScopeMode("fixed")} className={`flex-1 rounded-lg px-3 py-2 text-sm font-bold ${scopeMode === "fixed" ? "bg-card shadow-soft text-ink" : "text-ink/50"}`}>QR dirigido</button>
+              {canCreateGeneral && <button type="button" role="tab" aria-selected={scopeMode === "general"} onClick={() => setScopeMode("general")} className={`flex-1 rounded-lg px-3 py-2 text-sm font-bold ${scopeMode === "general" ? "bg-card shadow-soft text-ink" : "text-ink/50"}`}>QR general</button>}
+            </div>
+            <div className="rounded-xl border border-amber-100 bg-amber-50 px-3 py-2 text-sm text-amber-800">
+              {scopeMode === "fixed" ? <>Este QR registra visitantes en <strong>{scope.label}</strong>.</> : <>Este QR permite elegir sede y ministerio. Úsalo solo en actividades abiertas de la iglesia.</>}
+            </div>
+            {scopeMode === "fixed" && !canCreateFixed && <p className="text-xs text-coral-700">Selecciona una sede y un ministerio en el selector principal para crear un QR dirigido.</p>}
+          </>
+        )}
 
         {error && <div className="rounded-xl border border-coral-100 bg-coral-50 px-3 py-2 text-sm font-medium text-coral-700">{error}</div>}
 
-        {!publicToken ? (
-          <button onClick={handleCreate} disabled={!token || creating} className="w-full rounded-xl bg-ink px-4 py-3 text-sm font-bold text-white disabled:opacity-50">
+        {!shortCode ? (
+          <button onClick={handleCreate} disabled={!token || creating || (scopeMode === "fixed" && !canCreateFixed)} className="w-full rounded-xl bg-ink px-4 py-3 text-sm font-bold text-white disabled:opacity-50">
             {creating ? "Creando enlace..." : "Crear enlace público"}
           </button>
         ) : (

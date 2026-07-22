@@ -136,6 +136,7 @@ export default defineSchema({
     edadAproximada: v.optional(v.string()),
     registroRapido: v.optional(v.boolean()),
     fichaCompleta: v.optional(v.boolean()),
+    completedBy: v.optional(v.union(v.literal("teen"), v.literal("guardian"), v.literal("leader"))),
     motivoInactividad: v.optional(v.string()),
     colegio: v.optional(v.string()),
     gradoEscolar: v.optional(v.string()),
@@ -234,6 +235,8 @@ export default defineSchema({
 
   publicRegistrationLinks: defineTable({
     token: v.string(),
+    shortCode: v.optional(v.string()),
+    scopeMode: v.optional(v.union(v.literal("general"), v.literal("fixed"))),
     campusId: v.optional(v.id("campus")),
     ministryId: v.optional(v.id("ministry")),
     groupId: v.optional(v.id("group")),
@@ -243,6 +246,7 @@ export default defineSchema({
     updatedAt: v.string(),
   })
     .index("by_token", ["token"])
+    .index("by_shortCode", ["shortCode"])
     .index("by_createdByUserId", ["createdByUserId"]),
 
   guardians: defineTable({

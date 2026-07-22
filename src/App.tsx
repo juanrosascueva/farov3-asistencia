@@ -22,10 +22,11 @@ const DARK_KEY = "cristovive_dark_mode";
 
 function AppContent() {
   const publicRegistrationToken = new URLSearchParams(window.location.search).get("t");
-  const isPublicRegistration = window.location.pathname === "/registro-adolescente";
+  const shortRegistrationCode = window.location.pathname.match(/^\/r\/([a-zA-Z0-9]+)$/)?.[1] || "";
+  const isPublicRegistration = window.location.pathname === "/registro-adolescente" || Boolean(shortRegistrationCode);
 
   if (isPublicRegistration) {
-    return <PublicTeenRegistration publicToken={publicRegistrationToken || ""} />;
+    return <PublicTeenRegistration publicToken={publicRegistrationToken || ""} shortCode={shortRegistrationCode} />;
   }
 
   const { user, loading: authLoading } = useAuth();
