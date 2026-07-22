@@ -653,7 +653,7 @@ function UserPermissionsManager({ user }: { user: any }) {
               <p className="text-xs text-ink/50 truncate" title={user.email}>{user.email}</p>
               <button 
                 onClick={() => setIsEditing(true)} 
-                className="absolute top-1/2 right-0 -tranneutral-y-1/2 p-1 text-primary-600 hover:text-primary-700 bg-primary-50 dark:bg-primary-950/20 rounded-full w-6 h-6 flex items-center justify-center transition-colors shadow-sm"
+                className="absolute top-1/2 right-0 -translate-y-1/2 p-1 text-primary-600 hover:text-primary-700 bg-primary-50 dark:bg-primary-950/20 rounded-full w-6 h-6 flex items-center justify-center transition-colors shadow-sm"
                 title="Editar nombre y correo"
               >
                 <svg className="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M12 20h9" /><path d="M16.5 3.5a2.1 2.1 0 013 3L7 19l-4 1 1-4z" /></svg>

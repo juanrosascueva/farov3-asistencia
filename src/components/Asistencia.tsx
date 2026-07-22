@@ -380,13 +380,13 @@ export default function Asistencia({
               onChange={(e) => setSearchQuery(e.target.value)}
               className="w-full bg-card border border-ink/10 rounded-xl pl-10 pr-10 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-primary-600/20 focus:border-primary-600/30 transition-all"
             />
-            <svg className="w-4 h-4 text-ink/30 absolute left-3.5 top-1/2 -tranneutral-y-1/2" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+            <svg className="w-4 h-4 text-ink/30 absolute left-3.5 top-1/2 -translate-y-1/2" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
               <circle cx="11" cy="11" r="8" /><path d="m21 21-4.3-4.3" />
             </svg>
             {searchQuery && (
               <button
                 onClick={() => setSearchQuery("")}
-                className="text-xs text-ink/40 hover:text-ink/60 underline absolute right-3.5 top-1/2 -tranneutral-y-1/2"
+                className="text-xs text-ink/40 hover:text-ink/60 underline absolute right-3.5 top-1/2 -translate-y-1/2"
               >
                 Limpiar
               </button>
@@ -572,7 +572,7 @@ export default function Asistencia({
       )}
 
       {showCompleteSession && selectedSession && <Modal title="Cerrar actividad" onClose={() => setShowCompleteSession(false)}><div className="space-y-4"><p className="text-sm text-ink/60">Registra un breve resultado. La asistencia se conserva y el cierre queda auditado.</p><textarea value={resultNotes} onChange={(e) => setResultNotes(e.target.value)} rows={4} placeholder="Resultado, participación, acuerdos o novedades" className="w-full rounded-xl border border-ink/10 p-3 text-sm"/><div className="flex justify-end gap-2"><button onClick={() => setShowCompleteSession(false)} className="rounded-lg border border-ink/10 px-3 py-2 text-sm font-semibold">Cancelar</button><button onClick={async () => { if (token) { const stats = await completeSession({ token, sessionId: selectedSession._id, resultNotes }); setCompletedStats(stats); } setShowCompleteSession(false); setResultNotes(""); }} className="rounded-lg bg-primary-700 px-3 py-2 text-sm font-semibold text-white">Cerrar actividad</button></div></div></Modal>}
-      {completedStats && <div className="fixed bottom-24 left-1/2 z-50 -tranneutral-x-1/2 rounded-xl bg-primary-600 px-4 py-3 text-sm text-white shadow-lg">Actividad cerrada: {completedStats.present} presentes, {completedStats.absent} ausentes y {completedStats.excused} justificados.<button onClick={() => setCompletedStats(null)} className="ml-3 text-xs underline">Cerrar</button></div>}
+      {completedStats && <div className="fixed bottom-24 left-1/2 z-50 -translate-x-1/2 rounded-xl bg-primary-600 px-4 py-3 text-sm text-white shadow-lg">Actividad cerrada: {completedStats.present} presentes, {completedStats.absent} ausentes y {completedStats.excused} justificados.<button onClick={() => setCompletedStats(null)} className="ml-3 text-xs underline">Cerrar</button></div>}
 
       {/* Modal custom de confirmación de eliminación */}
       {showDeleteConfirm && (
@@ -655,7 +655,7 @@ export default function Asistencia({
 
       {/* Toast de éxito / error */}
       {successMsg && (
-        <div className={`fixed bottom-24 left-1/2 -tranneutral-x-1/2 z-50 px-4 py-3 rounded-2xl shadow-lg text-sm font-semibold flex items-center gap-2 ${
+        <div className={`fixed bottom-24 left-1/2 -translate-x-1/2 z-50 px-4 py-3 rounded-2xl shadow-lg text-sm font-semibold flex items-center gap-2 ${
           successMsg.startsWith("Error")
             ? "bg-danger-600 text-white"
             : "bg-primary-600 text-white"

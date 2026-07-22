@@ -237,7 +237,7 @@ export default function Jovenes({
       <div className="space-y-2">
         <div className="relative flex-1">
           <svg
-            className="w-4 h-4 absolute left-3.5 top-1/2 -tranneutral-y-1/2 text-ink/30"
+            className="w-4 h-4 absolute left-3.5 top-1/2 -translate-y-1/2 text-ink/30"
             viewBox="0 0 24 24"
             fill="none"
             stroke="currentColor"
@@ -267,7 +267,7 @@ export default function Jovenes({
             </svg>
             <span className="text-xs text-ink/50 mr-1 hidden sm:inline">Ordenar:</span>
             <span className="min-w-0 flex-1 truncate text-xs font-semibold text-ink/75">{sortLabels[sortMode]}</span>
-            <svg className="w-3 h-3 absolute right-2 top-1/2 -tranneutral-y-1/2 text-ink/40 pointer-events-none" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+            <svg className="w-3 h-3 absolute right-2 top-1/2 -translate-y-1/2 text-ink/40 pointer-events-none" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
               <path d="M6 9l6 6 6-6" />
             </svg>
             </button>
@@ -373,7 +373,7 @@ export default function Jovenes({
       {/* Panel de filtros */}
       <div
         className={`fixed inset-x-4 top-24 z-50 max-h-[calc(100vh-7rem)] overflow-hidden rounded-2xl border border-ink/10 bg-card shadow-2xl transition-all duration-200 ease-out sm:inset-auto sm:right-8 sm:top-36 sm:w-[360px] sm:max-h-[calc(100vh-10rem)] ${
-          showFilters ? "tranneutral-y-0 opacity-100 sm:tranneutral-x-0" : "-tranneutral-y-2 opacity-0 pointer-events-none sm:tranneutral-x-4 sm:tranneutral-y-0"
+          showFilters ? "translate-y-0 opacity-100 sm:translate-x-0" : "-translate-y-2 opacity-0 pointer-events-none sm:translate-x-4 sm:translate-y-0"
         }`}
       >
         <div className="flex max-h-[inherit] flex-col">

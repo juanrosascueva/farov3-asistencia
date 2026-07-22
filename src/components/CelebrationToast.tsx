@@ -68,7 +68,7 @@ export default function CelebrationToast({ name, streakTier, newBadges, onDone }
         ))}
       </div>
 
-      <div style={{ animation: "bounce-in 0.4s ease-out" }} className="fixed bottom-[calc(1rem+env(safe-area-inset-bottom))] left-4 right-4 sm:left-1/2 sm:right-auto sm:-tranneutral-x-1/2 z-50">
+      <div style={{ animation: "bounce-in 0.4s ease-out" }} className="fixed bottom-[calc(1rem+env(safe-area-inset-bottom))] left-4 right-4 sm:left-1/2 sm:right-auto sm:-translate-x-1/2 z-50">
         <div className="bg-primary-600 text-white rounded-2xl shadow-xl px-4 sm:px-5 py-4 flex items-center gap-3 sm:gap-4 w-full sm:min-w-[280px] sm:max-w-sm">
           <div className="shrink-0 flex flex-col items-center">
             {newBadges.length > 0 ? (

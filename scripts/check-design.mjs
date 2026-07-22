@@ -5,11 +5,13 @@ const collect = (dir) => readdirSync(dir, { withFileTypes: true }).flatMap((entr
 const files = collect("src").filter((file) => file !== "src/components/UiIcon.tsx");
 const forbidden = /(?:bg|text|border|ring|from|to)-(?:green|red|blue|teal|amber|coral|sage|cyan|emerald|orange|purple|slate)-\d{2,3}/;
 const arbitraryMicro = /text-\[(?:9|10\.5|11)px\]/;
+const brokenUtility = /tranneutral/;
 const violations = files.flatMap((file) => {
   const text = readFileSync(file, "utf8");
   const result = [];
   if (forbidden.test(text)) result.push(`${file}: color token legacy`);
   if (arbitraryMicro.test(text)) result.push(`${file}: typography token legacy`);
+  if (brokenUtility.test(text)) result.push(`${file}: malformed Tailwind utility`);
   return result;
 });
 
