@@ -1,24 +1,12 @@
-import { useState, useCallback, useMemo } from "react";
-import { useQuery, useMutation, useAction } from "convex/react";
+import { useEffect, useMemo, useState } from "react";
+import { useAction, useMutation, useQuery } from "convex/react";
+import { AlertTriangle, Cake, FileWarning, Grid2X2, List, MoreHorizontal, Plus, QrCode, RefreshCw, Search, SlidersHorizontal, Upload, Users, X } from "lucide-react";
 import { api } from "../../convex/_generated/api";
 import type { Doc } from "../../convex/_generated/dataModel";
-import type { AttendanceMap, RiskInfo } from "../lib/types";
-import {
-  statsFor,
-  riskScore,
-  ageFromDOB,
-  daysToNextBirthday,
-  esc,
-  getGamification,
-  getPrimaryGuardianName,
-  getTeenContactWarnings,
-  getTeenStatus,
-  teenProfileCompleteness,
-  TEEN_STATUS_META,
-} from "../lib/utils";
+import type { AttendanceMap, TeenStatus } from "../lib/types";
+import { ageFromDOB, daysToNextBirthday, esc, getTeenStatus, riskScore, statsFor, teenProfileCompleteness, TEEN_STATUS_META } from "../lib/utils";
 import { Avatar } from "./Layout";
 import TeenForm from "./TeenForm";
-import Modal from "./Modal";
 import TeenImportModal from "./TeenImportModal";
 import { useAuth } from "../hooks/useAuth";
 import { useScope } from "../hooks/useScope";
@@ -30,742 +18,222 @@ interface JovenesProps {
   onOpenProfile: (id: string) => void;
 }
 
-type SortMode = "nombre" | "riesgo" | "prioridad";
+type SortMode = "nombre" | "riesgo" | "prioridad" | "responsable";
+type ViewMode = "cards" | "list";
+type QuickView = "all" | "mine" | "action" | "unassigned" | "incomplete" | "visitors";
+type PastoralFilter = "all" | 0 | 1 | 2 | 3 | 4 | 5;
+type AgeFilter = "all" | "12-13" | "14-15" | "16-17" | "18+";
+type StatusFilter = "all" | TeenStatus;
+type IntegrationFilter = "all" | "nuevo" | "en_proceso" | "integrado" | "necesita_acompañamiento";
+type ResponsibleFilter = "all" | "mine" | "unassigned";
+type CompletenessFilter = "all" | "incomplete";
 
-export default function Jovenes({
-  teens,
-  attendanceMap,
-  onOpenProfile,
-}: JovenesProps) {
+const VIEW_KEY = "teens_list_view";
+const sortLabels: Record<SortMode, string> = { prioridad: "Prioridad pastoral", riesgo: "Nivel de riesgo", nombre: "Nombre (A-Z)", responsable: "Responsable" };
+const quickViews: Array<{ id: QuickView; label: string }> = [
+  { id: "all", label: "Todos" },
+  { id: "mine", label: "Mis adolescentes" },
+  { id: "action", label: "Requieren acción" },
+  { id: "unassigned", label: "Sin responsable" },
+  { id: "incomplete", label: "Fichas incompletas" },
+  { id: "visitors", label: "Visitantes" },
+];
+
+function sourceLabel(source?: string) {
+  if (source === "individual") return "Asignación individual";
+  if (source === "group") return "Líder del grupo";
+  return "Sin responsable";
+}
+
+function statusMeta(status: string) {
+  return TEEN_STATUS_META[status as TeenStatus];
+}
+
+export default function Jovenes({ teens, attendanceMap, onOpenProfile }: JovenesProps) {
+  const { token, user } = useAuth();
+  const { scope, scopeLabel } = useScope();
   const [query, setQuery] = useState("");
   const [showForm, setShowForm] = useState(false);
   const [showQuickVisitor, setShowQuickVisitor] = useState(false);
   const [showPublicLink, setShowPublicLink] = useState(false);
   const [showImport, setShowImport] = useState(false);
-  const [editingTeen, setEditingTeen] = useState<Doc<"teens"> | null>(null);
-  const [deletingTeen, setDeletingTeen] = useState<Doc<"teens"> | null>(null);
+  const [showMoreActions, setShowMoreActions] = useState(false);
   const [sortMode, setSortMode] = useState<SortMode>("prioridad");
   const [showSortMenu, setShowSortMenu] = useState(false);
-
-  type FilterFidelidad = "all" | 1 | 2 | 3 | 4;
-  type FilterPastoral = "all" | 0 | 1 | 2 | 3 | 4 | 5;
-  type FilterEdad = "all" | "12-13" | "14-15" | "16-17" | "18+";
-
+  const [viewMode, setViewMode] = useState<ViewMode>(() => sessionStorage.getItem(VIEW_KEY) === "list" ? "list" : "cards");
+  const [quickView, setQuickView] = useState<QuickView>("all");
   const [showFilters, setShowFilters] = useState(false);
-  const [filtroFidelidad, setFiltroFidelidad] = useState<FilterFidelidad>("all");
-  const [filtroPastoral, setFiltroPastoral] = useState<FilterPastoral>("all");
-  const [filtroEdad, setFiltroEdad] = useState<FilterEdad>("all");
-  const sortLabels: Record<SortMode, string> = {
-    prioridad: "Prioridad pastoral",
-    riesgo: "Nivel de riesgo",
-    nombre: "Nombre (A-Z)",
-  };
-
-  const deleteTeen = useMutation(api.teens.remove);
-  const { token, user } = useAuth();
-  const { scope, scopeLabel } = useScope();
-  const leaderAssignments = useQuery(api.teens.listLeaderAssignments, token ? { token } : "skip") ?? [];
-  const leaderByTeenId = useMemo(() => new Map(leaderAssignments.map((item: any) => [String(item.teenId), item])), [leaderAssignments]);
-  const assignableUsers = useQuery(api.pastoralTasks.listAssignableUsers, token ? { token } : "skip") ?? [];
-  const bulkAssignLeader = useMutation(api.teens.bulkAssignLeader);
+  const [filtroPastoral, setFiltroPastoral] = useState<PastoralFilter>("all");
+  const [filtroEdad, setFiltroEdad] = useState<AgeFilter>("all");
+  const [filtroEstado, setFiltroEstado] = useState<StatusFilter>("all");
+  const [filtroIntegracion, setFiltroIntegracion] = useState<IntegrationFilter>("all");
+  const [filtroResponsable, setFiltroResponsable] = useState<ResponsibleFilter>("all");
+  const [filtroFicha, setFiltroFicha] = useState<CompletenessFilter>("all");
   const [selectedTeenIds, setSelectedTeenIds] = useState<string[]>([]);
   const [bulkLeaderId, setBulkLeaderId] = useState("");
-  const canAssignLeaders = ["admin", "pastor", "director", "coordinador"].includes(user?.role || "");
-  const recalcPpp = useAction(api.ppp.calculateAllPpp as any);
   const [pppRecalculating, setPppRecalculating] = useState(false);
 
   const scopeArgs = { campusId: scope.campusId as any, ministryId: scope.ministryId as any, groupId: scope.groupId as any };
-  const followUps = useQuery(api.journal.listFollowUps, token ? { token, ...scopeArgs } : "skip");
-  const followUpTeenIds = useMemo(() => {
-    if (!followUps) return new Set<string>();
-    return new Set(followUps.map((e) => e.teenId));
-  }, [followUps]);
+  const leaderAssignments = useQuery(api.teens.listLeaderAssignments, token ? { token } : "skip") ?? [];
+  const followUpQueue = useQuery(api.followUp.getQueue, token ? { token, ...scopeArgs } : "skip") ?? [];
+  const assignableUsers = useQuery(api.pastoralTasks.listAssignableUsers, token ? { token } : "skip") ?? [];
+  const bulkAssignLeader = useMutation(api.teens.bulkAssignLeader);
+  const recalcPpp = useAction(api.ppp.calculateAllPpp as any);
+  const canAssignLeaders = ["admin", "pastor", "director", "coordinador"].includes(user?.role || "");
 
-  const allAnalyses = useQuery(api.ai.getAllAnalyses, token ? { token, ...scopeArgs } : "skip") ?? [];
-  const teenHighRiskMap = useMemo(() => {
-    const map = new Map<string, { hasHigh: boolean; hasMedium: boolean }>();
-    for (const a of allAnalyses as any[]) {
-      const existing = map.get(a.teenId) || { hasHigh: false, hasMedium: false };
-      if (a.riskLevel === "high") existing.hasHigh = true;
-      if (a.riskLevel === "medium") existing.hasMedium = true;
-      map.set(a.teenId, existing);
+  useEffect(() => {
+    sessionStorage.setItem(VIEW_KEY, viewMode);
+    if (viewMode === "cards") setSelectedTeenIds([]);
+  }, [viewMode]);
+
+  const leaderByTeenId = useMemo(() => new Map(leaderAssignments.map((item: any) => [String(item.teenId), item])), [leaderAssignments]);
+  const queueByTeenId = useMemo(() => {
+    const rank: Record<string, number> = { critical: 4, high: 3, medium: 2, low: 1 };
+    const next = new Map<string, any>();
+    for (const item of followUpQueue as any[]) {
+      const id = String(item.teenId);
+      const previous = next.get(id);
+      if (!previous || (rank[item.priority] || 0) > (rank[previous.priority] || 0)) next.set(id, item);
     }
-    return map;
-  }, [allAnalyses]);
+    return next;
+  }, [followUpQueue]);
 
-  const activeFilterCount = [filtroFidelidad, filtroPastoral, filtroEdad].filter((f) => f !== "all").length;
+  const allTeenData = useMemo(() => teens.map((t) => {
+    const stats = statsFor(t._id, attendanceMap);
+    const risk = riskScore(stats);
+    const leader = leaderByTeenId.get(String(t._id));
+    const queueItem = queueByTeenId.get(String(t._id));
+    const incomplete = (t as any).fichaCompleta === false || (t as any).registroRapido;
+    const requiresAction = Boolean(queueItem) || risk.score >= 2;
+    const latest = stats.history.length ? stats.history[stats.history.length - 1] : undefined;
+    const notice = queueItem?.kind === "crisis"
+      ? { label: "Crisis activa", detail: queueItem.detail, className: "bg-danger-50 text-danger-700 border-danger-200" }
+      : queueItem?.kind === "task"
+      ? { label: queueItem.status === "escalated" ? "Tarea escalada" : "Tarea pastoral", detail: queueItem.title, className: "bg-primary-50 text-primary-700 border-primary-200" }
+      : queueItem?.kind === "signal"
+      ? { label: "Señal de asistencia", detail: queueItem.detail, className: "bg-warning-50 text-warning-700 border-warning-200" }
+      : risk.score >= 4
+      ? { label: risk.score === 5 ? "Crisis" : "Riesgo crítico", detail: risk.label, className: "bg-danger-50 text-danger-700 border-danger-200" }
+      : risk.score >= 2
+      ? { label: "Requiere atención", detail: risk.label, className: "bg-warning-50 text-warning-700 border-warning-200" }
+      : incomplete
+      ? { label: "Ficha incompleta", detail: "Completar datos básicos", className: "bg-warning-50 text-warning-700 border-warning-200" }
+      : { label: "Sin alertas", detail: "Sin acciones abiertas", className: "bg-success-50 text-success-700 border-success-100" };
+    return { t, stats, risk, leader, queueItem, incomplete, requiresAction, age: ageFromDOB(t.nacimiento), completeness: teenProfileCompleteness(t), latest, notice, status: getTeenStatus(t) };
+  }), [attendanceMap, leaderByTeenId, queueByTeenId, teens]);
 
-  const ringColor = (risk: RiskInfo) => {
-    const colors: Record<RiskInfo["color"], string> = {
-      gray: "#6B7280",
-      teal: "#6849FF",
-      amber: "#FF9F1C",
-      coral: "#FF5A5F",
-      red: "#D94349",
-    };
-    return colors[risk.color];
-  };
-
-  const computePPP = (risk: RiskInfo, s: ReturnType<typeof statsFor>, hasFollowUp: boolean, teenId: string): number => {
-    const riskFactor = risk.score / 5;
-    const v = teenHighRiskMap.get(teenId);
-    const vulnFactor = v?.hasHigh ? 1 : v?.hasMedium ? 0.5 : 0;
-    const absFactor = Math.min(s.consecutiveAbsences / 10, 1);
-    const pctInverted = 1 - s.pct / 100;
-    const followUpFactor = hasFollowUp ? 1 : 0;
-    return riskFactor * 0.30 + vulnFactor * 0.25 + absFactor * 0.20 + pctInverted * 0.10 + followUpFactor * 0.15;
-  };
-
-  const pppLabel = (score: number): string => {
-    if (score >= 0.7) return "Crítica";
-    if (score >= 0.5) return "Alta";
-    if (score >= 0.3) return "Media";
-    return "Baja";
-  };
-
-  const teenData = teens
-    .map((t) => {
-      const s = statsFor(t._id, attendanceMap);
-      const risk = riskScore(s);
-      const ppp = computePPP(risk, s, followUpTeenIds.has(t._id), t._id);
-      return {
-        t,
-        s,
-        risk,
-        age: ageFromDOB(t.nacimiento),
-        game: getGamification(s),
-        rc: ringColor(risk),
-        hasFollowUp: followUpTeenIds.has(t._id),
-        ppp,
-        status: getTeenStatus(t),
-        completeness: teenProfileCompleteness(t),
-        warnings: getTeenContactWarnings(t),
-      };
+  const activeFilterCount = [filtroPastoral, filtroEdad, filtroEstado, filtroIntegracion, filtroResponsable, filtroFicha].filter((value) => value !== "all").length;
+  const teenData = useMemo(() => allTeenData
+    .filter(({ t, leader, requiresAction, incomplete, status }) => {
+      const normalizedQuery = query.trim().toLowerCase();
+      if (normalizedQuery && !`${t.nombre} ${t.apellido}`.toLowerCase().includes(normalizedQuery)) return false;
+      if (quickView === "mine" && String(leader?.userId || "") !== String(user?._id || "")) return false;
+      if (quickView === "action" && !requiresAction) return false;
+      if (quickView === "unassigned" && leader?.source !== "unassigned") return false;
+      if (quickView === "incomplete" && !incomplete) return false;
+      if (quickView === "visitors" && status !== "visitante") return false;
+      return true;
     })
-    .filter(({ t }) => {
-      const q = query.toLowerCase();
-      return !q || (t.nombre + " " + t.apellido).toLowerCase().includes(q);
-    })
-    .filter(({ t, s, risk, age, game, hasFollowUp }) => {
-      if (activeFilterCount === 0) return true;
-      if (filtroFidelidad !== "all" && game.level.level !== filtroFidelidad) return false;
+    .filter(({ t, age, risk, leader, incomplete, status }) => {
       if (filtroPastoral !== "all" && risk.score !== filtroPastoral) return false;
       if (filtroEdad !== "all") {
         if (age === null) return false;
-        const [min, max] = filtroEdad.split("-").map(Number);
-        if (age < min || age > max) return false;
+        if (filtroEdad === "18+") return age >= 18;
+        const [minimum, maximum] = filtroEdad.split("-").map(Number);
+        if (age < minimum || age > maximum) return false;
       }
+      if (filtroEstado !== "all" && status !== filtroEstado) return false;
+      if (filtroIntegracion !== "all" && (t as any).nivelIntegracion !== filtroIntegracion) return false;
+      if (filtroResponsable === "mine" && String(leader?.userId || "") !== String(user?._id || "")) return false;
+      if (filtroResponsable === "unassigned" && leader?.source !== "unassigned") return false;
+      if (filtroFicha === "incomplete" && !incomplete) return false;
       return true;
     })
     .sort((a, b) => {
-      if (sortMode === "nombre") return (a.t.nombre + a.t.apellido).localeCompare(b.t.nombre + b.t.apellido);
+      if (sortMode === "nombre") return `${a.t.nombre}${a.t.apellido}`.localeCompare(`${b.t.nombre}${b.t.apellido}`);
       if (sortMode === "riesgo") return b.risk.score - a.risk.score;
-      return b.ppp - a.ppp;
-    });
+      if (sortMode === "responsable") return (a.leader?.userName || "Sin responsable").localeCompare(b.leader?.userName || "Sin responsable");
+      const aPriority = (a.queueItem ? 10 : 0) + a.risk.score;
+      const bPriority = (b.queueItem ? 10 : 0) + b.risk.score;
+      return bPriority - aPriority;
+    }), [allTeenData, filtroEdad, filtroEstado, filtroFicha, filtroIntegracion, filtroPastoral, filtroResponsable, query, quickView, sortMode, user?._id]);
 
-  const upcoming = teens
-    .map((t) => ({ t, days: daysToNextBirthday(t.nacimiento) }))
-    .filter((x): x is { t: Doc<"teens">; days: number } => x.days !== null && x.days <= 21)
-    .sort((a, b) => a.days - b.days);
+  const summary = {
+    active: allTeenData.filter((item) => item.status === "activo").length,
+    action: allTeenData.filter((item) => item.requiresAction).length,
+    unassigned: allTeenData.filter((item) => item.leader?.source === "unassigned").length,
+    incomplete: allTeenData.filter((item) => item.incomplete).length,
+  };
+  const upcoming = allTeenData.map(({ t }) => ({ t, days: daysToNextBirthday(t.nacimiento) })).filter((item): item is { t: Doc<"teens">; days: number } => item.days !== null && item.days <= 21).sort((a, b) => a.days - b.days);
 
-  const handleDelete = useCallback(async () => {
-    if (!deletingTeen) return;
-    await deleteTeen({ id: deletingTeen._id, token: token ?? undefined });
-    setDeletingTeen(null);
-  }, [deletingTeen, deleteTeen, token]);
+  const clearFilters = () => {
+    setFiltroPastoral("all"); setFiltroEdad("all"); setFiltroEstado("all"); setFiltroIntegracion("all"); setFiltroResponsable("all"); setFiltroFicha("all");
+  };
+  const selectedAllVisible = teenData.length > 0 && teenData.every((item) => selectedTeenIds.includes(String(item.t._id)));
+  const toggleVisibleSelection = () => setSelectedTeenIds(selectedAllVisible ? [] : teenData.map((item) => String(item.t._id)));
+  const applyBulkLeader = async (useGroupLeader: boolean) => {
+    if (!token || !selectedTeenIds.length || (!useGroupLeader && !bulkLeaderId)) return;
+    await bulkAssignLeader({ token, teenIds: selectedTeenIds as any, liderPrincipalId: useGroupLeader ? undefined : bulkLeaderId as any, useGroupLeader });
+    setSelectedTeenIds([]);
+    setBulkLeaderId("");
+  };
 
-  return (
-    <div className="space-y-5 overflow-hidden">
-      <div className="space-y-3">
-        <div>
-          <p className="text-xs font-semibold text-primary-700 tracking-wide uppercase">
-            Mi grupo
-          </p>
-          <h1 className="font-display text-2xl font-bold mt-0.5">
-            Adolescentes
-          </h1>
-        </div>
-        <div className="grid grid-cols-2 gap-2 sm:flex sm:flex-wrap sm:items-center sm:gap-2">
-          <button
-            onClick={() => setShowImport(true)}
-            className="text-xs font-semibold bg-card border border-ink/10 text-ink/60 rounded-full px-3.5 py-2 flex items-center justify-center gap-1.5 min-w-0"
-          >
-            <svg className="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4" /><polyline points="7 10 12 15 17 10" /><line x1="12" y1="15" x2="12" y2="3" /></svg>
-            Importar
-          </button>
-          <button
-            onClick={() => setShowQuickVisitor(true)}
-            className="text-xs font-semibold bg-primary-50 border border-primary-100 text-primary-700 rounded-full px-3.5 py-2 flex items-center justify-center gap-1.5 min-w-0"
-          >
-            <svg className="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
-              <path d="M12 5v14M5 12h14" />
-            </svg>
-            Visitante
-          </button>
-          <button
-            onClick={() => setShowPublicLink(true)}
-            className="text-xs font-semibold bg-card border border-ink/10 text-ink/65 rounded-full px-3.5 py-2 flex items-center justify-center gap-1.5 min-w-0"
-          >
-            <svg className="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
-              <rect x="3" y="3" width="7" height="7" rx="1" />
-              <rect x="14" y="3" width="7" height="7" rx="1" />
-              <rect x="3" y="14" width="7" height="7" rx="1" />
-              <path d="M14 14h3v3h-3zM18 18h3v3h-3zM18 14h3M14 18v3" />
-            </svg>
-            Link QR
-          </button>
-          <button
-            onClick={() => setShowForm(true)}
-            className="text-xs font-semibold bg-primary-600 text-white rounded-full px-3.5 py-2 flex items-center justify-center gap-1.5 min-w-0"
-          >
-            <svg
-              className="w-3.5 h-3.5"
-              viewBox="0 0 24 24"
-              fill="none"
-              stroke="currentColor"
-              strokeWidth="1.8"
-              strokeLinecap="round"
-              strokeLinejoin="round"
-            >
-              <path d="M12 5v14M5 12h14" />
-            </svg>
-            Agregar
-          </button>
+  const emptyMessage = quickView === "unassigned" ? "No hay adolescentes sin responsable en este ámbito." : quickView === "action" ? "No hay adolescentes que requieran acción en este momento." : quickView === "incomplete" ? "No hay fichas incompletas en este ámbito." : quickView === "visitors" ? "No hay visitantes registrados en este ámbito." : "No se encontraron adolescentes con estos criterios.";
+
+  return <div className="space-y-5 overflow-hidden">
+    <header className="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
+      <div><p className="text-xs font-semibold uppercase text-primary-700">Mi grupo</p><h1 className="mt-0.5 text-balance font-display text-2xl font-bold">Adolescentes</h1><p className="mt-1 text-sm text-ink/50">{scopeLabel}</p></div>
+      <div className="flex flex-wrap gap-2">
+        <div className="relative"><button type="button" onClick={() => setShowMoreActions((value) => !value)} className="ui-button ui-button--secondary gap-1.5"><MoreHorizontal size={16} aria-hidden="true" />Más acciones</button>{showMoreActions && <div className="absolute right-0 top-11 z-30 w-48 rounded-card border border-ink/10 bg-card p-1 shadow-soft"><button type="button" onClick={() => { setShowImport(true); setShowMoreActions(false); }} className="flex w-full items-center gap-2 rounded-lg px-3 py-2.5 text-left text-sm font-semibold text-ink hover:bg-primary-50"><Upload size={16} aria-hidden="true" />Importar registros</button></div>}</div>
+        <button type="button" onClick={() => setShowQuickVisitor(true)} className="ui-button ui-button--secondary gap-1.5"><Plus size={16} aria-hidden="true" />Visitante</button>
+        <button type="button" onClick={() => setShowPublicLink(true)} className="ui-button ui-button--secondary gap-1.5"><QrCode size={16} aria-hidden="true" />Link QR</button>
+        <button type="button" onClick={() => setShowForm(true)} className="ui-button ui-button--primary gap-1.5"><Plus size={16} aria-hidden="true" />Agregar adolescente</button>
+      </div>
+    </header>
+
+    <section className="grid grid-cols-2 gap-2 lg:grid-cols-4" aria-label="Resumen de adolescentes">
+      {([
+        ["active", "Activos", Users], ["action", "Requieren acción", AlertTriangle], ["unassigned", "Sin responsable", Users], ["incomplete", "Fichas incompletas", FileWarning],
+      ] as const).map(([id, label, Icon]) => <button key={id} type="button" onClick={() => setQuickView(id as QuickView)} className={`ui-card flex min-h-20 items-center gap-3 p-3 text-left pressable ${quickView === id ? "border-primary-300 bg-primary-50" : "hover:border-primary-200"}`}><span className={`feature-icon ${id === "action" || id === "incomplete" ? "feature-icon--warning" : "feature-icon--primary"}`}><Icon size={18} aria-hidden="true" /></span><span><strong className="block text-xl font-bold tabular-nums text-ink">{summary[id]}</strong><span className="text-xs font-semibold text-ink/55">{label}</span></span></button>)}
+    </section>
+
+    <div className="space-y-3">
+      <div className="flex gap-2 overflow-x-auto pb-1">{quickViews.map((item) => <button key={item.id} type="button" onClick={() => setQuickView(item.id)} className={`ui-segment shrink-0 ${quickView === item.id ? "ui-segment--active" : ""}`}>{item.label}</button>)}</div>
+      <div className="flex flex-col gap-2 sm:flex-row">
+        <label className="relative min-w-0 flex-1"><Search className="absolute left-3 top-1/2 -translate-y-1/2 text-ink/35" size={17} aria-hidden="true" /><span className="sr-only">Buscar adolescente</span><input value={query} onChange={(event) => setQuery(event.target.value)} placeholder="Buscar por nombre..." className="ui-input w-full pl-10" /></label>
+        <div className="flex gap-2"><div className="relative min-w-0 flex-1 sm:min-w-52"><button type="button" onClick={() => setShowSortMenu((value) => !value)} className="ui-button ui-button--secondary w-full justify-between">{sortLabels[sortMode]}<span aria-hidden="true">⌄</span></button>{showSortMenu && <div className="absolute right-0 top-11 z-30 w-full overflow-hidden rounded-card border border-ink/10 bg-card p-1 shadow-soft">{(Object.keys(sortLabels) as SortMode[]).map((mode) => <button key={mode} type="button" onClick={() => { setSortMode(mode); setShowSortMenu(false); }} className={`w-full rounded-lg px-3 py-2 text-left text-sm font-semibold ${sortMode === mode ? "bg-primary-50 text-primary-700" : "text-ink/65 hover:bg-ink/5"}`}>{sortLabels[mode]}</button>)}</div>}</div>
+          <button type="button" onClick={async () => { setPppRecalculating(true); await recalcPpp(); setPppRecalculating(false); }} disabled={pppRecalculating} className="ui-button ui-button--secondary px-3" title="Actualizar prioridades pastorales" aria-label="Actualizar prioridades pastorales"><RefreshCw size={17} className={pppRecalculating ? "animate-spin" : ""} aria-hidden="true" /></button>
+          <button type="button" onClick={() => setShowFilters(true)} className="ui-button ui-button--secondary relative px-3" aria-label="Abrir filtros avanzados"><SlidersHorizontal size={17} aria-hidden="true" />{activeFilterCount > 0 && <span className="absolute -right-1 -top-1 rounded-full bg-primary-600 px-1.5 text-micro font-bold text-white">{activeFilterCount}</span>}</button>
+          <div className="flex rounded-lg border border-ink/10 bg-card p-1" role="group" aria-label="Modo de visualización"><button type="button" onClick={() => setViewMode("cards")} className={`size-9 rounded-md ${viewMode === "cards" ? "bg-primary-600 text-white" : "text-ink/50"}`} aria-label="Vista de tarjetas" title="Vista de tarjetas"><Grid2X2 size={17} aria-hidden="true" /></button><button type="button" onClick={() => setViewMode("list")} className={`size-9 rounded-md ${viewMode === "list" ? "bg-primary-600 text-white" : "text-ink/50"}`} aria-label="Vista de lista" title="Vista de lista"><List size={18} aria-hidden="true" /></button></div>
         </div>
       </div>
-
-      <div className="space-y-2">
-        <div className="relative flex-1">
-          <svg
-            className="w-4 h-4 absolute left-3.5 top-1/2 -translate-y-1/2 text-ink/30"
-            viewBox="0 0 24 24"
-            fill="none"
-            stroke="currentColor"
-            strokeWidth="1.8"
-            strokeLinecap="round"
-            strokeLinejoin="round"
-          >
-            <circle cx="11" cy="11" r="7" />
-            <path d="M21 21l-4.3-4.3" />
-          </svg>
-          <input
-            value={query}
-            onChange={(e) => setQuery(e.target.value)}
-            placeholder="Buscar por nombre..."
-            className="w-full bg-card border border-ink/10 rounded-xl pl-10 pr-4 py-2.5 text-sm outline-none transition focus:border-primary-500 focus:ring-2 focus:ring-primary-500/20"
-          />
-        </div>
-        <div className="flex flex-wrap items-center gap-2">
-          <div className="relative min-w-0 flex-1">
-            <button
-              type="button"
-              onClick={() => setShowSortMenu((value) => !value)}
-              className="w-full flex items-center bg-card border border-ink/10 rounded-xl px-2.5 h-10 hover:border-ink/20 focus:border-primary-500 focus:ring-2 focus:ring-primary-500/20 outline-none transition text-left"
-            >
-            <svg className="w-3.5 h-3.5 text-ink/40 mr-1.5 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
-              <line x1="21" y1="10" x2="3" y2="10" /><line x1="21" y1="6" x2="3" y2="6" /><line x1="21" y1="14" x2="3" y2="14" /><line x1="21" y1="18" x2="3" y2="18" />
-            </svg>
-            <span className="text-xs text-ink/50 mr-1 hidden sm:inline">Ordenar:</span>
-            <span className="min-w-0 flex-1 truncate text-xs font-semibold text-ink/75">{sortLabels[sortMode]}</span>
-            <svg className="w-3 h-3 absolute right-2 top-1/2 -translate-y-1/2 text-ink/40 pointer-events-none" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-              <path d="M6 9l6 6 6-6" />
-            </svg>
-            </button>
-            {showSortMenu && (
-              <div className="absolute left-0 right-0 top-11 z-30 overflow-hidden rounded-xl border border-ink/10 bg-card shadow-lg">
-                {(["prioridad", "riesgo", "nombre"] as SortMode[]).map((mode) => (
-                  <button
-                    key={mode}
-                    type="button"
-                    onClick={() => {
-                      setSortMode(mode);
-                      setShowSortMenu(false);
-                    }}
-                    className={`w-full px-3 py-2 text-left text-xs font-semibold transition ${
-                      sortMode === mode ? "bg-primary-50 text-primary-700" : "text-ink/65 hover:bg-ink/5"
-                    }`}
-                  >
-                    {sortLabels[mode]}
-                  </button>
-                ))}
-              </div>
-            )}
-          </div>
-
-          <button
-            onClick={async () => {
-              setPppRecalculating(true);
-              await recalcPpp();
-              setPppRecalculating(false);
-            }}
-            disabled={pppRecalculating}
-            className="shrink-0 h-10 px-3 sm:px-3.5 flex items-center justify-center gap-1.5 text-xs font-semibold bg-primary-50 text-primary-700 border border-primary-200 rounded-xl hover:bg-primary-100 transition disabled:opacity-50 pressable"
-            title="Actualizar y recalcular prioridades pastorales de los adolescentes"
-          >
-            <svg className={`w-3.5 h-3.5 ${pppRecalculating ? "animate-spin" : ""}`} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-              <path d="M21.5 2v6h-6M21.34 15.57a10 10 0 1 1-.57-8.38l5.67-5.67"/>
-            </svg>
-            <span className="hidden md:inline">Actualizar</span>
-          </button>
-          <button
-            onClick={() => setShowFilters((v) => !v)}
-            className="relative shrink-0 w-10 h-10 flex items-center justify-center rounded-xl border border-ink/10 bg-card text-ink/50 hover:text-ink/70 hover:bg-ink/5 transition"
-          >
-            <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
-              <path d="M22 3H2l8 9.46V19l4 2v-8.54L22 3z" />
-            </svg>
-            {activeFilterCount > 0 && (
-              <span className="absolute -top-1.5 -right-1.5 w-4.5 h-4.5 flex items-center justify-center text-[10px] font-bold text-white bg-primary-600 rounded-full">
-                {activeFilterCount}
-              </span>
-            )}
-          </button>
-        </div>
-      </div>
-
-      {canAssignLeaders && selectedTeenIds.length > 0 && (
-        <div className="flex flex-wrap items-center gap-2 rounded-xl border border-primary-200 bg-primary-50 p-3">
-          <span className="text-sm font-bold text-primary-800">{selectedTeenIds.length} seleccionado{selectedTeenIds.length > 1 ? "s" : ""}</span>
-          <select value={bulkLeaderId} onChange={(event) => setBulkLeaderId(event.target.value)} className="min-w-44 rounded-lg border border-primary-200 bg-card px-3 py-2 text-sm font-semibold text-ink">
-            <option value="">Elegir líder...</option>{assignableUsers.map((person: any) => <option key={person._id} value={person._id}>{person.name}</option>)}
-          </select>
-          <button disabled={!bulkLeaderId} onClick={async () => { if (!token) return; await bulkAssignLeader({ token, teenIds: selectedTeenIds as any, liderPrincipalId: bulkLeaderId as any, useGroupLeader: false }); setSelectedTeenIds([]); setBulkLeaderId(""); }} className="rounded-lg bg-primary-700 px-3 py-2 text-sm font-bold text-white disabled:opacity-40">Asignar líder</button>
-          <button onClick={async () => { if (!token) return; await bulkAssignLeader({ token, teenIds: selectedTeenIds as any, useGroupLeader: true }); setSelectedTeenIds([]); }} className="rounded-lg border border-primary-200 bg-card px-3 py-2 text-sm font-bold text-primary-800">Usar líder del grupo</button>
-          <button onClick={() => setSelectedTeenIds([])} className="px-2 py-2 text-xs font-bold text-primary-700">Cancelar</button>
-        </div>
-      )}
-
-      {activeFilterCount > 0 && (
-        <div className="flex flex-wrap items-center gap-1.5">
-          {[
-            { val: filtroFidelidad, label: filtroFidelidad !== "all" ? `Nivel: ${["", "Iniciado", "Fiel", "Líder", "Mentor"][filtroFidelidad as number]}` : null, onClear: () => setFiltroFidelidad("all") },
-            { val: filtroPastoral, label: filtroPastoral !== "all" ? ({ 0: "Sin riesgo", 1: "Seguimiento", 2: "Atención", 3: "Urgente", 4: "Crítico", 5: "Crisis" } as Record<number, string>)[filtroPastoral] : null, onClear: () => setFiltroPastoral("all") },
-            { val: filtroEdad, label: filtroEdad !== "all" ? `Edad: ${filtroEdad}` : null, onClear: () => setFiltroEdad("all") },
-          ]
-            .filter((x) => x.label)
-            .map((x) => (
-              <span key={x.label} className="inline-flex items-center gap-1 text-xs font-semibold bg-primary-50 text-primary-700 border border-primary-100 rounded-full pl-2.5 pr-1 py-1 dark:bg-primary-950/30 dark:text-primary-400 dark:border-primary-900/40">
-                {x.label}
-                <button onClick={x.onClear} className="w-4 h-4 flex items-center justify-center rounded-full hover:bg-primary-200/60 transition">
-                  <svg className="w-3 h-3" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-                    <path d="M18 6L6 18M6 6l12 12" />
-                  </svg>
-                </button>
-              </span>
-            ))}
-          <button
-            onClick={() => { setFiltroFidelidad("all"); setFiltroPastoral("all"); setFiltroEdad("all"); }}
-            className="text-xs font-semibold text-ink/40 hover:text-ink/60 underline underline-offset-2"
-          >
-            Limpiar todo
-          </button>
-        </div>
-      )}
-
-      {/* Overlay de filtros */}
-      {showFilters && (
-        <div
-          className="fixed inset-0 bg-ink/25 backdrop-blur-[2px] z-40 animate-overlay-in"
-          onClick={() => setShowFilters(false)}
-        />
-      )}
-
-      {/* Panel de filtros */}
-      <div
-        className={`fixed inset-x-4 top-24 z-50 max-h-[calc(100vh-7rem)] overflow-hidden rounded-2xl border border-ink/10 bg-card shadow-2xl transition-all duration-200 ease-out sm:inset-auto sm:right-8 sm:top-36 sm:w-[360px] sm:max-h-[calc(100vh-10rem)] ${
-          showFilters ? "translate-y-0 opacity-100 sm:translate-x-0" : "-translate-y-2 opacity-0 pointer-events-none sm:translate-x-4 sm:translate-y-0"
-        }`}
-      >
-        <div className="flex max-h-[inherit] flex-col">
-          <div className="flex items-center justify-between border-b border-ink/5 px-4 py-3.5">
-            <p className="text-sm font-bold text-ink flex items-center gap-1.5">
-              <span>🎛️</span> Filtros de búsqueda
-            </p>
-            <button
-              onClick={() => setShowFilters(false)}
-              className="w-8 h-8 rounded-full bg-ink/5 hover:bg-ink/10 text-ink/50 hover:text-ink/80 flex items-center justify-center pressable"
-            >
-              <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
-                <path d="M18 6L6 18M6 6l12 12" />
-              </svg>
-            </button>
-          </div>
-
-          <div className="flex-1 overflow-y-auto space-y-5 px-4 py-4">
-            <div>
-              <p className="text-xs font-semibold text-ink/40 uppercase tracking-wide mb-2">Fidelidad</p>
-              <div className="flex flex-wrap gap-1.5">
-                {(["all", 1, 2, 3, 4] as const).map((v) => (
-                  <button
-                    key={String(v)}
-                    onClick={() => setFiltroFidelidad(v)}
-                    className={`text-xs font-semibold rounded-full px-3 py-1.5 transition pressable ${
-                      filtroFidelidad === v
-                        ? "bg-primary-600 text-white"
-                        : "bg-ink/5 text-ink/60 hover:bg-ink/10"
-                    }`}
-                  >
-                    {v === "all" ? "Todos" : ["", "Iniciado", "Fiel", "Líder", "Mentor"][v]}
-                  </button>
-                ))}
-              </div>
-            </div>
-
-            <div>
-              <p className="text-xs font-semibold text-ink/40 uppercase tracking-wide mb-2">Estado Pastoral</p>
-              <div className="flex flex-wrap gap-1.5">
-                {(["all", 0, 1, 2, 3, 4, 5] as const).map((v) => (
-                  <button
-                    key={String(v)}
-                    onClick={() => setFiltroPastoral(v)}
-                    className={`text-xs font-semibold rounded-full px-3 py-1.5 transition pressable ${
-                      filtroPastoral === v
-                        ? "bg-primary-600 text-white"
-                        : "bg-ink/5 text-ink/60 hover:bg-ink/10"
-                    }`}
-                  >
-                    {v === "all" ? "Todos" : ({ 0: "Sin riesgo", 1: "Seguimiento", 2: "Atención", 3: "Urgente", 4: "Crítico", 5: "Crisis" } as Record<number, string>)[v]}
-                  </button>
-                ))}
-              </div>
-            </div>
-
-            <div>
-              <p className="text-xs font-semibold text-ink/40 uppercase tracking-wide mb-2">Grupo de Edad</p>
-              <div className="flex flex-wrap gap-1.5">
-                {(["all", "12-13", "14-15", "16-17", "18+"] as const).map((v) => (
-                  <button
-                    key={v}
-                    onClick={() => setFiltroEdad(v)}
-                    className={`text-xs font-semibold rounded-full px-3 py-1.5 transition pressable ${
-                      filtroEdad === v
-                        ? "bg-primary-600 text-white"
-                        : "bg-ink/5 text-ink/60 hover:bg-ink/10"
-                    }`}
-                  >
-                    {v === "all" ? "Todos" : v === "18+" ? "18+" : `${v} años`}
-                  </button>
-                ))}
-              </div>
-            </div>
-          </div>
-        </div>
-
-        <div className="border-t border-ink/5 px-4 py-3 flex gap-3">
-          <button
-            onClick={() => {
-              setFiltroFidelidad("all");
-              setFiltroPastoral("all");
-              setFiltroEdad("all");
-            }}
-            className="flex-1 bg-ink/5 hover:bg-ink/10 text-ink/60 rounded-xl py-2 text-xs font-semibold pressable"
-          >
-            Limpiar todo
-          </button>
-          <button
-            onClick={() => setShowFilters(false)}
-            className="flex-1 bg-primary-600 hover:bg-primary-700 text-white rounded-xl py-2 text-xs font-semibold pressable"
-          >
-            Aplicar
-          </button>
-        </div>
-      </div>
-
-      {upcoming.length > 0 && (
-          <div className="bg-primary-50 border border-primary-100 rounded-card p-3.5 flex items-start gap-3">
-          <svg
-            className="w-5 h-5 text-primary-600 shrink-0 mt-0.5"
-            viewBox="0 0 24 24"
-            fill="none"
-            stroke="currentColor"
-            strokeWidth="1.8"
-            strokeLinecap="round"
-            strokeLinejoin="round"
-          >
-            <path d="M3 21h18" />
-            <path d="M5 21v-6a2 2 0 012-2h10a2 2 0 012 2v6" />
-            <path d="M12 13V8" />
-            <path d="M9 13V9" />
-            <path d="M15 13V9" />
-            <circle cx="12" cy="5" r="1.3" />
-          </svg>
-            <div className="text-sm min-w-0 flex-1">
-              <p className="font-semibold text-primary-700">Próximos cumpleaños</p>
-              <div className="mt-1 flex flex-wrap gap-1.5">
-                {upcoming.slice(0, 4).map((u) => (
-                  <span key={u.t._id} className="inline-flex rounded-full border border-primary-100 bg-white/70 px-2 py-1 text-xs font-semibold text-primary-700">
-                    {esc(u.t.nombre)} ({u.days === 0 ? "hoy" : `en ${u.days}d`})
-                  </span>
-                ))}
-                {upcoming.length > 4 && (
-                  <span className="inline-flex rounded-full border border-primary-100 bg-white/70 px-2 py-1 text-xs font-semibold text-primary-700">
-                    +{upcoming.length - 4} más
-                  </span>
-                )}
-              </div>
-            </div>
-          </div>
-        )}
-
-      {teenData.length === 0 ? (
-        <div className="text-center py-8 px-4">
-          <div className="w-12 h-12 mx-auto rounded-full bg-ink/5 flex items-center justify-center mb-3 text-ink/30">
-            <svg
-              className="w-6 h-6"
-              viewBox="0 0 24 24"
-              fill="none"
-              stroke="currentColor"
-              strokeWidth="1.8"
-              strokeLinecap="round"
-              strokeLinejoin="round"
-            >
-              <circle cx="9" cy="8" r="3.2" />
-              <path d="M3 20c0-3.3 2.7-6 6-6s6 2.7 6 6" />
-              <circle cx="17.5" cy="9.5" r="2.4" />
-              <path d="M15.5 14.2c2.6.3 4.6 2.6 4.6 5.3" />
-            </svg>
-          </div>
-          <p className="text-sm font-semibold text-ink/70">
-            No se encontraron adolescentes
-          </p>
-          <p className="text-xs text-ink/40 mt-1 max-w-xs mx-auto">
-            Intenta otra búsqueda o agrega un nuevo registro.
-          </p>
-        </div>
-      ) : (
-        <div className="grid sm:grid-cols-2 lg:grid-cols-3 2xl:grid-cols-4 gap-3">
-          {teenData.map(({ t, s, risk, age, game, rc, hasFollowUp, ppp, status, completeness, warnings }) => (
-              <div
-                key={t._id}
-                onClick={() => onOpenProfile(t._id)}
-                className="bg-card rounded-card shadow-soft p-4 cursor-pointer premium-card pressable"
-              >
-                {canAssignLeaders && <label onClick={(event) => event.stopPropagation()} className="mb-3 flex items-center gap-2 text-xs font-semibold text-ink/45"><input type="checkbox" checked={selectedTeenIds.includes(String(t._id))} onChange={(event) => setSelectedTeenIds((current) => event.target.checked ? [...current, String(t._id)] : current.filter((id) => id !== String(t._id)))} className="h-4 w-4 rounded border-ink/20 text-primary-600 focus:ring-primary-500" />Seleccionar</label>}
-                <div className="flex items-start gap-3">
-                  <div className="relative shrink-0">
-                    <div
-                      className="rounded-full p-[2px]"
-                      style={{ background: rc }}
-                    >
-                      <div className="bg-card rounded-full p-[2px]">
-                        <Avatar teen={t} />
-                      </div>
-                    </div>
-                    {risk.score >= 1 && (
-                      <span
-                        className="absolute -bottom-0.5 -right-0.5 w-3.5 h-3.5 rounded-full border-2 border-white"
-                        style={{ background: rc }}
-                      />
-                    )}
-                  </div>
-                  <div className="flex-1 min-w-0">
-                    <p className="text-sm font-semibold truncate">
-                      {esc(t.nombre)} {esc(t.apellido)}
-                    </p>
-                    <div className="flex flex-wrap items-center gap-1 mt-1">
-                      <span className={`inline-flex items-center gap-1 text-xs font-semibold px-1.5 py-0.5 rounded-full border ${TEEN_STATUS_META[status].cls}`}>
-                        {TEEN_STATUS_META[status].label}
-                      </span>
-                      <span className="inline-flex items-center gap-1 text-xs font-semibold px-1.5 py-0.5 rounded-full border bg-ink/[0.03] text-ink/60 border-ink/10">
-                        Ficha {completeness.percent}%
-                      </span>
-                      {((t as any).fichaCompleta === false || (t as any).registroRapido) && (
-                        <span className="inline-flex items-center gap-1 text-xs font-semibold px-1.5 py-0.5 rounded-full border bg-danger-50 text-danger-700 border-danger-100">
-                          Ficha incompleta
-                        </span>
-                      )}
-                    </div>
-                    {(s.presentStreak > 2 || risk.score >= 2 || hasFollowUp) && (
-                      <div className="flex flex-wrap items-center gap-1 mt-1">
-                        {s.presentStreak > 2 && (
-                          <span className="inline-flex items-center gap-0.5 text-xs font-semibold bg-warning-50 text-warning-600 border border-warning-200/60 rounded-full px-1.5 py-0.5 dark:bg-warning-950/20 dark:text-warning-400 dark:border-warning-900/40">
-                            <svg className="w-3 h-3" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
-                              <path d="M8.5 14.5A2.5 2.5 0 0011 12c0-1.38-.8-2-1.83-2.37A4.5 4.5 0 008.5 6.5 4.5 4.5 0 006 11c-.1 1.37.57 2.5 1.5 3.5z" />
-                              <path d="M12 22c-3.31 0-6-2.69-6-6 0-2.5 2-5 3.5-7C10 11 10 12 10 13c0 1.1.9 2 2 2s2-.9 2-2c0-1 0-2 1.5-4C16 11 18 13.5 18 16c0 3.31-2.69 6-6 6z" />
-                            </svg>
-                            Racha {s.presentStreak}
-                          </span>
-                        )}
-                        {risk.score === 2 && (
-                          <span className="inline-flex items-center gap-0.5 text-xs font-semibold bg-warning-50 text-warning-700 border border-warning-200 rounded-full px-1.5 py-0.5 dark:bg-warning-950/30 dark:text-warning-400 dark:border-warning-900/40">
-                            <svg className="w-3 h-3" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
-                              <path d="M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z" />
-                              <line x1="12" y1="9" x2="12" y2="13" />
-                              <line x1="12" y1="17" x2="12.01" y2="17" />
-                            </svg>
-                            Atención
-                          </span>
-                        )}
-                        {risk.score === 3 && (
-                          <span className="inline-flex items-center gap-0.5 text-xs font-semibold bg-danger-50 text-danger-700 border border-danger-200 rounded-full px-1.5 py-0.5 dark:bg-warning-950/30 dark:text-danger-400 dark:border-danger-900/40">
-                            <svg className="w-3 h-3" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
-                              <path d="M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z" />
-                              <line x1="12" y1="9" x2="12" y2="13" />
-                              <line x1="12" y1="17" x2="12.01" y2="17" />
-                            </svg>
-                            Urgente
-                          </span>
-                        )}
-                        {risk.score >= 4 && (
-                          <span className="inline-flex items-center gap-0.5 text-xs font-semibold bg-danger-50 text-danger-700 border border-danger-200 rounded-full px-1.5 py-0.5 dark:bg-danger-950/30 dark:text-danger-400 dark:border-danger-900/40">
-                            <svg className="w-3 h-3" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
-                              <path d="M7.86 2h8.28L22 7.86v8.28L16.14 22H7.86L2 16.14V7.86L7.86 2z" />
-                              <line x1="12" y1="8" x2="12" y2="12" />
-                              <line x1="12" y1="16" x2="12.01" y2="16" />
-                            </svg>
-                            {risk.score === 4 ? "Crítico" : "Crisis"}
-                          </span>
-                        )}
-                        {hasFollowUp && (
-                          <span className="inline-flex items-center gap-0.5 text-xs font-semibold bg-info-50 text-info-700 border border-info-200 rounded-full px-1.5 py-0.5 dark:bg-info-950/30 dark:text-info-400 dark:border-info-900/40">
-                            <svg className="w-3 h-3" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
-                              <path d="M11 17a1 1 0 01-1-1c0-.4.2-.8.5-1.1L14 12" />
-                              <path d="M19 9c.5 0 1 .2 1.4.6l3 3c.4.4.6.9.6 1.4" />
-                              <path d="M5 15c-.5 0-1-.2-1.4-.6l-3-3c-.4-.4-.6-.9-.6-1.4" />
-                              <path d="M22 9l-1-1-4-2" />
-                              <path d="M2 9l1-1 4-2" />
-                              <path d="M13 17l3 2 4-2" />
-                              <path d="M5 15l-3 2 4 2" />
-                              <path d="M5 17l-1 1" />
-                              <path d="M19 9l-4-6h-3" />
-                            </svg>
-                            Seguimiento
-                          </span>
-                        )}
-                      </div>
-                    )}
-                    <p className="text-xs text-ink/40 flex items-center gap-2 mt-2 flex-wrap">
-                      {age !== null ? age + " años" : "—"}
-                      <span>{getPrimaryGuardianName(t)}</span>
-                      {s.total > 0 && (
-                        <span className="text-[10px] font-semibold text-ink/30 bg-ink/5 rounded-full px-1.5 py-0.5">
-                          Niv.{game.level.level}
-                        </span>
-                      )}
-                      <span className={`text-[10px] font-semibold px-1.5 py-0.5 rounded-full border ${
-                        ppp >= 0.7
-                          ? "bg-danger-50 text-danger-700 border-danger-100 dark:bg-danger-950/20 dark:text-danger-400 dark:border-danger-900/30"
-                          : ppp >= 0.5
-                          ? "bg-warning-50 text-warning-700 border-warning-100 dark:bg-warning-950/20 dark:text-warning-400 dark:border-warning-900/30"
-                          : ppp >= 0.3
-                          ? "bg-yellow-50 text-yellow-700 border-yellow-100 dark:bg-yellow-950/20 dark:text-yellow-400 dark:border-yellow-900/30"
-                          : "bg-success-50 text-success-700 border-success-100 dark:bg-success-950/20 dark:text-success-400 dark:border-success-900/30"
-                      }`}>
-                        PPP {pppLabel(ppp)}
-                      </span>
-                    </p>
-                    <p className="mt-2 truncate text-xs text-ink/45">Líder: <span className="font-semibold text-ink/60">{leaderByTeenId.get(String(t._id))?.userName || "Sin responsable"}</span></p>
-                    <div className="flex items-center gap-2 mt-2">
-                      <div className="flex-1 h-1.5 bg-ink/5 rounded-full overflow-hidden">
-                        <div
-                          className="h-full bg-primary-600"
-                          style={{ width: `${s.pct}%` }}
-                        />
-                      </div>
-                      <span className="text-xs font-semibold text-ink/50">
-                        {s.pct}%
-                      </span>
-                    </div>
-                    {warnings.length > 0 && (
-                      <div className="mt-2 flex flex-wrap gap-1">
-                        {warnings.slice(0, 1).map((warning) => (
-                          <span key={warning} className="text-[10px] font-semibold bg-warning-50 text-warning-700 border border-warning-100 rounded-full px-1.5 py-0.5">
-                            {warning}
-                          </span>
-                        ))}
-                        {warnings.length > 1 && (
-                          <span className="text-[10px] font-semibold bg-ink/[0.03] text-ink/55 border border-ink/10 rounded-full px-1.5 py-0.5">
-                            +{warnings.length - 1} alerta{warnings.length - 1 > 1 ? "s" : ""}
-                          </span>
-                        )}
-                      </div>
-                    )}
-                  </div>
-                </div>
-                {t.gustos && (
-                  <p className="text-xs text-ink/40 mt-3 truncate">
-                    🎯 {esc(t.gustos)}
-                  </p>
-                )}
-              </div>
-          ))}
-        </div>
-      )}
-
-      {showForm && (
-        <TeenForm
-          onClose={() => setShowForm(false)}
-          onSuccess={() => setShowForm(false)}
-        />
-      )}
-
-      {showQuickVisitor && (
-        <TeenForm
-          quickVisitor
-          onClose={() => setShowQuickVisitor(false)}
-          onSuccess={() => setShowQuickVisitor(false)}
-        />
-      )}
-
-      {showPublicLink && (
-        <PublicRegistrationLinkModal
-          token={token}
-          scope={{
-            campusId: scope.campusId,
-            ministryId: scope.ministryId,
-            groupId: scope.groupId,
-            label: scopeLabel,
-          }}
-          onClose={() => setShowPublicLink(false)}
-        />
-      )}
-
-      {showImport && (
-        <TeenImportModal
-          onClose={() => setShowImport(false)}
-          onSuccess={() => setShowImport(false)}
-        />
-      )}
-
-      {editingTeen && (
-        <TeenForm
-          teen={editingTeen}
-          onClose={() => setEditingTeen(null)}
-          onSuccess={() => setEditingTeen(null)}
-        />
-      )}
-
-      {deletingTeen && (
-        <Modal
-          title="Archivar adolescente"
-          onClose={() => setDeletingTeen(null)}
-        >
-          <div className="p-5">
-            <p className="text-sm text-ink/70">
-              ¿Seguro que deseas archivar a{" "}
-              <strong>
-                {esc(deletingTeen.nombre)} {esc(deletingTeen.apellido)}
-              </strong>
-              ? Su ficha saldrá de los listados activos, pero se conservará su
-              historial de asistencia, bitácora y auditoría.
-            </p>
-            <div className="flex gap-3 mt-5">
-              <button
-                onClick={() => setDeletingTeen(null)}
-                className="flex-1 bg-ink/5 rounded-xl py-2.5 text-sm font-semibold"
-              >
-                Cancelar
-              </button>
-              <button
-                onClick={handleDelete}
-                className="flex-1 bg-danger-600 text-white rounded-xl py-2.5 text-sm font-semibold"
-              >
-                Archivar
-              </button>
-            </div>
-          </div>
-        </Modal>
-      )}
+      {activeFilterCount > 0 && <div className="flex flex-wrap items-center gap-2"><span className="text-xs font-semibold text-ink/45">Filtros:</span>{filtroPastoral !== "all" && <FilterChip label={`Prioridad: ${filtroPastoral}`} onClear={() => setFiltroPastoral("all")} />}{filtroEdad !== "all" && <FilterChip label={`Edad: ${filtroEdad}`} onClear={() => setFiltroEdad("all")} />}{filtroEstado !== "all" && <FilterChip label={`Estado: ${TEEN_STATUS_META[filtroEstado].label}`} onClear={() => setFiltroEstado("all")} />}{filtroIntegracion !== "all" && <FilterChip label="Integración" onClear={() => setFiltroIntegracion("all")} />}{filtroResponsable !== "all" && <FilterChip label={filtroResponsable === "mine" ? "Mi cartera" : "Sin responsable"} onClear={() => setFiltroResponsable("all")} />}{filtroFicha !== "all" && <FilterChip label="Ficha incompleta" onClear={() => setFiltroFicha("all")} />}<button type="button" onClick={clearFilters} className="text-xs font-semibold text-primary-700 underline underline-offset-2">Limpiar filtros</button></div>}
     </div>
-  );
+
+    {showFilters && <FilterPanel onClose={() => setShowFilters(false)} filtroPastoral={filtroPastoral} setFiltroPastoral={setFiltroPastoral} filtroEdad={filtroEdad} setFiltroEdad={setFiltroEdad} filtroEstado={filtroEstado} setFiltroEstado={setFiltroEstado} filtroIntegracion={filtroIntegracion} setFiltroIntegracion={setFiltroIntegracion} filtroResponsable={filtroResponsable} setFiltroResponsable={setFiltroResponsable} filtroFicha={filtroFicha} setFiltroFicha={setFiltroFicha} onClear={clearFilters} />}
+
+    {upcoming.length > 0 && <section className="ui-card flex items-center gap-3 p-3"><span className="feature-icon feature-icon--warning"><Cake size={18} aria-hidden="true" /></span><div className="min-w-0"><p className="text-sm font-bold text-ink">Próximos cumpleaños</p><p className="mt-0.5 truncate text-xs text-ink/55">{upcoming.slice(0, 3).map((item) => `${item.t.nombre} (${item.days === 0 ? "hoy" : `en ${item.days}d`})`).join(" · ")}{upcoming.length > 3 ? ` · +${upcoming.length - 3}` : ""}</p></div></section>}
+
+    {viewMode === "list" && canAssignLeaders && selectedTeenIds.length > 0 && <section className="sticky bottom-3 z-20 flex flex-wrap items-center gap-2 rounded-card border border-primary-200 bg-primary-50 p-3 shadow-soft"><strong className="text-sm text-primary-800">{selectedTeenIds.length} seleccionado{selectedTeenIds.length > 1 ? "s" : ""}</strong><select value={bulkLeaderId} onChange={(event) => setBulkLeaderId(event.target.value)} className="ui-input min-w-48 py-2 text-sm"><option value="">Elegir líder...</option>{assignableUsers.map((person: any) => <option key={person._id} value={person._id}>{person.name}</option>)}</select><button type="button" onClick={() => applyBulkLeader(false)} disabled={!bulkLeaderId} className="ui-button ui-button--primary text-sm disabled:opacity-40">Asignar líder</button><button type="button" onClick={() => applyBulkLeader(true)} className="ui-button ui-button--secondary text-sm">Usar líder del grupo</button><button type="button" onClick={() => setSelectedTeenIds([])} className="ui-button ui-button--ghost text-sm">Cancelar</button></section>}
+
+    {teenData.length === 0 ? <div className="ui-card p-8 text-center"><Users className="mx-auto text-ink/30" size={30} aria-hidden="true" /><p className="mt-3 text-sm font-semibold text-ink">{emptyMessage}</p><button type="button" onClick={() => { setQuickView("all"); setQuery(""); clearFilters(); }} className="mt-3 text-sm font-bold text-primary-700 underline underline-offset-2">Ver todos los adolescentes</button></div> : viewMode === "cards" ? <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3 2xl:grid-cols-4">{teenData.map((item) => <TeenCard key={item.t._id} item={item} onOpen={() => onOpenProfile(item.t._id)} />)}</div> : <TeenList items={teenData} onOpenProfile={onOpenProfile} canAssignLeaders={canAssignLeaders} selectedTeenIds={selectedTeenIds} setSelectedTeenIds={setSelectedTeenIds} selectedAllVisible={selectedAllVisible} onToggleVisible={toggleVisibleSelection} />}
+
+    {showForm && <TeenForm onClose={() => setShowForm(false)} onSuccess={() => setShowForm(false)} />}
+    {showQuickVisitor && <TeenForm quickVisitor onClose={() => setShowQuickVisitor(false)} onSuccess={() => setShowQuickVisitor(false)} />}
+    {showPublicLink && <PublicRegistrationLinkModal token={token} scope={{ campusId: scope.campusId, ministryId: scope.ministryId, groupId: scope.groupId, label: scopeLabel }} onClose={() => setShowPublicLink(false)} />}
+    {showImport && <TeenImportModal onClose={() => setShowImport(false)} onSuccess={() => setShowImport(false)} />}
+  </div>;
 }
+
+function FilterChip({ label, onClear }: { label: string; onClear: () => void }) { return <span className="inline-flex items-center gap-1 rounded-full border border-primary-200 bg-primary-50 py-1 pl-2.5 pr-1 text-xs font-semibold text-primary-700">{label}<button type="button" onClick={onClear} className="grid size-5 place-items-center rounded-full hover:bg-primary-100" aria-label={`Quitar filtro ${label}`}><X size={13} aria-hidden="true" /></button></span>; }
+
+function TeenCard({ item, onOpen }: { item: any; onOpen: () => void }) {
+  const { t, age, status, leader, notice, completeness, latest } = item;
+  const meta = statusMeta(status);
+  return <button type="button" onClick={onOpen} className="ui-card min-h-56 p-4 text-left pressable hover:border-primary-200"><div className="flex items-start gap-3"><Avatar teen={t} /><div className="min-w-0 flex-1"><p className="truncate text-sm font-bold text-ink">{esc(t.nombre)} {esc(t.apellido)}</p><p className="mt-1 text-xs text-ink/45">{age === null ? "Edad por registrar" : `${age} años`}</p><span className={`mt-2 inline-flex rounded-full border px-2 py-1 text-xs font-semibold ${meta.cls}`}>{meta.label}</span></div></div><div className="mt-4"><p className="text-xs font-semibold text-ink/45">Responsable</p><p className="mt-1 truncate text-sm font-semibold text-ink">{leader?.userName || "Sin responsable"}</p><p className="mt-0.5 text-xs text-ink/45">{sourceLabel(leader?.source)}</p></div><div className={`mt-3 rounded-lg border px-2.5 py-2 ${notice.className}`}><p className="text-xs font-bold">{notice.label}</p><p className="mt-0.5 truncate text-xs opacity-80">{notice.detail}</p></div><div className="mt-3"><div className="flex items-center justify-between text-xs"><span className="font-semibold text-ink/50">Ficha completa</span><span className="font-bold tabular-nums text-ink/65">{completeness.percent}%</span></div><div className="progress-track mt-1.5"><div className="progress-fill" style={{ width: `${completeness.percent}%` }} /></div></div>{latest && <p className="mt-3 truncate text-xs text-ink/45">Último registro: {latest.date} · {latest.status === "present" ? "Presente" : latest.status === "excused" ? "Justificado" : "Ausente"}</p>}</button>; }
+
+function TeenList({ items, onOpenProfile, canAssignLeaders, selectedTeenIds, setSelectedTeenIds, selectedAllVisible, onToggleVisible }: any) { return <div className="ui-card overflow-x-auto"><table className="w-full min-w-[860px] text-left"><thead className="border-b border-ink/10 bg-ink/[0.02] text-xs uppercase text-ink/45"><tr>{canAssignLeaders && <th className="w-12 px-4 py-3"><input type="checkbox" checked={selectedAllVisible} onChange={onToggleVisible} aria-label="Seleccionar todos los adolescentes visibles" className="size-4 rounded border-ink/25 text-primary-600 focus:ring-primary-500" /></th>}<th className="px-4 py-3">Adolescente</th><th className="px-4 py-3">Estado</th><th className="px-4 py-3">Responsable</th><th className="px-4 py-3">Próxima acción</th><th className="px-4 py-3">Prioridad</th><th className="px-4 py-3">Ficha</th></tr></thead><tbody>{items.map((item: any) => { const meta = statusMeta(item.status); return <tr key={item.t._id} className="border-b border-ink/5 last:border-0 hover:bg-primary-50/40">{canAssignLeaders && <td className="px-4 py-3"><input type="checkbox" checked={selectedTeenIds.includes(String(item.t._id))} onChange={(event) => setSelectedTeenIds((current: string[]) => event.target.checked ? [...current, String(item.t._id)] : current.filter((id) => id !== String(item.t._id)))} aria-label={`Seleccionar ${item.t.nombre} ${item.t.apellido}`} className="size-4 rounded border-ink/25 text-primary-600 focus:ring-primary-500" /></td>}<td className="px-4 py-3"><button type="button" onClick={() => onOpenProfile(item.t._id)} className="flex items-center gap-2 text-left"><Avatar teen={item.t} /><span><strong className="block max-w-44 truncate text-sm text-ink">{esc(item.t.nombre)} {esc(item.t.apellido)}</strong><small className="text-xs text-ink/45">{item.age === null ? "Edad por registrar" : `${item.age} años`}</small></span></button></td><td className="px-4 py-3"><span className={`inline-flex rounded-full border px-2 py-1 text-xs font-semibold ${meta.cls}`}>{meta.label}</span></td><td className="px-4 py-3"><p className="max-w-40 truncate text-sm font-semibold text-ink">{item.leader?.userName || "Sin responsable"}</p><p className="text-xs text-ink/45">{sourceLabel(item.leader?.source)}</p></td><td className="px-4 py-3"><p className="max-w-56 truncate text-sm text-ink/70">{item.notice.detail}</p></td><td className="px-4 py-3"><span className={`inline-flex rounded-full border px-2 py-1 text-xs font-bold ${item.notice.className}`}>{item.notice.label}</span></td><td className="px-4 py-3"><span className="tabular-nums text-sm font-bold text-ink">{item.completeness.percent}%</span></td></tr>; })}</tbody></table></div>; }
+
+function FilterPanel(props: any) { const { onClose, onClear } = props; return <><button type="button" className="fixed inset-0 z-40 bg-ink/20" aria-label="Cerrar filtros" onClick={onClose} /><aside className="fixed inset-x-4 top-20 z-50 max-h-[calc(100dvh-6rem)] overflow-y-auto rounded-card border border-ink/10 bg-card p-4 shadow-soft sm:left-auto sm:right-8 sm:w-[380px]"><div className="flex items-center justify-between"><div><h2 className="text-base font-bold text-ink">Filtros avanzados</h2><p className="mt-1 text-xs text-ink/50">Ajusta el listado del ámbito activo.</p></div><button type="button" onClick={onClose} className="ui-button ui-button--ghost size-10 p-0" aria-label="Cerrar filtros"><X size={18} aria-hidden="true" /></button></div><div className="mt-5 space-y-5"><FilterGroup label="Estado"><select value={props.filtroEstado} onChange={(event) => props.setFiltroEstado(event.target.value)} className="ui-input w-full"><option value="all">Todos los estados</option>{Object.entries(TEEN_STATUS_META).map(([id, meta]) => <option key={id} value={id}>{meta.label}</option>)}</select></FilterGroup><FilterGroup label="Nivel de integración"><select value={props.filtroIntegracion} onChange={(event) => props.setFiltroIntegracion(event.target.value)} className="ui-input w-full"><option value="all">Todos los niveles</option><option value="nuevo">Nuevo</option><option value="en_proceso">En proceso</option><option value="integrado">Integrado</option><option value="necesita_acompañamiento">Necesita acompañamiento</option></select></FilterGroup><FilterGroup label="Prioridad pastoral"><select value={props.filtroPastoral} onChange={(event) => props.setFiltroPastoral(event.target.value === "all" ? "all" : Number(event.target.value))} className="ui-input w-full"><option value="all">Todos los niveles</option><option value="0">Sin riesgo</option><option value="1">Seguimiento</option><option value="2">Atención</option><option value="3">Urgente</option><option value="4">Crítico</option><option value="5">Crisis</option></select></FilterGroup><FilterGroup label="Edad"><select value={props.filtroEdad} onChange={(event) => props.setFiltroEdad(event.target.value)} className="ui-input w-full"><option value="all">Todas las edades</option><option value="12-13">12-13 años</option><option value="14-15">14-15 años</option><option value="16-17">16-17 años</option><option value="18+">18 o más</option></select></FilterGroup><FilterGroup label="Responsable"><select value={props.filtroResponsable} onChange={(event) => props.setFiltroResponsable(event.target.value)} className="ui-input w-full"><option value="all">Todos</option><option value="mine">Mi cartera</option><option value="unassigned">Sin responsable</option></select></FilterGroup><FilterGroup label="Ficha"><select value={props.filtroFicha} onChange={(event) => props.setFiltroFicha(event.target.value)} className="ui-input w-full"><option value="all">Todas las fichas</option><option value="incomplete">Solo fichas incompletas</option></select></FilterGroup></div><div className="mt-6 flex justify-end gap-2"><button type="button" onClick={onClear} className="ui-button ui-button--secondary">Limpiar</button><button type="button" onClick={onClose} className="ui-button ui-button--primary">Aplicar</button></div></aside></>; }
+
+function FilterGroup({ label, children }: { label: string; children: React.ReactNode }) { return <label className="block"><span className="mb-1.5 block text-xs font-bold text-ink/55">{label}</span>{children}</label>; }
