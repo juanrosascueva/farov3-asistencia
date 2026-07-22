@@ -39,6 +39,10 @@ export function generateToken(): string {
   return "sess_" + randomHex(24) + "_" + Date.now().toString(36);
 }
 
+export function isSessionExpired(expiresAt: string, now = Date.now()): boolean {
+  return Date.parse(expiresAt) < now;
+}
+
 export async function getSession(
   ctx: QueryCtx | MutationCtx,
   token: string | undefined | null
@@ -49,7 +53,7 @@ export async function getSession(
     .withIndex("by_token", q => q.eq("token", token))
     .first();
   if (!session) return null;
-  if (new Date(session.expiresAt) < new Date()) return null;
+  if (isSessionExpired(session.expiresAt)) return null;
   return session;
 }
 
@@ -71,7 +75,7 @@ export async function cleanExpiredSession(
     .query("sessions")
     .withIndex("by_token", q => q.eq("token", token))
     .first();
-  if (session && new Date(session.expiresAt) < new Date()) {
+  if (session && isSessionExpired(session.expiresAt)) {
     await ctx.db.delete(session._id);
   }
 }

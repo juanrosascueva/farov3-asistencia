@@ -6,6 +6,7 @@
   "scripts": {
     "dev": "vite",
     "build": "tsc -b && vite build",
+    "check:auth": "node scripts/check-auth.mjs && node scripts/check-session-auth.mjs",
     "check:design": "node scripts/check-design.mjs",
     "preview": "vite preview"
   },

@@ -1,4 +1,4 @@
-import { useState, useCallback, useEffect, useMemo } from "react";
+import { Component, type ReactNode, useState, useCallback, useEffect, useMemo } from "react";
 import { useQuery } from "convex/react";
 import { api } from "../convex/_generated/api";
 import { useAttendanceMap } from "./hooks/useAttendanceMap";
@@ -18,8 +18,48 @@ import AuditPanel from "./components/AuditPanel";
 import PublicTeenRegistration from "./components/PublicTeenRegistration";
 import Seguimiento from "./components/Seguimiento";
 import Administracion from "./components/Administracion";
+import { isAuthenticationError } from "./hooks/authSession";
 
 const DARK_KEY = "cristovive_dark_mode";
+
+class AuthErrorBoundary extends Component<
+  { children: ReactNode; onAuthenticationError: () => void },
+  { error: Error | null }
+> {
+  state = { error: null as Error | null };
+
+  static getDerivedStateFromError(error: Error) {
+    return { error };
+  }
+
+  componentDidCatch(error: Error) {
+    if (isAuthenticationError(error)) this.props.onAuthenticationError();
+  }
+
+  render() {
+    if (!this.state.error) return this.props.children;
+
+    if (isAuthenticationError(this.state.error)) {
+      return (
+        <div className="min-h-screen flex items-center justify-center bg-paper">
+          <p className="text-sm text-ink/60">Tu sesión terminó. Volviendo al inicio...</p>
+        </div>
+      );
+    }
+
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-paper p-6">
+        <div className="max-w-sm text-center">
+          <h1 className="font-display text-xl font-semibold text-ink">No pudimos mostrar esta pantalla</h1>
+          <p className="mt-2 text-sm text-ink/60">Recarga la página para intentarlo nuevamente.</p>
+          <button className="ui-button ui-button--primary mt-4" onClick={() => window.location.reload()}>
+            Recargar
+          </button>
+        </div>
+      </div>
+    );
+  }
+}
 
 function AppContent() {
   const publicRegistrationToken = new URLSearchParams(window.location.search).get("t");
@@ -30,7 +70,7 @@ function AppContent() {
     return <PublicTeenRegistration publicToken={publicRegistrationToken || ""} shortCode={shortRegistrationCode} />;
   }
 
-  const { user, loading: authLoading } = useAuth();
+  const { user, loading: authLoading, invalidateSession } = useAuth();
 
   if (authLoading) {
     return (
@@ -47,7 +87,11 @@ function AppContent() {
     return <LoginPage />;
   }
 
-  return <AuthenticatedApp />;
+  return (
+    <AuthErrorBoundary onAuthenticationError={invalidateSession}>
+      <AuthenticatedApp />
+    </AuthErrorBoundary>
+  );
 }
 
 function AuthenticatedApp() {
@@ -62,7 +106,7 @@ function AuthenticatedApp() {
 
   const { token } = useAuth();
   const { scope } = useScope();
-  const allTeens = useQuery(api.teens.list, token ? { token } : {});
+  const allTeens = useQuery(api.teens.list, token ? { token } : "skip");
   
   const teens = useMemo(() => {
     if (!allTeens) return undefined;

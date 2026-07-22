@@ -23,6 +23,7 @@ interface AuthContextValue {
   login: (email: string, password: string) => Promise<void>;
   register: (email: string, password: string, name: string, role: AuthUser["role"]) => Promise<void>;
   logout: () => Promise<void>;
+  invalidateSession: () => void;
   isPastor: boolean;
   canManageUsers: boolean;
   canManageSettings: boolean;
@@ -152,6 +153,13 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     setUser(null);
   }, [token, logoutMutation]);
 
+  const invalidateSession = useCallback(() => {
+    clearToken();
+    setToken(null);
+    setUser(null);
+    setLoading(false);
+  }, []);
+
   const value: AuthContextValue = {
     user,
     token,
@@ -159,6 +167,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     login,
     register,
     logout,
+    invalidateSession,
     isPastor: user?.role === "pastor",
     canManageUsers: user?.permissions?.includes("manage_users") ?? false,
     canManageSettings: user?.permissions?.includes("manage_settings") ?? false,

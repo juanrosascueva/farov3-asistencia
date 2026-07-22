@@ -7,6 +7,7 @@ import {
   generateToken,
   getUserFromToken,
   cleanExpiredSession,
+  isSessionExpired,
   SESSION_TTL_DAYS,
 } from "./authHelper";
 import { logAudit } from "./auditLog";
@@ -82,13 +83,13 @@ export const login = mutation({
     const hashed = await hashPassword(args.password, user.salt);
     if (hashed !== user.hashedPassword) throw new Error("Credenciales inválidas");
 
-    // Clean old sessions for this user
+    // Keep valid sessions so the same account can be used on multiple devices.
     const oldSessions = await ctx.db
       .query("sessions")
       .withIndex("by_userId", q => q.eq("userId", user._id))
       .collect();
     for (const s of oldSessions) {
-      await ctx.db.delete(s._id);
+      if (isSessionExpired(s.expiresAt)) await ctx.db.delete(s._id);
     }
 
     const token = generateToken();
