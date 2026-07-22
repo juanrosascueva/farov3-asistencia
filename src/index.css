@@ -3,35 +3,37 @@
 @tailwind utilities;
 
 :root {
-  --clr-ink: 47 31 27;
-  --clr-paper: 251 247 240;
+  --clr-ink: 37 35 45;
+  --clr-paper: 250 250 252;
   --clr-card: 255 255 255;
+  --color-primary: #6849FF;
+  --color-primary-dark: #5C41DD;
+  --color-primary-soft: #EEE9FF;
+  --color-border: #E5E7EE;
 }
 .dark {
-  --clr-ink: 244 236 228;
-  --clr-paper: 20 16 17;
-  --clr-card: 34 28 30;
+  --clr-ink: 246 245 250;
+  --clr-paper: 26 24 35;
+  --clr-card: 37 35 47;
 }
 
 html, body {
-  background:
-    radial-gradient(circle at top left, #fff9ef 0, #f8efe3 42%, #f3ecdf 100%);
+  background: #FAFAFC;
   color: rgb(var(--clr-ink));
   overflow-x: hidden;
   width: 100%;
 }
 
 .dark, .dark body {
-  background:
-    radial-gradient(circle at top left, #3b1b17 0, #1d1718 38%, #120f10 100%);
+  background: #1A1823;
   color: rgb(var(--clr-ink));
 }
 
 .beam {
-  background: conic-gradient(from -90deg, var(--c1) calc(var(--p)*1%), #ECE7DC 0);
+  background: conic-gradient(from -90deg, var(--c1) calc(var(--p)*1%), #E5E7EE 0);
 }
 
-.tab-active { color: #8A2D1C; }
+.tab-active { color: var(--color-primary); }
 .tab-active .tab-dot { opacity: 1; transform: scale(1); }
 
 .fade-in { animation: fadeIn .25s ease both; }
@@ -39,7 +41,7 @@ html, body {
 @media (prefers-reduced-motion: reduce) { .fade-in { animation: none; } }
 
 input:focus, textarea:focus, select:focus, button:focus-visible {
-  outline: 2px solid #8A2D1C;
+  outline: 2px solid var(--color-primary);
   outline-offset: 2px;
 }
 
@@ -65,8 +67,8 @@ input::placeholder, textarea::placeholder {
 .chip { display: inline-flex; align-items: center; gap: 4px; }
 
 ::-webkit-scrollbar { width: 6px; height: 6px; }
-::-webkit-scrollbar-thumb { background: #D9D2C5; border-radius: 8px; }
-.dark ::-webkit-scrollbar-thumb { background: #6b4a42; }
+::-webkit-scrollbar-thumb { background: #C5C1D3; border-radius: 8px; }
+.dark ::-webkit-scrollbar-thumb { background: #59566A; }
 
 /* ─── Clases de Diseño Premium ─── */
 
@@ -74,16 +76,20 @@ input::placeholder, textarea::placeholder {
   transition: transform 0.15s cubic-bezier(0.4, 0, 0.2, 1);
 }
 .pressable:active {
-  transform: scale(0.97);
+  transform: scale(0.98);
 }
 
 .premium-card {
   transition: transform 0.3s cubic-bezier(0.34, 1.56, 0.64, 1), box-shadow 0.3s ease, border-color 0.3s ease;
 }
 .premium-card:hover {
-  transform: translateY(-4px);
-  box-shadow: 0 12px 24px -8px rgb(var(--clr-ink) / 0.08);
+  transform: translateY(-2px);
+  box-shadow: 0 8px 20px -10px rgb(var(--clr-ink) / 0.16);
 }
+
+button, input, select, textarea { font-family: inherit; }
+h1, h2, h3 { text-wrap: balance; }
+p { text-wrap: pretty; }
 .dark .premium-card:hover {
   box-shadow: 0 12px 24px -8px rgb(0 0 0 / 0.5);
   border-color: rgb(var(--clr-ink) / 0.15);

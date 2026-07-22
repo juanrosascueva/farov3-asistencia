@@ -45,9 +45,9 @@ export default function Layout({
   const displaySubtitle = scope.campusId ? scopeLabel : "Ministerio de Adolescentes";
 
   return (
-    <div className="max-w-7xl mx-auto lg:flex lg:gap-8 lg:px-6 lg:pt-6">
+    <div className="max-w-7xl mx-auto lg:flex lg:gap-6 lg:px-6 lg:pt-6">
       <aside className="hidden lg:flex lg:flex-col w-72 shrink-0 sticky top-6 self-start z-20">
-        <div className="rounded-[28px] border border-amber-100/70 bg-card/90 shadow-soft backdrop-blur-sm p-4 mb-5 dark:border-amber-900/30 dark:bg-card/95">
+        <div className="rounded-[20px] border border-ink/10 bg-card/90 shadow-soft backdrop-blur-sm p-4 mb-4 dark:bg-card/95">
           <div className="flex items-start gap-3">
             <LogoIcon />
             <div className="min-w-0 flex-1 pr-2">
@@ -64,7 +64,7 @@ export default function Layout({
             <ScopeSwitcher fullWidth />
           </div>
         </div>
-        <nav className="rounded-[28px] border border-amber-100/60 bg-card/88 shadow-soft backdrop-blur-sm p-3 dark:border-amber-900/30 dark:bg-card/92">
+        <nav className="rounded-[20px] border border-ink/10 bg-card/88 shadow-soft backdrop-blur-sm p-3 dark:bg-card/92">
           {(["operacion", "analitica", "administracion"] as const).map((section) => {
             const routes = visibleRoutes.filter((route) => route.section === section);
             if (!routes.length) return null;
@@ -74,7 +74,7 @@ export default function Layout({
         {setDark && (
           <button
             onClick={() => setDark(!dark)}
-            className="flex items-center gap-2 px-4 py-3 text-sm text-ink/60 hover:text-ink transition mt-5 rounded-2xl border border-amber-100/60 bg-card/85 shadow-soft dark:border-amber-900/30 dark:bg-card/92"
+            className="flex items-center gap-2 px-4 py-3 text-sm text-ink/60 hover:text-ink transition mt-4 rounded-2xl border border-ink/10 bg-card/85 shadow-soft dark:bg-card/92"
           >
             {dark ? (
               <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="5"/><path d="M12 1v2M12 21v2M4.2 4.2l1.4 1.4M18.4 18.4l1.4 1.4M1 12h2M21 12h2M4.2 19.8l1.4-1.4M18.4 5.6l1.4-1.4"/></svg>
