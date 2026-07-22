@@ -1,11 +1,11 @@
 import { useState } from "react";
 import type { ButtonHTMLAttributes, InputHTMLAttributes, ReactNode } from "react";
-import { AlertCircle, ArrowLeft, CheckCircle2, Church, Eye, EyeOff, Heart, Info, LockKeyhole, Mail } from "lucide-react";
+import { AlertCircle, ArrowLeft, CheckCircle2, Eye, EyeOff, Heart, Info, LockKeyhole, Mail } from "lucide-react";
 
 export function ChurchLogo({ size = "small", circular = false }: { size?: "small" | "large"; circular?: boolean }) {
   return (
     <span className={`church-logo church-logo--${size}${circular ? " church-logo--circular" : ""}`} aria-hidden="true">
-      <Church strokeWidth={1.8} />
+      <img src="/logo.svg" alt="" />
     </span>
   );
 }

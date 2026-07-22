@@ -43,9 +43,9 @@
 
 .church-logo { display: inline-flex; align-items: center; justify-content: center; color: var(--auth-primary); flex: none; }
 .church-logo--small { width: 40px; height: 40px; }
-.church-logo--small svg { width: 34px; height: 34px; }
+.church-logo--small img { width: 34px; height: 34px; object-fit: contain; }
 .church-logo--large { width: 92px; height: 92px; }
-.church-logo--large svg { width: 51px; height: 51px; }
+.church-logo--large img { width: 51px; height: 61px; object-fit: contain; }
 .church-logo--circular { display: flex; margin-inline: auto; border-radius: 50%; background: #fff; box-shadow: 0 10px 30px rgba(37,35,45,.12); }
 
 .auth-illustration { width: calc(100% - 24px); height: clamp(192px, 29dvh, 242px); margin: 0 auto; overflow: hidden; border-radius: 0 0 32px 32px; background: var(--auth-primary-soft); }
