@@ -127,6 +127,7 @@ function AuthenticatedApp() {
             teens={teens}
             attendanceMap={attendanceMap}
             onOpenProfile={(id) => navigate(currentRoute, id)}
+            onNavigate={navigate}
           />
         );
       case "jovenes":

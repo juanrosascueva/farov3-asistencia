@@ -22,6 +22,7 @@ interface AsistenciaProps {
   teens: Doc<"teens">[];
   attendanceMap: AttendanceMap;
   onOpenProfile: (id: string) => void;
+  onNavigate: (route: string) => void;
 }
 
 const MEETING_LABELS: Record<MeetingType, string> = {
@@ -37,12 +38,12 @@ export default function Asistencia({
   teens,
   attendanceMap,
   onOpenProfile,
+  onNavigate,
 }: AsistenciaProps) {
   const allDates = Object.keys(attendanceMap).sort();
   const markAtt = useMutation(api.attendance.mark);
   const createSession = useMutation(api.attendance.createSession);
   const completeSession = useMutation(api.attendance.completeSession);
-  const createPastoralTask = useMutation(api.pastoralTasks.create);
   const deleteDateMut = useMutation(api.attendance.deleteDate);
   const updateDateMut = useMutation(api.attendance.updateDate);
   const { user, token } = useAuth();
@@ -54,7 +55,6 @@ export default function Asistencia({
   };
   const sessions = useQuery(api.attendance.listSessions, token ? { token, ...activeScopeArgs } : {}) ?? [];
   const needsContact = useQuery(api.attendance.getNeedsContact, token ? { token, ...activeScopeArgs } : {}) ?? [];
-  const openTasks = useQuery(api.pastoralTasks.listOpenForDashboard, token ? { token, ...activeScopeArgs } : "skip") ?? [];
 
   const [selectedDate, setSelectedDate] = useState(
     allDates[allDates.length - 1] || todayISO()
@@ -76,7 +76,7 @@ export default function Asistencia({
   const [editDateValue, setEditDateValue] = useState(selectedDate);
   const [searchQuery, setSearchQuery] = useState("");
   const [pendingCount, setPendingCount] = useState(0);
-  const [taskCreatingId, setTaskCreatingId] = useState<string | null>(null);
+  const [showFollowUpPrompt, setShowFollowUpPrompt] = useState(false);
   const [successMsg, setSuccessMsg] = useState<string | null>(null);
   const [deletedDates, setDeletedDates] = useState<string[]>([]);
   const [attendanceDetail, setAttendanceDetail] = useState<{
@@ -245,25 +245,6 @@ export default function Asistencia({
   const unmarkedCount = Math.max(0, rosterTotal - counts.marked);
   const completionPct = rosterTotal ? Math.round((counts.marked / rosterTotal) * 100) : 0;
   const filterCounts = { all: rosterTotal, unmarked: unmarkedCount, present: counts.present, excused: counts.excused, absent: counts.absent };
-  const hasOpenTask = (teenId: string) => openTasks.some((task: any) => String(task.teenId) === teenId);
-
-  const createTaskFromSignal = async (item: any) => {
-    if (!token || hasOpenTask(String(item.teenId))) return;
-    setTaskCreatingId(String(item.teenId));
-    try {
-      await createPastoralTask({
-        token,
-        teenId: item.teenId,
-        source: "manual",
-        title: `Dar seguimiento: ${item.reasons[0]}`,
-        description: item.reasons.join(" · "),
-        priority: item.priority,
-      });
-    } finally {
-      setTaskCreatingId(null);
-    }
-  };
-
   const finishSession = async (allowIncomplete: boolean) => {
     if (!token || !selectedSession) return;
     try {
@@ -271,10 +252,15 @@ export default function Asistencia({
       setCompletedStats(stats);
       setShowCompleteSession(false);
       setResultNotes("");
+      setShowFollowUpPrompt(needsContact.length > 0);
     } catch (error) {
       setSuccessMsg(`Error: ${error instanceof Error ? error.message : "No se pudo cerrar la actividad."}`);
     }
   };
+
+  useEffect(() => {
+    if (completedStats && needsContact.length > 0) setShowFollowUpPrompt(true);
+  }, [completedStats, needsContact.length]);
 
   return (
     <div className="space-y-5">
@@ -369,15 +355,17 @@ export default function Asistencia({
 
       {upcomingSessions.length > 0 && <section className="game-card p-4"><div className="flex items-center justify-between gap-3"><div className="flex items-center gap-3"><span className="feature-icon feature-icon--primary"><svg className="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8"><rect x="3" y="4" width="18" height="17" rx="2"/><path d="M8 2v4M16 2v4M3 10h18"/></svg></span><div><p className="text-xs font-bold uppercase text-primary-700">Agenda del ámbito</p><p className="mt-1 text-sm text-ink/50">Próximas actividades planificadas.</p></div></div><span className="text-xs text-ink/40">{scopeLabel}</span></div><div className="mt-3 grid gap-2 sm:grid-cols-2 lg:grid-cols-3">{visibleUpcomingSessions.map((session: any) => <button key={session._id} onClick={() => { setSelectedDate(session.date); setSelectedSessionId(String(session._id)); }} className="rounded-xl border border-ink/10 px-3 py-2.5 text-left hover:border-primary-300"><p className="text-sm font-bold">{MEETING_LABELS[session.type as MeetingType]}</p><p className="mt-1 text-xs text-ink/55">{session.date}{session.objective ? ` · ${session.objective}` : ""}</p><p className="mt-1 text-xs text-primary-700">{session.status === "completed" ? "Cerrada" : "Planificada"}{session.expectedAttendance ? ` · Esperados ${session.expectedAttendance}` : ""}</p></button>)}</div>{upcomingSessions.length > 3 && <button type="button" onClick={() => setShowAllUpcoming((value) => !value)} className="mt-3 text-xs font-semibold text-primary-700 underline underline-offset-2">{showAllUpcoming ? "Ver menos" : `Ver las ${upcomingSessions.length} actividades`}</button>}</section>}
 
-      {needsContact.length > 0 && (
-        <div className="rounded-2xl border border-primary-100 bg-primary-50 p-3.5">
-          <p className="text-sm font-bold text-primary-700">Adolescentes que necesitan contacto esta semana</p>
-          <div className="mt-2 grid gap-2 sm:grid-cols-2">
-            {needsContact.slice(0, 5).map((item: any) => (
-              <div key={String(item.teenId)} className="rounded-xl border border-primary-100 bg-white/70 px-3 py-2 text-xs"><button type="button" onClick={() => onOpenProfile(String(item.teenId))} className="w-full text-left"><span className="font-semibold text-ink">{item.teenName}</span><span className="block text-primary-700">{item.reasons.join(" · ")}</span></button><div className="mt-2 flex gap-2"><button type="button" onClick={() => onOpenProfile(String(item.teenId))} className="text-xs font-semibold text-primary-700 underline underline-offset-2">Abrir ficha</button>{hasOpenTask(String(item.teenId)) ? <span className="text-xs text-success-700">Tarea abierta</span> : <button type="button" disabled={taskCreatingId === String(item.teenId)} onClick={() => createTaskFromSignal(item)} className="text-xs font-semibold text-primary-700 underline underline-offset-2 disabled:opacity-50">{taskCreatingId === String(item.teenId) ? "Creando..." : "Crear tarea"}</button>}</div></div>
-            ))}
+      {showFollowUpPrompt && needsContact.length > 0 && (
+        <section className="ui-card flex items-start justify-between gap-3 border-primary-200 bg-primary-50 p-4" aria-live="polite">
+          <div>
+            <p className="text-sm font-bold text-primary-800">Hay {needsContact.length} {needsContact.length === 1 ? "adolescente" : "adolescentes"} que requieren seguimiento.</p>
+            <p className="mt-1 text-xs text-primary-700">Revisa las señales y define la próxima acción en Seguimiento.</p>
           </div>
-        </div>
+          <div className="flex shrink-0 items-center gap-2">
+            <button type="button" onClick={() => onNavigate("seguimiento")} className="ui-button ui-button--primary px-3 py-2 text-xs">Ver Seguimiento</button>
+            <button type="button" onClick={() => setShowFollowUpPrompt(false)} className="ui-button ui-button--ghost px-2 py-2 text-xs" aria-label="Cerrar aviso de seguimiento" title="Cerrar">×</button>
+          </div>
+        </section>
       )}
 
       {rosterTeens.length === 0 ? (
