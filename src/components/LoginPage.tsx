@@ -1,83 +1,103 @@
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { useMutation, useQuery } from "convex/react";
+import { CheckCircle2 } from "lucide-react";
 import { api } from "../../convex/_generated/api";
 import { useAuth } from "../hooks/useAuth";
+import {
+  AuthIllustration,
+  AuthInput,
+  AuthLayout,
+  ChurchLogo,
+  FaithMotto,
+  PasswordInput,
+  PrimaryButton,
+  SecondaryButton,
+  SocialLoginButton,
+  StatusMessage,
+} from "./auth/AuthComponents";
+import { emailError, passwordError } from "./auth/validation";
+import "./auth/auth.css";
+
+type View = "login" | "register" | "success";
+
+function friendlyAuthError(error: unknown, fallback: string) {
+  const raw = error instanceof Error ? error.message : "";
+  if (raw.includes("Credenciales inválidas")) return "Correo o contraseña incorrectos.";
+  if (raw.includes("pendiente de aprobación")) return "Tu cuenta todavía está pendiente de aprobación por el pastor.";
+  if (raw.includes("email ya está registrado")) return "Ya existe una cuenta con este correo electrónico.";
+  if (raw.includes("Ya existe un usuario")) return "La congregación ya tiene una cuenta inicial. Crea una solicitud de acceso.";
+  return fallback;
+}
 
 export default function LoginPage() {
-  const { login, register, user, loading } = useAuth();
-  const [email, setEmail] = useState("");
-  const [password, setPassword] = useState("");
-  const [error, setError] = useState("");
-  const [submitting, setSubmitting] = useState(false);
-  const [showSetup, setShowSetup] = useState(false);
-  const [setupEmail, setSetupEmail] = useState("");
-  const [setupPassword, setSetupPassword] = useState("");
-  const [setupName, setSetupName] = useState("");
-  const [setupError, setSetupError] = useState("");
-  const [setupDone, setSetupDone] = useState(false);
-
-  // Estados de auto-registro / solicitud de acceso
-  const [showRequestAccess, setShowRequestAccess] = useState(false);
-  const [requestEmail, setRequestEmail] = useState("");
-  const [requestPassword, setRequestPassword] = useState("");
-  const [requestName, setRequestName] = useState("");
-  const [requestRole, setRequestRole] = useState<"pastor" | "director" | "coordinador" | "leader" | "helper">("leader");
-  const [requestError, setRequestError] = useState("");
-  const [requestSuccess, setRequestSuccess] = useState(false);
-
+  const { login, register, loading } = useAuth();
   const setupFirstUser = useMutation(api.users.setupFirstUser);
   const hasUsers = useQuery(api.users.hasAnyUser);
+  const [view, setView] = useState<View>("login");
+  const [submitting, setSubmitting] = useState(false);
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+  const [confirmPassword, setConfirmPassword] = useState("");
+  const [touched, setTouched] = useState<Record<string, boolean>>({});
+  const [message, setMessage] = useState<{ type: "error" | "info"; text: string } | null>(null);
 
-  const handleLogin = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!email.trim() || !password.trim()) return;
-    setSubmitting(true);
-    setError("");
-    try {
-      await login(email.trim(), password);
-    } catch (err: any) {
-      setError(err.message || "Error al iniciar sesión");
-    } finally {
-      setSubmitting(false);
-    }
+  const isRegister = view === "register";
+  const currentEmailError = emailError(email);
+  const currentPasswordError = passwordError(password);
+  const confirmError = !confirmPassword
+    ? "Confirma tu contraseña."
+    : confirmPassword !== password
+      ? "Las contraseñas no coinciden."
+      : "";
+  const loginValid = !currentEmailError && Boolean(password);
+  const registerValid = loginValid && !currentPasswordError && !confirmError;
+
+  const resetView = (nextView: View) => {
+    setView(nextView);
+    setEmail("");
+    setPassword("");
+    setConfirmPassword("");
+    setTouched({});
+    setMessage(null);
   };
 
-  const handleRequestAccess = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!requestEmail.trim() || !requestPassword.trim() || !requestName.trim()) return;
+  const handleLogin = async (event: React.FormEvent) => {
+    event.preventDefault();
+    setTouched({ email: true, password: true });
+    if (!loginValid) return;
     setSubmitting(true);
-    setRequestError("");
+    setMessage(null);
     try {
-      await register(requestEmail.trim(), requestPassword, requestName.trim(), requestRole);
-      setRequestSuccess(true);
-    } catch (err: any) {
-      setRequestError(err.message || "Error al enviar la solicitud");
-    } finally {
-      setSubmitting(false);
-    }
-  };
-
-  const scrollIntoView = (e: React.FocusEvent<HTMLFormElement>) => {
-    const target = e.target as HTMLElement;
-    if (target.tagName === "INPUT" || target.tagName === "SELECT" || target.tagName === "TEXTAREA") {
-      setTimeout(() => target.scrollIntoView({ behavior: "smooth", block: "center" }), 300);
-    }
-  };
-
-  const handleSetup = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!setupEmail.trim() || !setupPassword.trim() || !setupName.trim()) return;
-    setSubmitting(true);
-    setSetupError("");
-    try {
-      await setupFirstUser({
-        email: setupEmail.trim(),
-        password: setupPassword,
-        name: setupName.trim(),
+      await login(email, password);
+    } catch (error) {
+      setMessage({
+        type: "error",
+        text: friendlyAuthError(error, "No pudimos iniciar sesión. Revisa tus datos e inténtalo de nuevo."),
       });
-      setSetupDone(true);
-    } catch (err: any) {
-      setSetupError(err.message || "Error al configurar");
+    } finally {
+      setSubmitting(false);
+    }
+  };
+
+  const handleRegister = async (event: React.FormEvent) => {
+    event.preventDefault();
+    setTouched({ email: true, password: true, confirmPassword: true });
+    if (!registerValid) return;
+    setSubmitting(true);
+    setMessage(null);
+    const generatedName = email.split("@")[0].replace(/[._-]+/g, " ").trim() || "Nuevo miembro";
+    try {
+      if (hasUsers === false) {
+        await setupFirstUser({ email: email.trim(), password, name: generatedName });
+      } else {
+        await register(email, password, generatedName, "helper");
+      }
+      setView("success");
+    } catch (error) {
+      setMessage({
+        type: "error",
+        text: friendlyAuthError(error, "No pudimos crear tu cuenta. Inténtalo de nuevo."),
+      });
     } finally {
       setSubmitting(false);
     }
@@ -85,268 +105,124 @@ export default function LoginPage() {
 
   if (loading) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-paper">
-        <div className="text-center">
-          <div className="w-12 h-12 mx-auto rounded-full bg-ink/5 animate-pulse mb-3" />
-          <p className="text-sm text-ink/50">Cargando...</p>
+      <AuthLayout variant="login">
+        <div className="auth-loading" role="status" aria-live="polite">
+          <span className="auth-spinner auth-spinner--large" aria-hidden="true" />
+          <p>Preparando tu espacio…</p>
         </div>
-      </div>
+      </AuthLayout>
     );
   }
 
-  if (requestSuccess) {
+  if (view === "success") {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-paper">
-        <div className="bg-card rounded-card shadow-soft p-8 max-w-sm w-full mx-4 text-center">
-          <div className="w-14 h-14 mx-auto rounded-full bg-teal-100 flex items-center justify-center mb-4">
-            <svg className="w-7 h-7 text-teal-600" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-              <path d="M20 6L9 17l-5-5" />
-            </svg>
-          </div>
-          <h1 className="font-display text-xl font-bold mb-2">¡Solicitud enviada!</h1>
-          <p className="text-sm text-ink/60 mb-6 leading-relaxed">
-            Tu solicitud de acceso ha sido registrada. Tu cuenta se encuentra en espera de aprobación por el Pastor.
+      <AuthLayout variant="register">
+        <main className="auth-success" aria-labelledby="success-title">
+          <span className="auth-success__icon" aria-hidden="true"><CheckCircle2 /></span>
+          <h1 id="success-title">¡Cuenta creada!</h1>
+          <p>
+            {hasUsers === false
+              ? "Tu cuenta de pastor está lista. Ya puedes iniciar sesión."
+              : "Recibimos tu solicitud. El pastor debe aprobarla antes de que puedas ingresar."}
           </p>
-          <button
-            onClick={() => { setRequestSuccess(false); setShowRequestAccess(false); setRequestEmail(""); setRequestPassword(""); setRequestName(""); }}
-            className="w-full bg-ink dark:bg-teal-600 dark:hover:bg-teal-500 text-white rounded-xl py-2.5 text-sm font-semibold pressable"
-          >
-            Volver a inicio de sesión
-          </button>
-        </div>
-      </div>
-    );
-  }
-
-  if (setupDone) {
-    return (
-      <div className="min-h-screen flex items-center justify-center bg-paper">
-        <div className="bg-card rounded-card shadow-soft p-8 max-w-sm w-full mx-4 text-center">
-          <div className="w-14 h-14 mx-auto rounded-full bg-teal-100 flex items-center justify-center mb-4">
-            <svg className="w-7 h-7 text-teal-600" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-              <path d="M20 6L9 17l-5-5" />
-            </svg>
-          </div>
-          <h1 className="font-display text-xl font-bold mb-2">¡Configuración lista!</h1>
-          <p className="text-sm text-ink/60 mb-4">
-            El usuario pastor fue creado. Ahora puedes iniciar sesión.
-          </p>
-          <button
-            onClick={() => { setShowSetup(false); setSetupDone(false); }}
-            className="bg-ink dark:bg-teal-600 dark:hover:bg-teal-500 text-white rounded-xl py-2.5 px-6 text-sm font-semibold"
-          >
-            Iniciar sesión
-          </button>
-        </div>
-      </div>
+          <PrimaryButton type="button" onClick={() => resetView("login")}>Ir a iniciar sesión</PrimaryButton>
+        </main>
+      </AuthLayout>
     );
   }
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-paper">
-      <div className="bg-card rounded-card shadow-soft p-8 max-w-sm w-full mx-4">
-        <div className="text-center mb-6">
-          <img src="/logo.svg" alt="Cristo Vive" className="w-14 h-14 mx-auto mb-3" />
-          <h1 className="font-display text-xl font-bold">Congregación Cristo Vive</h1>
-          <p className="text-sm text-ink/50 mt-1">Control de Asistencia Pastoral</p>
+    <AuthLayout variant={isRegister ? "register" : "login"} onBack={isRegister ? () => resetView("login") : undefined}>
+      {!isRegister && (
+        <>
+          <header className="auth-brand auth-brand--top">
+            <ChurchLogo size="small" />
+            <span>Congregación<br /><strong>Cristo Vive</strong></span>
+          </header>
+          <AuthIllustration />
+        </>
+      )}
+
+      <main className={`auth-content ${isRegister ? "auth-content--register" : ""}`}>
+        {isRegister && <ChurchLogo size="large" circular />}
+        <div className="auth-heading">
+          <h1>{isRegister ? "Crea tu cuenta" : "Bienvenido"}</h1>
+          <span className="auth-heading__line" aria-hidden="true" />
+          <p>{isRegister ? "Únete a nuestra comunidad" : <>Nos alegra tenerte <strong>de vuelta</strong></>}</p>
         </div>
 
-        {showRequestAccess ? (
-          <form onSubmit={handleRequestAccess} className="space-y-4" onFocus={scrollIntoView} autoComplete="on">
-            <p className="text-sm font-semibold text-center text-teal-700">Solicitud de Acceso / Registro</p>
-            <p className="text-xs text-ink/40 text-center">Registra tus datos. Tu cuenta estará inactiva hasta que sea aprobada por el Pastor.</p>
-            <div>
-              <label className="text-xs font-semibold text-ink/50 mb-1 block">Nombre completo</label>
-              <input
-                type="text"
-                name="name"
-                autoComplete="name"
-                value={requestName}
-                onChange={e => setRequestName(e.target.value)}
-                placeholder="Ej: Juan Rosas"
-                required
-                className="w-full bg-card border border-ink/10 rounded-xl px-3.5 py-2.5 text-base"
-              />
-            </div>
-            <div>
-              <label className="text-xs font-semibold text-ink/50 mb-1 block">Correo electrónico</label>
-              <input
-                type="email"
-                name="email"
-                autoComplete="email"
-                value={requestEmail}
-                onChange={e => setRequestEmail(e.target.value)}
-                placeholder="correo@iglesia.com"
-                required
-                className="w-full bg-card border border-ink/10 rounded-xl px-3.5 py-2.5 text-base"
-              />
-            </div>
-            <div>
-              <label className="text-xs font-semibold text-ink/50 mb-1 block">Contraseña</label>
-              <input
-                type="password"
-                name="new-password"
-                autoComplete="new-password"
-                value={requestPassword}
-                onChange={e => setRequestPassword(e.target.value)}
-                placeholder="••••••••"
-                required
-                className="w-full bg-card border border-ink/10 rounded-xl px-3.5 py-2.5 text-base"
-              />
-            </div>
-            <div>
-              <label className="text-xs font-semibold text-ink/50 mb-1 block">Rol solicitado</label>
-              <select
-                value={requestRole}
-                onChange={e => setRequestRole(e.target.value as any)}
-                className="w-full bg-card border border-ink/10 rounded-xl px-3.5 py-2.5 text-base"
-              >
-                <option value="leader">Líder</option>
-                <option value="helper">Ayudante</option>
-                <option value="coordinador">Coordinador</option>
-                <option value="director">Director</option>
-              </select>
-            </div>
-            {requestError && (
-              <p className="text-xs text-coral-600 bg-coral-50 rounded-lg px-3 py-2">{requestError}</p>
-            )}
+        <form className="auth-form" onSubmit={isRegister ? handleRegister : handleLogin} noValidate>
+          <AuthInput
+            id={isRegister ? "register-email" : "login-email"}
+            label="Correo electrónico"
+            type="email"
+            autoComplete={isRegister ? "email" : "username"}
+            value={email}
+            onChange={(event) => { setEmail(event.target.value); setMessage(null); }}
+            onBlur={() => setTouched((state) => ({ ...state, email: true }))}
+            error={touched.email ? currentEmailError : ""}
+          />
+          <PasswordInput
+            id={isRegister ? "register-password" : "login-password"}
+            label="Contraseña"
+            autoComplete={isRegister ? "new-password" : "current-password"}
+            value={password}
+            onChange={(event) => { setPassword(event.target.value); setMessage(null); }}
+            onBlur={() => setTouched((state) => ({ ...state, password: true }))}
+            error={touched.password ? (isRegister ? currentPasswordError : (!password ? "Ingresa tu contraseña." : "")) : ""}
+          />
+          {isRegister && (
+            <PasswordInput
+              id="confirm-password"
+              label="Confirmar contraseña"
+              autoComplete="new-password"
+              value={confirmPassword}
+              onChange={(event) => { setConfirmPassword(event.target.value); setMessage(null); }}
+              onBlur={() => setTouched((state) => ({ ...state, confirmPassword: true }))}
+              error={touched.confirmPassword ? confirmError : ""}
+            />
+          )}
+
+          {!isRegister && (
             <button
-              type="submit"
-              disabled={submitting}
-              className="w-full bg-ink dark:bg-teal-600 dark:hover:bg-teal-500 text-white rounded-xl py-2.5 text-sm font-semibold disabled:opacity-50 pressable"
-            >
-              {submitting ? "Enviando solicitud..." : "Enviar solicitud"}
-            </button>
-            <button
+              className="auth-text-button"
               type="button"
-              onClick={() => { setShowRequestAccess(false); setRequestError(""); }}
-              className="w-full text-xs text-ink/40 hover:text-ink/60 text-center"
+              onClick={() => setMessage({ type: "info", text: "Pide al administrador de tu congregación que restablezca tu contraseña." })}
             >
-              Volver a inicio de sesión
+              ¿Olvidaste tu contraseña?
             </button>
-          </form>
-        ) : !showSetup ? (
-          <form onSubmit={handleLogin} className="space-y-4" onFocus={scrollIntoView} autoComplete="on">
-            <div>
-              <label className="text-xs font-semibold text-ink/50 mb-1 block">
-                Correo electrónico
-              </label>
-              <input
-                type="email"
-                name="email"
-                autoComplete="username"
-                inputMode="email"
-                value={email}
-                onChange={e => setEmail(e.target.value)}
-                placeholder="correo@iglesia.com"
-                className="w-full bg-card border border-ink/10 rounded-xl px-3.5 py-2.5 text-base"
-                autoFocus
-              />
-            </div>
-            <div>
-              <label className="text-xs font-semibold text-ink/50 mb-1 block">
-                Contraseña
-              </label>
-              <input
-                type="password"
-                name="password"
-                autoComplete="current-password"
-                value={password}
-                onChange={e => setPassword(e.target.value)}
-                placeholder="••••••••"
-                className="w-full bg-card border border-ink/10 rounded-xl px-3.5 py-2.5 text-base"
-              />
-            </div>
-            {error && (
-              <p className="text-xs text-coral-600 bg-coral-50 rounded-lg px-3 py-2">{error}</p>
-            )}
-            <button
-              type="submit"
-              disabled={submitting}
-              className="w-full bg-ink dark:bg-teal-600 dark:hover:bg-teal-500 text-white rounded-xl py-2.5 text-sm font-semibold disabled:opacity-50 pressable"
-            >
-              {submitting ? "Ingresando..." : "Iniciar sesión"}
-            </button>
-            
-            <div className="space-y-2 pt-2 text-center">
-              <button
+          )}
+
+          {message && <StatusMessage type={message.type}>{message.text}</StatusMessage>}
+
+          <PrimaryButton type="submit" loading={submitting} disabled={submitting || (isRegister ? !registerValid : !loginValid)}>
+            {isRegister ? "Crear cuenta" : "Iniciar sesión"}
+          </PrimaryButton>
+
+          {isRegister ? (
+            <>
+              <div className="auth-divider"><span>o</span></div>
+              <SocialLoginButton
                 type="button"
-                onClick={() => { setShowRequestAccess(true); setError(""); }}
-                className="w-full text-xs text-teal-700 font-semibold hover:text-teal-600"
+                onClick={() => setMessage({ type: "info", text: "El acceso con Google estará disponible próximamente. Usa tu correo por ahora." })}
               >
-                ¿No tienes cuenta? Solicitar acceso
-              </button>
-              {hasUsers === false && (
-                <button
-                  type="button"
-                  onClick={() => { setShowSetup(true); setError(""); }}
-                  className="w-full text-[11px] text-ink/30 hover:text-ink/50"
-                >
-                  ¿Primer acceso? Configurar pastor inicial
-                </button>
-              )}
-            </div>
-          </form>
-        ) : (
-          <form onSubmit={handleSetup} className="space-y-4" onFocus={scrollIntoView} autoComplete="on">
-            <p className="text-sm font-semibold">Configurar primer usuario (Pastor)</p>
-            <p className="text-xs text-ink/40">Esto solo funciona si no hay usuarios registrados.</p>
-            <div>
-              <label className="text-xs font-semibold text-ink/50 mb-1 block">Nombre</label>
-              <input
-                type="text"
-                name="name"
-                autoComplete="name"
-                value={setupName}
-                onChange={e => setSetupName(e.target.value)}
-                placeholder="Ej: Juan Rosas"
-                className="w-full bg-card border border-ink/10 rounded-xl px-3.5 py-2.5 text-base"
-              />
-            </div>
-            <div>
-              <label className="text-xs font-semibold text-ink/50 mb-1 block">Correo</label>
-              <input
-                type="email"
-                name="email"
-                autoComplete="email"
-                value={setupEmail}
-                onChange={e => setSetupEmail(e.target.value)}
-                placeholder="pastor@iglesia.com"
-                className="w-full bg-card border border-ink/10 rounded-xl px-3.5 py-2.5 text-base"
-              />
-            </div>
-            <div>
-              <label className="text-xs font-semibold text-ink/50 mb-1 block">Contraseña</label>
-              <input
-                type="password"
-                name="new-password"
-                autoComplete="new-password"
-                value={setupPassword}
-                onChange={e => setSetupPassword(e.target.value)}
-                placeholder="••••••••"
-                className="w-full bg-card border border-ink/10 rounded-xl px-3.5 py-2.5 text-base"
-              />
-            </div>
-            {setupError && (
-              <p className="text-xs text-coral-600 bg-coral-50 rounded-lg px-3 py-2">{setupError}</p>
-            )}
-            <button
-              type="submit"
-              disabled={submitting}
-              className="w-full bg-ink dark:bg-teal-600 dark:hover:bg-teal-500 text-white rounded-xl py-2.5 text-sm font-semibold disabled:opacity-50 pressable"
-            >
-              {submitting ? "Configurando..." : "Configurar"}
-            </button>
-            <button
-              type="button"
-              onClick={() => setShowSetup(false)}
-              className="w-full text-xs text-ink/40 hover:text-ink/60 text-center"
-            >
-              Volver a inicio de sesión
-            </button>
-          </form>
-        )}
-      </div>
-    </div>
+                Continuar con Google
+              </SocialLoginButton>
+            </>
+          ) : (
+            <SecondaryButton type="button" onClick={() => resetView("register")}>Crear cuenta</SecondaryButton>
+          )}
+        </form>
+      </main>
+
+      {isRegister ? (
+        <footer className="auth-brand auth-brand--bottom">
+          <ChurchLogo size="small" />
+          <span>Congregación<br /><strong>Cristo Vive</strong></span>
+        </footer>
+      ) : (
+        <footer><FaithMotto /></footer>
+      )}
+    </AuthLayout>
   );
 }
