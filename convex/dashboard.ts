@@ -43,6 +43,16 @@ export const getRoleSummary = query({
     const tasks = (await ctx.db.query("pastoralTasks").collect()).filter((task) => teenIds.has(String(task.teenId)));
     const crisis = (await ctx.db.query("crisisAlerts").collect()).filter((alert) => teenIds.has(String(alert.teenId)));
     const groups = await ctx.db.query("group").collect();
+    const users = new Map((await ctx.db.query("users").collect()).map((user) => [String(user._id), user.name]));
+    const groupLeaderById = new Map(groups.map((group) => [String(group._id), group.leaderId]));
+    const effectiveLeaderByTeenId = new Map(teens.map((teen) => [
+      String(teen._id),
+      teen.liderPrincipalId
+        ? { userId: teen.liderPrincipalId, source: "individual" }
+        : groupLeaderById.get(String(teen.groupId || ""))
+          ? { userId: groupLeaderById.get(String(teen.groupId || "")), source: "group" }
+          : { userId: undefined, source: "unassigned" },
+    ]));
     const activePlans = (await ctx.db.query("pastoralPlans").collect()).filter((plan) => teenIds.has(String(plan.teenId)) && plan.status === "active");
     const today = new Date().toISOString().slice(0, 10);
     const currentMonth = monthOf(today);
@@ -110,6 +120,46 @@ export const getRoleSummary = query({
     const present = attendance.filter((a) => a.status === "present").length;
     const attendanceTotal = attendance.length;
 
+    const isSupervisor = roleVariant(access.user.role) !== "leader";
+    const taskView = (task: any) => {
+      const teen = teens.find((item) => String(item._id) === String(task.teenId));
+      return {
+        taskId: task._id,
+        teenId: task.teenId,
+        teenName: teen ? `${teen.nombre} ${teen.apellido}`.trim() : "Adolescente",
+        title: task.title,
+        detail: task.description || "Tarea pastoral pendiente.",
+        dueDate: task.dueDate,
+        priority: task.priority,
+        status: task.status,
+        assignedToUserId: task.assignedToUserId,
+        assignedName: task.assignedToUserId ? users.get(String(task.assignedToUserId)) || "Sin responsable" : "Sin responsable",
+      };
+    };
+    const myTasks = openTasks
+      .filter((task) => String(task.assignedToUserId || "") === String(access.user._id))
+      .map(taskView)
+      .sort((a, b) => Number(Boolean(b.dueDate && b.dueDate < today)) - Number(Boolean(a.dueDate && a.dueDate < today)) || (b.priority === "critical" ? 1 : 0) - (a.priority === "critical" ? 1 : 0) || (a.dueDate || "9999-99-99").localeCompare(b.dueDate || "9999-99-99"));
+    const mySignals = needsContact
+      .filter((signal: any) => String(effectiveLeaderByTeenId.get(String(signal.teenId))?.userId || "") === String(access.user._id))
+      .filter((signal: any) => !openTasks.some((task) => String(task.teenId) === String(signal.teenId)))
+      .map((signal: any) => ({ ...signal, leaderSource: effectiveLeaderByTeenId.get(String(signal.teenId))?.source || "unassigned" }));
+    const unassigned = teens
+      .filter((teen) => !effectiveLeaderByTeenId.get(String(teen._id))?.userId)
+      .map((teen) => {
+        const signal = needsContact.find((item: any) => String(item.teenId) === String(teen._id));
+        return {
+          teenId: teen._id,
+          teenName: `${teen.nombre} ${teen.apellido}`.trim(),
+          reason: signal?.reasons?.join(" · ") || "Sin líder responsable asignado.",
+        };
+      });
+    const myAssignedTeens = teens.filter((teen) => String(effectiveLeaderByTeenId.get(String(teen._id))?.userId || "") === String(access.user._id)).length;
+    const supervisionPriorities = openTasks
+      .filter((task) => task.priority === "critical" || task.priority === "high" || task.status === "escalated" || (task.dueDate && task.dueDate < today))
+      .map(taskView)
+      .sort((a, b) => (b.priority === "critical" ? 1 : 0) - (a.priority === "critical" ? 1 : 0) || Number(Boolean(b.dueDate && b.dueDate < today)) - Number(Boolean(a.dueDate && a.dueDate < today)));
+
     return {
       role: access.user.role,
       variant: roleVariant(access.user.role),
@@ -134,6 +184,15 @@ export const getRoleSummary = query({
       },
       needsContact,
       groupHealth,
+      portfolio: {
+        isSupervisor,
+        myTasks: myTasks.slice(0, 3),
+        mySignals: mySignals.slice(0, 3),
+        supervisionPriorities: supervisionPriorities.slice(0, 3),
+        unassigned: unassigned.slice(0, 5),
+        assignedTeens: isSupervisor ? teens.length - unassigned.length : myAssignedTeens,
+        totalTeens: teens.length,
+      },
     };
   },
 });

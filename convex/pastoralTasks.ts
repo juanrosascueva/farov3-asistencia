@@ -3,6 +3,7 @@ import { internalMutation, mutation, query } from "./_generated/server";
 import { getUserFromToken } from "./authHelper";
 import { canAccessTeen, filterTeensByScope, requireAccess } from "./authz";
 import { logAudit } from "./auditLog";
+import { resolveEffectiveLeader } from "./leaderAssignment";
 
 const priority = v.union(v.literal("low"), v.literal("medium"), v.literal("high"), v.literal("critical"));
 const taskStatus = v.union(
@@ -111,14 +112,15 @@ export const create = mutation({
     relatedCrisisAlertId: v.optional(v.id("crisisAlerts")),
   },
   handler: async (ctx, args) => {
-    const { access } = await requireTeenAccess(ctx, args.token, args.teenId);
+    const { access, teen } = await requireTeenAccess(ctx, args.token, args.teenId);
     const now = new Date().toISOString();
+    const resolvedLeader = args.assignedToUserId ? undefined : await resolveEffectiveLeader(ctx, teen);
     const payload = {
       teenId: args.teenId,
       source: args.source,
       title: args.title.trim(),
       description: args.description?.trim(),
-      assignedToUserId: args.assignedToUserId,
+      assignedToUserId: args.assignedToUserId ?? resolvedLeader?.userId,
       dueDate: args.dueDate,
       priority: args.priority,
       status: "pending" as const,
@@ -229,8 +231,11 @@ export const createInternal = internalMutation({
   },
   handler: async (ctx, args) => {
     const now = new Date().toISOString();
+    const teen = await ctx.db.get(args.teenId);
+    const resolvedLeader = args.assignedToUserId ? undefined : await resolveEffectiveLeader(ctx, teen);
     return await ctx.db.insert("pastoralTasks", {
       ...args,
+      assignedToUserId: args.assignedToUserId ?? resolvedLeader?.userId,
       status: "pending",
       createdAt: now,
       updatedAt: now,

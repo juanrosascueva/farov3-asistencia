@@ -310,6 +310,7 @@ export default function TeenForm({ teen, quickVisitor = false, onClose, onSucces
       </button>
     </div>
   );
+  const assignableUsers = useQuery(api.pastoralTasks.listAssignableUsers, token ? { token } : "skip") ?? [];
   const mobileProgress = (
     <div className="rounded-2xl border border-ink/10 bg-ink/[0.02] p-3.5 sm:hidden">
       <div className="flex items-center justify-between gap-3 text-sm">
@@ -608,6 +609,18 @@ export default function TeenForm({ teen, quickVisitor = false, onClose, onSucces
                   options={[{ value: "", label: "Sin grupo" }, ...((groups || []).map((g: any) => ({ value: g._id, label: g.name })))]}
                 />
               )}
+              <div className="rounded-xl border border-ink/10 bg-ink/[0.02] p-3">
+                <SelectField
+                  label="Líder responsable"
+                  value={form.liderPrincipalId}
+                  onChange={set("liderPrincipalId")}
+                  options={[
+                    { value: "", label: "Usar líder del grupo" },
+                    ...assignableUsers.map((person: any) => ({ value: person._id, label: person.name })),
+                  ]}
+                />
+                <p className="mt-2 text-xs text-ink/45">Si el grupo no tiene líder, esta ficha quedará sin responsable hasta asignarlo.</p>
+              </div>
             </div>
           </section>
         )}

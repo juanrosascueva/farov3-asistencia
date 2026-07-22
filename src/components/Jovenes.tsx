@@ -62,8 +62,15 @@ export default function Jovenes({
   };
 
   const deleteTeen = useMutation(api.teens.remove);
-  const { token } = useAuth();
+  const { token, user } = useAuth();
   const { scope, scopeLabel } = useScope();
+  const leaderAssignments = useQuery(api.teens.listLeaderAssignments, token ? { token } : "skip") ?? [];
+  const leaderByTeenId = useMemo(() => new Map(leaderAssignments.map((item: any) => [String(item.teenId), item])), [leaderAssignments]);
+  const assignableUsers = useQuery(api.pastoralTasks.listAssignableUsers, token ? { token } : "skip") ?? [];
+  const bulkAssignLeader = useMutation(api.teens.bulkAssignLeader);
+  const [selectedTeenIds, setSelectedTeenIds] = useState<string[]>([]);
+  const [bulkLeaderId, setBulkLeaderId] = useState("");
+  const canAssignLeaders = ["admin", "pastor", "director", "coordinador"].includes(user?.role || "");
   const recalcPpp = useAction(api.ppp.calculateAllPpp as any);
   const [pppRecalculating, setPppRecalculating] = useState(false);
 
@@ -316,6 +323,18 @@ export default function Jovenes({
         </div>
       </div>
 
+      {canAssignLeaders && selectedTeenIds.length > 0 && (
+        <div className="flex flex-wrap items-center gap-2 rounded-xl border border-teal-200 bg-teal-50 p-3">
+          <span className="text-sm font-bold text-teal-800">{selectedTeenIds.length} seleccionado{selectedTeenIds.length > 1 ? "s" : ""}</span>
+          <select value={bulkLeaderId} onChange={(event) => setBulkLeaderId(event.target.value)} className="min-w-44 rounded-lg border border-teal-200 bg-card px-3 py-2 text-sm font-semibold text-ink">
+            <option value="">Elegir líder...</option>{assignableUsers.map((person: any) => <option key={person._id} value={person._id}>{person.name}</option>)}
+          </select>
+          <button disabled={!bulkLeaderId} onClick={async () => { if (!token) return; await bulkAssignLeader({ token, teenIds: selectedTeenIds as any, liderPrincipalId: bulkLeaderId as any, useGroupLeader: false }); setSelectedTeenIds([]); setBulkLeaderId(""); }} className="rounded-lg bg-teal-700 px-3 py-2 text-sm font-bold text-white disabled:opacity-40">Asignar líder</button>
+          <button onClick={async () => { if (!token) return; await bulkAssignLeader({ token, teenIds: selectedTeenIds as any, useGroupLeader: true }); setSelectedTeenIds([]); }} className="rounded-lg border border-teal-200 bg-card px-3 py-2 text-sm font-bold text-teal-800">Usar líder del grupo</button>
+          <button onClick={() => setSelectedTeenIds([])} className="px-2 py-2 text-xs font-bold text-teal-700">Cancelar</button>
+        </div>
+      )}
+
       {activeFilterCount > 0 && (
         <div className="flex flex-wrap items-center gap-1.5">
           {[
@@ -521,6 +540,7 @@ export default function Jovenes({
                 onClick={() => onOpenProfile(t._id)}
                 className="bg-card rounded-card shadow-soft p-4 cursor-pointer premium-card pressable"
               >
+                {canAssignLeaders && <label onClick={(event) => event.stopPropagation()} className="mb-3 flex items-center gap-2 text-[11px] font-semibold text-ink/45"><input type="checkbox" checked={selectedTeenIds.includes(String(t._id))} onChange={(event) => setSelectedTeenIds((current) => event.target.checked ? [...current, String(t._id)] : current.filter((id) => id !== String(t._id)))} className="h-4 w-4 rounded border-ink/20 text-teal-600 focus:ring-teal-500" />Seleccionar</label>}
                 <div className="flex items-start gap-3">
                   <div className="relative shrink-0">
                     <div
@@ -634,6 +654,7 @@ export default function Jovenes({
                         PPP {pppLabel(ppp)}
                       </span>
                     </p>
+                    <p className="mt-2 truncate text-[11px] text-ink/45">Líder: <span className="font-semibold text-ink/60">{leaderByTeenId.get(String(t._id))?.userName || "Sin responsable"}</span></p>
                     <div className="flex items-center gap-2 mt-2">
                       <div className="flex-1 h-1.5 bg-ink/5 rounded-full overflow-hidden">
                         <div

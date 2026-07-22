@@ -2,6 +2,7 @@ import { v } from "convex/values";
 import { mutation, query } from "./_generated/server";
 import { canAccessTeen, filterTeensByScope, requireAccess } from "./authz";
 import { logAudit } from "./auditLog";
+import { resolveEffectiveLeader } from "./leaderAssignment";
 
 const priority = v.union(v.literal("low"), v.literal("medium"), v.literal("high"), v.literal("critical"));
 const planStatus = v.union(v.literal("active"), v.literal("completed"), v.literal("paused"));
@@ -23,7 +24,7 @@ async function withAssignedName(ctx: any, plan: any) {
 export const getByTeen = query({
   args: { token: v.string(), teenId: v.id("teens") },
   handler: async (ctx, args) => {
-    await requireTeenAccess(ctx, args.token, args.teenId);
+    const { teen } = await requireTeenAccess(ctx, args.token, args.teenId);
     const plan = await ctx.db
       .query("pastoralPlans")
       .withIndex("by_teenId_status", (q) => q.eq("teenId", args.teenId).eq("status", "active"))
@@ -47,7 +48,7 @@ export const upsertActive = mutation({
     status: v.optional(planStatus),
   },
   handler: async (ctx, args) => {
-    await requireTeenAccess(ctx, args.token, args.teenId);
+    const { teen } = await requireTeenAccess(ctx, args.token, args.teenId);
     const now = new Date().toISOString();
     const existing = await ctx.db
       .query("pastoralPlans")
@@ -58,7 +59,7 @@ export const upsertActive = mutation({
       mainNeed: args.mainNeed.trim(),
       monthlyGoal: args.monthlyGoal.trim(),
       recommendedAction: args.recommendedAction.trim(),
-      assignedToUserId: args.assignedToUserId,
+      assignedToUserId: args.assignedToUserId ?? (await resolveEffectiveLeader(ctx, teen)).userId,
       dueDate: args.dueDate,
       followUpResult: args.followUpResult?.trim(),
       priority: args.priority,
