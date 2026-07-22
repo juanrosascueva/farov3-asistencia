@@ -12,6 +12,7 @@ import { usePastoralTarget } from "../hooks/usePastoralTarget";
 import { useAuth } from "../hooks/useAuth";
 import { useScope } from "../hooks/useScope";
 import AiPanel from "./AiPanel";
+import OperationsAnalytics from "./reports/OperationsAnalytics";
 
 interface ReportsPanelProps {
   teens: Doc<"teens">[];
@@ -20,11 +21,11 @@ interface ReportsPanelProps {
   initialTab?: Tab;
 }
 
-type Tab = "attendance" | "pastoral" | "levels" | "fichas" | "ia";
+type Tab = "attendance" | "pastoral" | "levels" | "fichas" | "gestion" | "ia";
 type Range = "30d" | "3m" | "all";
 
 export default function ReportsPanel({ teens, attendanceMap, onOpenProfile, initialTab = "attendance" }: ReportsPanelProps) {
-  const { canUseAi, token } = useAuth();
+  const { canUseAi, token, user } = useAuth();
   const { scope, scopeLabel } = useScope();
   const [tab, setTab] = useState<Tab>(initialTab);
   const [range, setRange] = useState<Range>("30d");
@@ -32,6 +33,8 @@ export default function ReportsPanel({ teens, attendanceMap, onOpenProfile, init
   const allJournal = useQuery(api.journal.listAll, token ? { token, ...scopeArgs } : "skip") ?? [];
   const followUps = useQuery(api.journal.listFollowUps, token ? { token, ...scopeArgs } : "skip") ?? [];
   const { pastoralTargetCoverage } = usePastoralTarget();
+  const canViewManagement = ["admin", "pastor", "director", "coordinador"].includes(user?.role || "");
+  const operations = useQuery(api.analytics.getLevel2Summary, token && canViewManagement ? { token, ...scopeArgs } : "skip");
 
   const dates = allDatesSorted(attendanceMap);
   const now = new Date();
@@ -54,6 +57,7 @@ export default function ReportsPanel({ teens, attendanceMap, onOpenProfile, init
     { id: "pastoral", label: "Pastoral", icon: "📋" },
     { id: "levels", label: "Niveles", icon: "🏆" },
     { id: "fichas", label: "Fichas", icon: "🗂️" },
+    ...(canViewManagement ? [{ id: "gestion" as Tab, label: "Gestión", icon: "◫" }] : []),
     ...(canUseAi ? [{ id: "ia" as Tab, label: "Tendencias IA", icon: "✦" }] : []),
   ];
 
@@ -115,6 +119,7 @@ export default function ReportsPanel({ teens, attendanceMap, onOpenProfile, init
         <GamificationStats teens={teens} attendanceMap={attendanceMap} />
       )}
       {tab === "fichas" && <RegistryStats teens={teens} />}
+      {tab === "gestion" && canViewManagement && <OperationsAnalytics data={operations} />}
       {tab === "ia" && canUseAi && <AiPanel teens={teens} attendanceMap={attendanceMap} onOpenProfile={onOpenProfile} embedded />}
     </div>
   );

@@ -41,6 +41,7 @@ export default function Asistencia({
   const allDates = Object.keys(attendanceMap).sort();
   const markAtt = useMutation(api.attendance.mark);
   const createSession = useMutation(api.attendance.createSession);
+  const completeSession = useMutation(api.attendance.completeSession);
   const deleteDateMut = useMutation(api.attendance.deleteDate);
   const updateDateMut = useMutation(api.attendance.updateDate);
   const { user, token } = useAuth();
@@ -62,6 +63,8 @@ export default function Asistencia({
   const [newObjective, setNewObjective] = useState("");
   const [newExpectedAttendance, setNewExpectedAttendance] = useState("");
   const [selectedSessionId, setSelectedSessionId] = useState<string>("");
+  const [showCompleteSession, setShowCompleteSession] = useState(false);
+  const [resultNotes, setResultNotes] = useState("");
   const [showEditDate, setShowEditDate] = useState(false);
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const [editDateValue, setEditDateValue] = useState(selectedDate);
@@ -89,6 +92,7 @@ export default function Asistencia({
   const sessionDates = sessions.map((s: any) => s.date);
   const recent = [...new Set([...allDates, ...sessionDates])].sort().slice(-10);
   const selectedSession = sessions.find((s: any) => String(s._id) === selectedSessionId);
+  const upcomingSessions = sessions.filter((s: any) => s.date >= todayISO() && s.status !== "canceled").sort((a: any, b: any) => a.date.localeCompare(b.date)).slice(0, 6);
 
   if (!attendanceMap[selectedDate]) {
     attendanceMap[selectedDate] = {};
@@ -312,16 +316,12 @@ export default function Asistencia({
             ))}
           </select>
           {selectedSessionId && (
-            <button
-              type="button"
-              onClick={() => navigator.clipboard?.writeText(`${location.origin}${location.pathname}?session=${selectedSessionId}&checkIn=${selectedSession?.checkInToken || ""}`)}
-              className="mt-2 text-xs font-semibold text-teal-700 underline underline-offset-2"
-            >
-              Copiar URL segura de check-in
-            </button>
+            <div className="mt-2 flex flex-wrap gap-3 text-xs font-semibold"><button type="button" onClick={() => navigator.clipboard?.writeText(`${location.origin}${location.pathname}?session=${selectedSessionId}&checkIn=${selectedSession?.checkInToken || ""}`)} className="text-teal-700 underline underline-offset-2">Copiar URL segura de check-in</button>{selectedSession?.status !== "completed" && <button type="button" onClick={() => setShowCompleteSession(true)} className="text-ink/65 underline underline-offset-2">Cerrar actividad</button>}</div>
           )}
         </div>
       )}
+
+      {upcomingSessions.length > 0 && <section className="rounded-2xl border border-ink/10 bg-card p-4"><div className="flex items-center justify-between gap-3"><div><p className="text-xs font-bold uppercase text-teal-700">Agenda del ámbito</p><p className="mt-1 text-sm text-ink/50">Próximas actividades planificadas.</p></div><span className="text-xs text-ink/40">{scopeLabel}</span></div><div className="mt-3 grid gap-2 sm:grid-cols-2 lg:grid-cols-3">{upcomingSessions.map((session: any) => <button key={session._id} onClick={() => { setSelectedDate(session.date); setSelectedSessionId(String(session._id)); }} className="rounded-xl border border-ink/10 px-3 py-2.5 text-left hover:border-teal-300"><p className="text-sm font-bold">{MEETING_LABELS[session.type as MeetingType]}</p><p className="mt-1 text-xs text-ink/55">{session.date}{session.objective ? ` · ${session.objective}` : ""}</p><p className="mt-1 text-[11px] text-teal-700">{session.status === "completed" ? "Cerrada" : "Planificada"}{session.expectedAttendance ? ` · Esperados ${session.expectedAttendance}` : ""}</p></button>)}</div></section>}
 
       {needsContact.length > 0 && (
         <div className="rounded-2xl border border-amber-100 bg-amber-50 p-3.5">
@@ -569,6 +569,8 @@ export default function Asistencia({
         </Modal>
       )}
 
+      {showCompleteSession && selectedSession && <Modal title="Cerrar actividad" onClose={() => setShowCompleteSession(false)}><div className="space-y-4"><p className="text-sm text-ink/60">Registra un breve resultado. La asistencia se conserva y el cierre queda auditado.</p><textarea value={resultNotes} onChange={(e) => setResultNotes(e.target.value)} rows={4} placeholder="Resultado, participación, acuerdos o novedades" className="w-full rounded-xl border border-ink/10 p-3 text-sm"/><div className="flex justify-end gap-2"><button onClick={() => setShowCompleteSession(false)} className="rounded-lg border border-ink/10 px-3 py-2 text-sm font-semibold">Cancelar</button><button onClick={async () => { if (token) await completeSession({ token, sessionId: selectedSession._id, resultNotes }); setShowCompleteSession(false); setResultNotes(""); }} className="rounded-lg bg-teal-700 px-3 py-2 text-sm font-semibold text-white">Cerrar actividad</button></div></div></Modal>}
+
       {/* Modal custom de confirmación de eliminación */}
       {showDeleteConfirm && (
         <Modal title="Eliminar fecha" onClose={() => setShowDeleteConfirm(false)}>
@@ -627,6 +629,7 @@ export default function Asistencia({
               placeholder={attendanceDetail.status === "excused" ? "Ej. Enfermedad, viaje familiar..." : "Ej. No respondió, avisó el apoderado..."}
               className="w-full resize-none rounded-xl border border-ink/10 bg-card px-3.5 py-3 text-sm outline-none transition focus:border-teal-500 focus:ring-2 focus:ring-teal-500/20"
             />
+            {attendanceDetail.status === "excused" && <div className="flex flex-wrap gap-2">{["Estudios", "Salud", "Trabajo", "Familia", "Transporte", "Otro"].map((reason) => <button key={reason} type="button" onClick={() => setAttendanceDetail({ ...attendanceDetail, value: attendanceDetail.value ? attendanceDetail.value : reason })} className="rounded-full border border-ink/10 px-2.5 py-1 text-xs font-semibold text-ink/60 hover:border-teal-300">{reason}</button>)}</div>}
             <div className="flex flex-col-reverse gap-2 sm:flex-row sm:justify-end">
               <button
                 type="button"
