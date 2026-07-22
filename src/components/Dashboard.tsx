@@ -17,6 +17,7 @@ import { fill } from "../lib/templates";
 import { useTemplates } from "../hooks/useTemplates";
 import WhatsAppModal from "./WhatsAppModal";
 import { useAuth } from "../hooks/useAuth";
+import { useScope } from "../hooks/useScope";
 import Modal from "./Modal";
 
 function roleTitle(role: string | undefined): string {
@@ -170,6 +171,12 @@ export default function Dashboard({
   onOpenProfile,
 }: DashboardProps) {
   const { user, token } = useAuth();
+  const { scope } = useScope();
+  const activeScopeArgs = {
+    campusId: scope.campusId as any,
+    ministryId: scope.ministryId as any,
+    groupId: scope.groupId as any,
+  };
   const firstName = user?.name?.split(" ")[0] ?? "";
   const title = roleTitle(user?.role);
   const dates = Object.keys(attendanceMap).sort();
@@ -213,9 +220,9 @@ export default function Dashboard({
     return { d, pct: tot ? Math.round((pres / tot) * 100) : 0 };
   });
 
-  const crisisAlertsRaw = useQuery(api.crisis.getUnattendedAlerts, token ? { token } : {}) ?? [];
-  const roleSummary = useQuery(api.dashboard.getRoleSummary, token ? { token } : "skip") as any;
-  const pastoralTasks = useQuery(api.pastoralTasks.listOpenForDashboard, token ? { token } : "skip") ?? [];
+  const crisisAlertsRaw = useQuery(api.crisis.getUnattendedAlerts, token ? { token, ...activeScopeArgs } : {}) ?? [];
+  const roleSummary = useQuery(api.dashboard.getRoleSummary, token ? { token, ...activeScopeArgs } : "skip") as any;
+  const pastoralTasks = useQuery(api.pastoralTasks.listOpenForDashboard, token ? { token, ...activeScopeArgs } : "skip") ?? [];
   const updateCrisisStatus = useMutation(api.crisis.updateStatus);
   const reviewCrisisAlert = useMutation(api.crisis.reviewAlert);
   const dropoutPredictions = useQuery(api.ai.getAllDropoutPredictions) ?? [];

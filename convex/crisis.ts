@@ -14,6 +14,16 @@ const status = v.union(
 const openStatuses = new Set(["unattended", "open", "in_progress", "follow_up"]);
 const severityRank: Record<string, number> = { critical: 4, high: 3, medium: 2, low: 1 };
 const elevatedRoles = new Set(["coordinador", "director", "pastor", "admin"]);
+const optionalCampusId = v.optional(v.union(v.id("campus"), v.literal("")));
+const optionalMinistryId = v.optional(v.union(v.id("ministry"), v.literal("")));
+const optionalGroupId = v.optional(v.union(v.id("group"), v.literal("")));
+
+function matchesActiveScope(record: { campusId?: any; ministryId?: any; groupId?: any }, scope: { campusId?: any; ministryId?: any; groupId?: any }) {
+  if (scope.groupId) return String(record.groupId || "") === String(scope.groupId);
+  if (scope.ministryId) return String(record.ministryId || "") === String(scope.ministryId);
+  if (scope.campusId) return String(record.campusId || "") === String(scope.campusId);
+  return true;
+}
 
 function mapSeverity(riskLevel?: string, suggested?: string) {
   if (suggested && ["low", "medium", "high", "critical"].includes(suggested)) return suggested as any;
@@ -227,13 +237,14 @@ export const markAttended = mutation({
 });
 
 export const getUnattendedAlerts = query({
-  args: { token: v.optional(v.string()) },
+  args: { token: v.optional(v.string()), campusId: optionalCampusId, ministryId: optionalMinistryId, groupId: optionalGroupId },
   handler: async (ctx, args) => {
     const alerts = (await ctx.db.query("crisisAlerts").order("desc").collect())
       .filter((alert) => openStatuses.has(alert.status));
-    if (!args.token) return await Promise.all(alerts.map((alert) => enrichAlert(ctx, alert)));
+    if (!args.token) return [];
     const access = await requireAccess(ctx, args.token, "helper");
-    const allowedTeenIds = new Set(filterTeensByScope(access, await ctx.db.query("teens").collect()).map((teen) => teen._id));
+    const activeScope = { campusId: args.campusId || undefined, ministryId: args.ministryId || undefined, groupId: args.groupId || undefined };
+    const allowedTeenIds = new Set(filterTeensByScope(access, await ctx.db.query("teens").collect()).filter((teen) => matchesActiveScope(teen, activeScope)).map((teen) => teen._id));
     const scoped = alerts.filter((alert) => allowedTeenIds.has(alert.teenId));
     const enriched = await Promise.all(scoped.map((alert) => enrichAlert(ctx, alert)));
     return enriched.sort((a, b) => {
