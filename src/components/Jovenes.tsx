@@ -472,9 +472,9 @@ export default function Jovenes({
       </div>
 
       {upcoming.length > 0 && (
-          <div className="bg-amber-50 border border-amber-100 rounded-card p-3.5 flex items-start gap-3">
+          <div className="bg-teal-50 border border-teal-100 rounded-card p-3.5 flex items-start gap-3">
           <svg
-            className="w-5 h-5 text-amber-600 shrink-0 mt-0.5"
+            className="w-5 h-5 text-teal-600 shrink-0 mt-0.5"
             viewBox="0 0 24 24"
             fill="none"
             stroke="currentColor"
@@ -490,15 +490,15 @@ export default function Jovenes({
             <circle cx="12" cy="5" r="1.3" />
           </svg>
             <div className="text-sm min-w-0 flex-1">
-              <p className="font-semibold text-amber-700">Próximos cumpleaños</p>
+              <p className="font-semibold text-teal-700">Próximos cumpleaños</p>
               <div className="mt-1 flex flex-wrap gap-1.5">
                 {upcoming.slice(0, 4).map((u) => (
-                  <span key={u.t._id} className="inline-flex rounded-full border border-amber-200 bg-white/70 px-2 py-1 text-[11px] font-semibold text-amber-700">
+                  <span key={u.t._id} className="inline-flex rounded-full border border-teal-100 bg-white/70 px-2 py-1 text-[11px] font-semibold text-teal-700">
                     {esc(u.t.nombre)} ({u.days === 0 ? "hoy" : `en ${u.days}d`})
                   </span>
                 ))}
                 {upcoming.length > 4 && (
-                  <span className="inline-flex rounded-full border border-amber-200 bg-white/70 px-2 py-1 text-[11px] font-semibold text-amber-700">
+                  <span className="inline-flex rounded-full border border-teal-100 bg-white/70 px-2 py-1 text-[11px] font-semibold text-teal-700">
                     +{upcoming.length - 4} más
                   </span>
                 )}

@@ -326,18 +326,18 @@ export default function Asistencia({
       {upcomingSessions.length > 0 && <section className="game-card p-4"><div className="flex items-center justify-between gap-3"><div className="flex items-center gap-3"><span className="feature-icon feature-icon--primary"><svg className="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8"><rect x="3" y="4" width="18" height="17" rx="2"/><path d="M8 2v4M16 2v4M3 10h18"/></svg></span><div><p className="text-xs font-bold uppercase text-teal-700">Agenda del ámbito</p><p className="mt-1 text-sm text-ink/50">Próximas actividades planificadas.</p></div></div><span className="text-xs text-ink/40">{scopeLabel}</span></div><div className="mt-3 grid gap-2 sm:grid-cols-2 lg:grid-cols-3">{upcomingSessions.map((session: any) => <button key={session._id} onClick={() => { setSelectedDate(session.date); setSelectedSessionId(String(session._id)); }} className="rounded-xl border border-ink/10 px-3 py-2.5 text-left hover:border-teal-300"><p className="text-sm font-bold">{MEETING_LABELS[session.type as MeetingType]}</p><p className="mt-1 text-xs text-ink/55">{session.date}{session.objective ? ` · ${session.objective}` : ""}</p><p className="mt-1 text-[11px] text-teal-700">{session.status === "completed" ? "Cerrada" : "Planificada"}{session.expectedAttendance ? ` · Esperados ${session.expectedAttendance}` : ""}</p></button>)}</div></section>}
 
       {needsContact.length > 0 && (
-        <div className="rounded-2xl border border-amber-100 bg-amber-50 p-3.5">
-          <p className="text-sm font-bold text-amber-800">Adolescentes que necesitan contacto esta semana</p>
+        <div className="rounded-2xl border border-teal-100 bg-teal-50 p-3.5">
+          <p className="text-sm font-bold text-teal-700">Adolescentes que necesitan contacto esta semana</p>
           <div className="mt-2 flex flex-wrap gap-2">
             {needsContact.slice(0, 5).map((item: any) => (
               <button
                 key={String(item.teenId)}
                 type="button"
                 onClick={() => onOpenProfile(String(item.teenId))}
-                className="rounded-xl border border-amber-200 bg-white/70 px-3 py-2 text-left text-xs"
+                className="rounded-xl border border-teal-100 bg-white/70 px-3 py-2 text-left text-xs"
               >
-                <span className="font-semibold text-amber-900">{item.teenName}</span>
-                <span className="block text-amber-700">{item.reasons.join(" · ")}</span>
+                <span className="font-semibold text-ink">{item.teenName}</span>
+                <span className="block text-teal-700">{item.reasons.join(" · ")}</span>
               </button>
             ))}
           </div>

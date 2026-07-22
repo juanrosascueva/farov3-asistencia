@@ -23,7 +23,7 @@ export default function XpBar({ level }: XpBarProps) {
       </div>
       <div className="w-full h-2 bg-ink/5 rounded-full overflow-hidden">
         <div
-          className="h-full rounded-full bg-gradient-to-r from-teal-500 to-amber-500 transition-all"
+          className="h-full rounded-full bg-teal-600 transition-all"
           style={{ width: `${Math.round(level.progress * 100)}%` }}
         />
       </div>

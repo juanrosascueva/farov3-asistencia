@@ -356,7 +356,7 @@ function LeaderBadge({ onlyAvatar = false }: { onlyAvatar?: boolean }) {
     <div className="relative" ref={ref}>
       <button
         onClick={() => setOpen(!open)}
-        className="flex w-full items-center gap-2 text-xs font-medium rounded-2xl px-3 py-2.5 transition bg-gradient-to-r from-teal-50 to-amber-50 text-teal-700 hover:from-teal-100 hover:to-amber-100 dark:from-teal-50/10 dark:to-amber-50/10 dark:text-amber-100"
+        className="flex w-full items-center gap-2 text-xs font-medium rounded-2xl px-3 py-2.5 transition bg-teal-50 text-teal-700 hover:bg-teal-100 dark:bg-teal-50/10 dark:text-teal-100"
       >
         <div className="w-4 h-4 rounded-full overflow-hidden shrink-0 bg-teal-600/10 flex items-center justify-center">
           {user.avatar ? (

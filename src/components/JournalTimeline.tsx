@@ -20,7 +20,7 @@ const categoryMeta: Record<
   call: { label: "Llamada", icon: "📞", color: "bg-teal-50 border-teal-100" },
   visit: { label: "Visita", icon: "🏠", color: "bg-sage-50 border-sage-100" },
   chat: { label: "WhatsApp", icon: "📱", color: "bg-green-50 border-green-100" },
-  counseling: { label: "Consejería", icon: "💬", color: "bg-amber-50 border-amber-100" },
+  counseling: { label: "Consejería", icon: "💬", color: "bg-teal-50 border-teal-100" },
   prayer: { label: "Oración", icon: "🙏", color: "bg-coral-50 border-coral-100" },
   other: { label: "Nota", icon: "📝", color: "bg-ink/5 border-ink/10" },
 };

@@ -390,7 +390,7 @@ export default function Ajustes({ teens, attendanceMap, dark, setDark }: Ajustes
         <button onClick={() => setShowReset(true)} className="text-xs font-semibold bg-coral-600 text-white rounded-full px-3.5 py-2">Archivar todo</button>
       </div>
 
-      <div className="bg-amber-50/70 border border-amber-100 rounded-card p-5"><p className="text-xs font-semibold text-amber-800 uppercase tracking-wide">Consentimientos y ciclo de ficha</p><p className="mt-1 text-sm text-ink/65">{teens.filter((teen: any) => !teen.consentimientoDatos || !teen.consentimientoFoto).length} ficha(s) tienen consentimiento pendiente. Revisa la ficha y valida con el apoderado antes de usar mensajería o fotografías.</p><p className="mt-3 text-xs text-ink/50">Política operativa: egresados, trasladados e inactivos conservan su historial, salen de las listas activas y se excluyen de los indicadores operativos.</p></div>
+      <div className="bg-teal-50/70 border border-teal-100 rounded-card p-5"><p className="text-xs font-semibold text-teal-700 uppercase tracking-wide">Consentimientos y ciclo de ficha</p><p className="mt-1 text-sm text-ink/65">{teens.filter((teen: any) => !teen.consentimientoDatos || !teen.consentimientoFoto).length} ficha(s) tienen consentimiento pendiente. Revisa la ficha y valida con el apoderado antes de usar mensajería o fotografías.</p><p className="mt-3 text-xs text-ink/50">Política operativa: egresados, trasladados e inactivos conservan su historial, salen de las listas activas y se excluyen de los indicadores operativos.</p></div>
 
       <p className="text-center text-[11px] text-ink/30 pt-2">Congregación Cristo Vive · Control de asistencia</p>
 
