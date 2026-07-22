@@ -25,6 +25,7 @@ import PastoralPlanCard from "./PastoralPlanCard";
 import PastoralTasksCard from "./PastoralTasksCard";
 import TransitionsCard from "./TransitionsCard";
 import { ContactLogsCard, IntegrationCard } from "./IntegrationAndContactsCard";
+import PastoralCasesCard from "./PastoralCasesCard";
 import BadgeGrid from "./BadgeGrid";
 import XpBar from "./XpBar";
 import { Avatar } from "./Layout";
@@ -506,6 +507,7 @@ export default function Profile({
       <PastoralTasksCard teenId={teen._id} />
       <IntegrationCard teenId={teen._id} />
       <ContactLogsCard teenId={teen._id} />
+      <PastoralCasesCard teenId={teen._id} />
       <TransitionsCard teenId={teen._id} />
       <JournalTimeline teenId={teen._id} />
 
