@@ -180,12 +180,10 @@ export const reassign = mutation({
     const task = await ctx.db.get(args.taskId);
     if (!task) throw new Error("Tarea no encontrada.");
     await requireTeenAccess(ctx, args.token, task.teenId);
-    const patch = {
-      assignedToUserId: args.assignedToUserId,
-      dueDate: args.dueDate,
-      priority: args.priority ?? task.priority,
-      updatedAt: new Date().toISOString(),
-    };
+    const patch: Record<string, unknown> = { updatedAt: new Date().toISOString() };
+    if (args.assignedToUserId !== undefined) patch.assignedToUserId = args.assignedToUserId;
+    if (args.dueDate !== undefined) patch.dueDate = args.dueDate;
+    if (args.priority !== undefined) patch.priority = args.priority;
     await ctx.db.patch(args.taskId, patch);
     await logAudit(ctx, {
       token: args.token,

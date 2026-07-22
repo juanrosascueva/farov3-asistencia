@@ -11,15 +11,12 @@ import { api } from "../../convex/_generated/api";
 import MyProfileModal from "./MyProfileModal";
 
 const ROUTES = [
-  { id: "dashboard", label: "Resumen", icon: "home" },
-  { id: "asistencia", label: "Asistencia", icon: "check" },
-  { id: "jovenes", label: "Adolescentes", icon: "users" },
-  { id: "campana", label: "Campaña", icon: "clipboard" },
-  { id: "ia", label: "IA Pastoral", icon: "sparkles", perm: "canUseAi" },
-  { id: "reportes", label: "Reportes", icon: "chart", perm: "canViewReports" },
-  { id: "ajustes", label: "Ajustes", icon: "settings", perm: "canManageSettings" },
-  { id: "accesos", label: "Accesos", icon: "lock", perm: "canManageUsers" },
-  { id: "auditoria", label: "Auditoría", icon: "clipboard", perm: "canManageUsers" },
+  { id: "dashboard", label: "Mi ministerio", icon: "home", section: "operacion" },
+  { id: "asistencia", label: "Asistencia", icon: "check", section: "operacion" },
+  { id: "jovenes", label: "Adolescentes", icon: "users", section: "operacion" },
+  { id: "seguimiento", label: "Seguimiento", icon: "clipboard", section: "operacion" },
+  { id: "reportes", label: "Analítica", icon: "chart", perms: ["canViewReports"], section: "analitica" },
+  { id: "administracion", label: "Administración", icon: "settings", perms: ["canManageSettings", "canManageUsers"], section: "administracion" },
 ];
 
 interface LayoutProps {
@@ -43,10 +40,7 @@ export default function Layout({
   const { logout } = auth;
   const { scope, scopeLabel } = useScope();
   
-  const visibleRoutes = ROUTES.filter((r) => {
-    if (!r.perm) return true;
-    return (auth as any)[r.perm] === true;
-  });
+  const visibleRoutes = ROUTES.filter((route) => !route.perms || route.perms.some((permission) => (auth as any)[permission]));
 
   const displaySubtitle = scope.campusId ? scopeLabel : "Ministerio de Adolescentes";
 
@@ -70,21 +64,12 @@ export default function Layout({
             <ScopeSwitcher fullWidth />
           </div>
         </div>
-        <nav className="flex flex-col gap-1 rounded-[28px] border border-amber-100/60 bg-card/88 shadow-soft backdrop-blur-sm p-3 dark:border-amber-900/30 dark:bg-card/92">
-          {visibleRoutes.map((r) => (
-            <button
-              key={r.id}
-              onClick={() => onNavigate(r.id)}
-              className={`flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium transition ${
-                currentRoute === r.id
-                  ? "bg-teal-50 text-teal-700"
-                  : "text-ink/60 hover:bg-ink/5"
-              }`}
-            >
-              <Icon name={r.icon} cls="w-[18px] h-[18px]" />
-              <span>{r.label}</span>
-            </button>
-          ))}
+        <nav className="rounded-[28px] border border-amber-100/60 bg-card/88 shadow-soft backdrop-blur-sm p-3 dark:border-amber-900/30 dark:bg-card/92">
+          {(["operacion", "analitica", "administracion"] as const).map((section) => {
+            const routes = visibleRoutes.filter((route) => route.section === section);
+            if (!routes.length) return null;
+            return <div key={section} className="mb-3 last:mb-0"><p className="px-3 pb-1 text-[10px] font-bold uppercase text-ink/35">{section === "operacion" ? "Operación" : section === "analitica" ? "Analítica" : "Administración"}</p><div className="flex flex-col gap-1">{routes.map((r) => <button key={r.id} onClick={() => onNavigate(r.id)} className={`flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-medium transition ${currentRoute === r.id || (["campana", "ia", "ajustes", "accesos", "auditoria"].includes(currentRoute) && r.id === "administracion") ? "bg-teal-50 text-teal-700" : "text-ink/60 hover:bg-ink/5"}`}><Icon name={r.icon} cls="w-[18px] h-[18px]" /><span>{r.label}</span></button>)}</div></div>;
+          })}
         </nav>
         {setDark && (
           <button
@@ -138,9 +123,10 @@ export default function Layout({
 
       <nav className="fixed bottom-0 left-0 right-0 bg-card border-t border-ink/10 flex lg:hidden z-40 pb-[env(safe-area-inset-bottom)]">
         {[
-          { id: "dashboard", label: "Resumen", icon: "home" },
+          { id: "dashboard", label: "Mi ministerio", icon: "home" },
           { id: "asistencia", label: "Asistencia", icon: "check" },
           { id: "jovenes", label: "Adolescentes", icon: "users" },
+          { id: "seguimiento", label: "Seguimiento", icon: "clipboard" },
         ].map((r) => (
           <button
             key={r.id}
@@ -160,14 +146,14 @@ export default function Layout({
         <button
           onClick={() => setMoreOpen(true)}
           className={`flex-1 flex flex-col items-center justify-center gap-0.5 py-2.5 pressable ${
-            ["campana", "ia", "reportes", "ajustes", "accesos", "auditoria"].includes(currentRoute)
+            ["campana", "ia", "reportes", "administracion", "ajustes", "accesos", "auditoria"].includes(currentRoute)
               ? "tab-active text-teal-700 font-semibold"
               : "text-ink/45"
           }`}
         >
           <Icon name="menu" cls="w-5 h-5" />
           <span className="text-[10.5px] font-medium">Más</span>
-          <span className={`tab-dot w-1 h-1 rounded-full bg-teal-600 transition ${["campana", "ia", "reportes", "ajustes", "accesos", "auditoria"].includes(currentRoute) ? "opacity-100 scale-100" : "opacity-0 scale-0"}`} />
+          <span className={`tab-dot w-1 h-1 rounded-full bg-teal-600 transition ${["campana", "ia", "reportes", "administracion", "ajustes", "accesos", "auditoria"].includes(currentRoute) ? "opacity-100 scale-100" : "opacity-0 scale-0"}`} />
         </button>
       </nav>
 
@@ -183,7 +169,7 @@ export default function Layout({
               Herramientas y Ajustes
             </p>
             <nav className="flex flex-col gap-1">
-              {visibleRoutes.filter(r => ["campana", "ia", "reportes", "ajustes", "accesos", "auditoria"].includes(r.id)).map((r) => (
+              {visibleRoutes.filter(r => ["reportes", "administracion"].includes(r.id)).map((r) => (
                 <button
                   key={r.id}
                   onClick={() => {
