@@ -27,11 +27,12 @@ const barColors: Record<string, string> = {
   high: "bg-red-600",
 };
 
-export default function AiPanel({ teens, attendanceMap, onOpenProfile }: AiPanelProps) {
+export default function AiPanel({ teens, attendanceMap, onOpenProfile, embedded = false }: AiPanelProps & { embedded?: boolean }) {
   const { token } = useAuth();
   const { scope } = useScope();
-  const allAnalyses = useQuery(api.ai.getAllAnalyses) ?? [];
-  const allJournal = useQuery(api.journal.listAll) ?? [];
+  const scopeArgs = { campusId: scope.campusId as any, ministryId: scope.ministryId as any, groupId: scope.groupId as any };
+  const allAnalyses = useQuery(api.ai.getAllAnalyses, token ? { token, ...scopeArgs } : "skip") ?? [];
+  const allJournal = useQuery(api.journal.listAll, token ? { token, ...scopeArgs } : "skip") ?? [];
 
   // Queries y mutations de persistencia en base de datos
   const latestWeeklySummaryFromDb = useQuery(api.ai.getLatestWeeklySummary);
@@ -111,14 +112,14 @@ export default function AiPanel({ teens, attendanceMap, onOpenProfile }: AiPanel
 
   return (
     <div className="space-y-5">
-      <div>
+      {!embedded && <div>
         <p className="text-xs font-semibold text-teal-700 tracking-wide uppercase">
           Inteligencia Pastoral
         </p>
         <h1 className="font-display text-2xl font-bold mt-0.5">
           Asistente IA
         </h1>
-      </div>
+      </div>}
 
       <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
         <StatCard label="Entradas analizadas" value={total} icon="analytics" />

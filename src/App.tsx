@@ -12,11 +12,12 @@ import Profile from "./components/Profile";
 import Ajustes from "./components/Ajustes";
 import ReportsPanel from "./components/ReportsPanel";
 import Campana from "./components/Campana";
-import AiPanel from "./components/AiPanel";
 import LoginPage from "./components/LoginPage";
 import AccessControl from "./components/AccessControl";
 import AuditPanel from "./components/AuditPanel";
 import PublicTeenRegistration from "./components/PublicTeenRegistration";
+import Seguimiento from "./components/Seguimiento";
+import Administracion from "./components/Administracion";
 
 const DARK_KEY = "cristovive_dark_mode";
 
@@ -117,6 +118,7 @@ function AuthenticatedApp() {
             teens={teens}
             attendanceMap={attendanceMap}
             onOpenProfile={(id) => navigate(currentRoute, id)}
+            onNavigate={navigate}
           />
         );
       case "asistencia":
@@ -136,29 +138,19 @@ function AuthenticatedApp() {
           />
         );
       case "reportes":
-        return <ReportsPanel teens={teens} attendanceMap={attendanceMap} />;
+        return <ReportsPanel teens={teens} attendanceMap={attendanceMap} onOpenProfile={(id) => navigate(currentRoute, id)} />;
       case "campana":
-        return (
-          <Campana
-            teens={teens}
-            attendanceMap={attendanceMap}
-            onOpenProfile={(id) => navigate(currentRoute, id)}
-          />
-        );
+      case "seguimiento":
+        return <Seguimiento onOpenProfile={(id) => navigate(currentRoute, id)} />;
       case "ia":
-        return (
-          <AiPanel
-            teens={teens}
-            attendanceMap={attendanceMap}
-            onOpenProfile={(id) => navigate(currentRoute, id)}
-          />
-        );
+        return <ReportsPanel teens={teens} attendanceMap={attendanceMap} onOpenProfile={(id) => navigate(currentRoute, id)} initialTab="ia" />;
       case "ajustes":
-        return <Ajustes teens={teens} attendanceMap={attendanceMap} dark={dark} setDark={setDark} />;
+      case "administracion":
+        return <Administracion teens={teens} attendanceMap={attendanceMap} dark={dark} setDark={setDark} />;
       case "accesos":
-        return <AccessControl />;
+        return <Administracion teens={teens} attendanceMap={attendanceMap} dark={dark} setDark={setDark} />;
       case "auditoria":
-        return <AuditPanel />;
+        return <Administracion teens={teens} attendanceMap={attendanceMap} dark={dark} setDark={setDark} />;
       default:
         return null;
     }
