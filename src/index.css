@@ -61,8 +61,24 @@ input::placeholder, textarea::placeholder {
 }
 
 .dark .tab-active {
-  color: #f0d5cb;
+  color: #c9beff;
 }
+
+.app-shell { min-height: 100vh; }
+.appbar { min-height: 52px; }
+.game-card { border: 1px solid var(--color-border); border-radius: 14px; background: rgb(var(--clr-card)); box-shadow: 0 4px 14px rgba(37,35,45,.08); }
+.game-card--primary { border-color: #6849FF; background: #6849FF; color: #fff; }
+.game-stat { border: 1px solid var(--color-border); border-radius: 10px; background: rgb(var(--clr-card)); padding: 12px; }
+.game-pill { min-height: 40px; border-radius: 999px; padding: 0 16px; font-size: 14px; font-weight: 600; transition: background-color 160ms ease-out, color 160ms ease-out, transform 120ms ease-out; }
+.game-pill--primary { background: #6849FF; color: #fff; }
+.game-pill--primary:hover { background: #5C41DD; }
+.game-pill--secondary { background: #EEE9FF; color: #5C41DD; }
+.game-pill--outline { background: #fff; color: #5C41DD; border: 1px solid #6849FF; }
+.progress-track { height: 6px; border-radius: 999px; background: rgb(var(--clr-ink) / .12); overflow: hidden; }
+.progress-fill { height: 100%; border-radius: inherit; background: #6849FF; transition: width 280ms ease-out; }
+.game-card--primary .progress-track { background: rgb(255 255 255 / .26); }
+.game-card--primary .progress-fill { background: #FFC43D; }
+.dark .game-pill--outline { background: rgb(var(--clr-card)); }
 
 .chip { display: inline-flex; align-items: center; gap: 4px; }
 

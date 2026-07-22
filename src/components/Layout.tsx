@@ -45,7 +45,7 @@ export default function Layout({
   const displaySubtitle = scope.campusId ? scopeLabel : "Ministerio de Adolescentes";
 
   return (
-    <div className="max-w-7xl mx-auto lg:flex lg:gap-6 lg:px-6 lg:pt-6">
+    <div className="app-shell max-w-7xl mx-auto lg:flex lg:gap-6 lg:px-6 lg:pt-6">
       <aside className="hidden lg:flex lg:flex-col w-72 shrink-0 sticky top-6 self-start z-20">
         <div className="rounded-[20px] border border-ink/10 bg-card/90 shadow-soft backdrop-blur-sm p-4 mb-4 dark:bg-card/95">
           <div className="flex items-start gap-3">
@@ -87,7 +87,7 @@ export default function Layout({
       </aside>
 
       <main className="flex-1 px-3 sm:px-6 lg:px-0 pt-5 lg:pt-0 pb-28 sm:pb-24 lg:pb-6">
-        <header className="mb-5 space-y-3 lg:hidden">
+        <header className="appbar mb-5 space-y-3 lg:hidden">
           <div className="flex items-center justify-between gap-3">
             <div className="flex items-center gap-2 min-w-0">
               <LogoIcon />
@@ -121,7 +121,7 @@ export default function Layout({
         <div className="fade-in">{children}</div>
       </main>
 
-      <nav className="fixed bottom-0 left-0 right-0 bg-card border-t border-ink/10 flex lg:hidden z-40 pb-[env(safe-area-inset-bottom)]">
+      <nav className="fixed bottom-0 left-0 right-0 bg-card border-t border-ink/10 flex lg:hidden z-40 pb-[env(safe-area-inset-bottom)] shadow-[0_-4px_14px_rgba(37,35,45,0.06)]">
         {[
           { id: "dashboard", label: "Mi ministerio", icon: "home" },
           { id: "asistencia", label: "Asistencia", icon: "check" },
