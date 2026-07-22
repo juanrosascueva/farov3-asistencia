@@ -15,7 +15,31 @@ const FREE_MODELS = [
 
 const PASTORAL_DISCLAIMER = "Esta sugerencia no es un diagnóstico y requiere revisión humana pastoral.";
 
+const PASTORAL_STYLE_GUIDE = `Guía de lenguaje pastoral:
+- Escribe con tono humano, cercano, sobrio y respetuoso.
+- Separa hechos observados de interpretaciones pastorales.
+- No copies texto crudo cuando puedas resumirlo con claridad.
+- No diagnostiques ni uses lenguaje clínico como conclusión.
+- No afirmes intenciones, heridas o estados internos como hechos.
+- Usa expresiones prudentes: "podría indicar", "conviene conversar", "se observa una señal".
+- Evita lenguaje alarmista, sentencias absolutas y etiquetas frías.
+- Sugiere acciones concretas, realizables y pastoralmente responsables.`;
+
+const JOURNAL_STRUCTURE_TEMPLATE = `Motivo del contacto:
+...
+
+Respuesta recibida:
+...
+
+Observación pastoral:
+...
+
+Próxima acción sugerida:
+...`;
+
 const SYSTEM_PROMPT = `Eres una herramienta de apoyo pastoral para líderes de adolescentes. Analiza bitácoras de acompañamiento juvenil.
+${PASTORAL_STYLE_GUIDE}
+
 Límites obligatorios:
 - No diagnostiques condiciones clínicas.
 - No reemplaces al pastor, líder, coordinador ni apoderado.
@@ -51,7 +75,9 @@ function buildPrompt(content: string, category: string): string {
 Contenido de la bitácora:
 ${content}
 
-Analiza esta entrada pastoral y devuelve el JSON requerido.`;
+Analiza esta entrada pastoral y devuelve el JSON requerido.
+Redacta el resumen, motivo y acciones con lenguaje humano, pastoral y prudente.
+No copies frases crudas si puedes resumirlas con claridad.`;
 }
 
 async function callModel(apiKey: string, model: string, prompt: string): Promise<string | null> {
@@ -95,6 +121,22 @@ function sanitizeModelText(text: string | null | undefined): string | null {
     .trim();
 }
 
+function normalizeBulletNoise(text: string): string {
+  return text
+    .replace(/\r\n/g, "\n")
+    .replace(/\bwhatsa+pp\b/gi, "WhatsApp")
+    .replace(/\bwhatss?app\b/gi, "WhatsApp")
+    .replace(/\bwasap\b/gi, "WhatsApp")
+    .replace(/\b0(\d)\b/g, "$1")
+    .replace(/^[ \t]*[-•]\s*[-•]\s*/gm, "- ")
+    .replace(/[ \t]+[-•][ \t]+/g, ". ")
+    .replace(/[ \t]+/g, " ")
+    .replace(/\s+([,.])/g, "$1")
+    .replace(/([.!?]){2,}/g, "$1")
+    .replace(/\n{3,}/g, "\n\n")
+    .trim();
+}
+
 function sanitizePastoralAiText(text: string): string {
   return text
     .replace(/tiene depresi[oó]n/gi, "presenta señales de desánimo que requieren conversación y revisión humana")
@@ -109,8 +151,22 @@ function sanitizePastoralAiText(text: string): string {
     .replace(/caso confirmado/gi, "señal por revisar");
 }
 
+function sanitizeHumanPastoralText(text: string): string {
+  return normalizeBulletNoise(sanitizePastoralAiText(text))
+    .replace(/tiene heridas/gi, "podría haber aspectos que conviene conversar con cuidado")
+    .replace(/est[aá] teniendo pensamientos/gi, "se observan expresiones que podrían requerir conversación")
+    .replace(/centrados en s[ií] misma/gi, "de mayor enfoque personal")
+    .replace(/ya no en los dem[aá]s/gi, "y conviene escuchar cómo se está sintiendo")
+    .replace(/\bse identifica que\b/gi, "se observa que")
+    .replace(/\bes posible que\b/gi, "podría")
+    .replace(/\bmanifest[oó]\b/gi, "comentó")
+    .replace(/\bargumentando que\b/gi, "indicó que")
+    .replace(/\b02\b/g, "2")
+    .trim();
+}
+
 function sanitizePastoralArray(values: string[]): string[] {
-  return values.map((value) => sanitizePastoralAiText(value)).filter(Boolean);
+  return values.map((value) => sanitizeHumanPastoralText(value)).filter(Boolean);
 }
 
 function parseAnalysis(raw: string): {
@@ -140,13 +196,13 @@ function parseAnalysis(raw: string): {
       riskLevel,
       confidence: ["low", "medium", "high"].includes(parsed.confidence) ? parsed.confidence : "low",
       humanReviewRequired: true,
-      reasoningSummary: sanitizePastoralAiText(typeof parsed.reasoningSummary === "string" ? parsed.reasoningSummary : "La IA no explicó el motivo; requiere revisión humana."),
+      reasoningSummary: sanitizeHumanPastoralText(typeof parsed.reasoningSummary === "string" ? parsed.reasoningSummary : "La IA no explicó el motivo; requiere revisión humana."),
       usedDataSources: Array.isArray(parsed.usedDataSources) ? parsed.usedDataSources.filter((s: any) => typeof s === "string") : ["journal"],
       isCrisis: parsed.isCrisis === true,
       crisisSeverity: ["low", "medium", "high", "critical"].includes(parsed.crisisSeverity) ? parsed.crisisSeverity : undefined,
       suggestedActions: Array.isArray(parsed.suggestedActions) ? sanitizePastoralArray(parsed.suggestedActions) : [],
       suggestedVerses: Array.isArray(parsed.suggestedVerses) ? parsed.suggestedVerses : [],
-      summary: sanitizePastoralAiText(typeof parsed.summary === "string" ? parsed.summary : ""),
+      summary: sanitizeHumanPastoralText(typeof parsed.summary === "string" ? parsed.summary : ""),
       pastoralDisclaimer: PASTORAL_DISCLAIMER,
     };
   } catch {
@@ -362,17 +418,20 @@ export const generateWeeklySummary = action({
     if (!apiKey) return { success: false, error: "No API key configured" };
 
     const weeklyPrompt = `Eres un asesor pastoral. Genera un resumen ejecutivo semanal de estas bitácoras de acompañamiento juvenil.
+${PASTORAL_STYLE_GUIDE}
+
 Responde ÚNICAMENTE con JSON válido:
 {
   "totalEntries": number,
-  "mainConcerns": "párrafo corto con las principales preocupaciones",
-  "emotionalClimate": "descripción del clima emocional general",
+  "mainConcerns": "párrafo corto, humano y prudente con las principales señales de cuidado",
+  "emotionalClimate": "descripción sobria del clima emocional general, sin diagnosticar",
   "riskDistribution": { "low": number, "medium": number, "high": number },
   "topTags": ["tag1", "tag2"],
-  "recommendation": "recomendación pastoral concreta para el equipo de líderes"
+  "recommendation": "recomendación pastoral concreta para el equipo de líderes esta semana"
 }
 
 NO uses nombres propios en el resumen.
+No conviertas señales en conclusiones absolutas.
 
 Bitácoras de la semana:
 ${args.entries.map((e, i) => `[${i + 1}] (${e.entryDate}, ${e.category}): ${e.content}`).join("\n")}`;
@@ -383,7 +442,16 @@ ${args.entries.map((e, i) => `[${i + 1}] (${e.entryDate}, ${e.category}): ${e.co
       try {
         const cleaned = raw.replace(/```json\s*/gi, "").replace(/```\s*/g, "").trim();
         const parsed = JSON.parse(cleaned);
-        return { success: true, summary: parsed, modelUsed: model };
+        return {
+          success: true,
+          summary: {
+            ...parsed,
+            mainConcerns: typeof parsed.mainConcerns === "string" ? sanitizeHumanPastoralText(parsed.mainConcerns) : "",
+            emotionalClimate: typeof parsed.emotionalClimate === "string" ? sanitizeHumanPastoralText(parsed.emotionalClimate) : "",
+            recommendation: typeof parsed.recommendation === "string" ? sanitizeHumanPastoralText(parsed.recommendation) : "",
+          },
+          modelUsed: model,
+        };
       } catch {
         continue;
       }
@@ -583,37 +651,54 @@ function inferCategoryFromText(rawText: string): "call" | "visit" | "chat" | "co
   return "other";
 }
 
+function splitPastoralNotes(rawText: string): string[] {
+  return normalizeBulletNoise(rawText)
+    .replace(/\s+-\s+/g, ". ")
+    .replace(/\s+(Que|Y|Si|Se le|En los estados)\s+/g, ". $1 ")
+    .split(/\n+|(?<=[.!?])\s+/)
+    .map((part) => sanitizeHumanPastoralText(part.replace(/^[-•]\s*/, "")))
+    .filter((part) => part.length > 8);
+}
+
+function pickSentences(parts: string[], matcher: RegExp, limit = 2): string[] {
+  return parts.filter((part) => matcher.test(part)).slice(0, limit);
+}
+
+function joinHumanSentences(parts: string[], fallback: string): string {
+  const unique = [...new Set(parts.map((part) => part.replace(/\.$/, "").trim()).filter(Boolean))];
+  if (unique.length === 0) return fallback;
+  return unique.slice(0, 3).map((part) => `${part}.`).join(" ");
+}
+
 function structureTranscriptionFallback(rawText: string) {
-  const normalized = rawText
-    .replace(/\s+/g, " ")
-    .replace(/\s*,\s*/g, ", ")
-    .replace(/\s*\.\s*/g, ". ")
-    .trim();
-
-  const sentenceParts = normalized
-    .split(/(?<=[.!?])\s+|,\s+|\s+y luego\s+|\s+despues\s+de\s+eso\s+/i)
-    .map((part) => part.trim())
-    .filter(Boolean);
-
-  const mainContent = sentenceParts.length > 1
-    ? sentenceParts.map((part) => `- ${part.charAt(0).toUpperCase()}${part.slice(1)}`).join("\n")
-    : normalized.charAt(0).toUpperCase() + normalized.slice(1);
-
+  const normalized = normalizeBulletNoise(rawText);
+  const sentenceParts = splitPastoralNotes(normalized);
+  const absenceParts = pickSentences(sentenceParts, /(falta|ausencia|no asist|no vino|no viene|inasistencia)/i, 2);
+  const guardianParts = pickSentences(sentenceParts, /(madre|padre|apoderad|tutor|familia)/i, 2);
+  const schoolParts = pickSentences(sentenceParts, /(colegio|tarea|trabajo grupal|vacaciones|estudio|escuela)/i, 3);
+  const sensitiveParts = pickSentences(sentenceParts, /(estado|WhatsApp|pensamiento|autosuficiencia|herida|conversaci[oó]n personal|des[aá]nimo)/i, 2);
   const followUpNeeded = /(seguir|acompañar|acompanar|volver|pendiente|orar|visitar|llamar|contactar)/i.test(normalized);
-  const contactReason = /(falta|ausencia|no asist|no vino|no viene)/i.test(normalized)
-    ? "Se registró contacto o seguimiento relacionado con ausencias recientes."
+  const contactReason = absenceParts.length > 0
+    ? "Se registró contacto pastoral para conocer el motivo de ausencias recientes y saber cómo se encuentra el adolescente."
     : "Se registró una interacción de acompañamiento pastoral.";
+  const response = joinHumanSentences(
+    [...schoolParts, ...guardianParts],
+    joinHumanSentences(sentenceParts.slice(0, 2), "No se especifica una respuesta concreta en el texto original.")
+  );
+  const observation = sensitiveParts.length > 0
+    ? "Además de la explicación recibida, se observan señales que podrían ser útiles para una conversación personal y prudente. Esta lectura debe tomarse como una señal de cuidado, no como una conclusión definitiva."
+    : "La información registrada debe revisarse pastoralmente sin asumir conclusiones no confirmadas.";
   const nextAction = followUpNeeded
-    ? "Dar seguimiento según lo conversado y registrar el avance en una próxima bitácora."
-    : "Mantener observación pastoral y registrar cualquier novedad relevante.";
+    ? "Dar seguimiento durante la semana, escuchar cómo se encuentra y registrar el avance en una próxima bitácora."
+    : "Conversar personalmente durante la semana o en la próxima reunión para confirmar cómo se encuentra y si necesita apoyo.";
   const structuredContent = `Motivo del contacto:
 ${contactReason}
 
 Respuesta recibida:
-${mainContent}
+${response}
 
 Observación pastoral:
-La información registrada debe revisarse pastoralmente sin asumir conclusiones no confirmadas.
+${observation}
 
 Próxima acción sugerida:
 ${nextAction}`;
@@ -630,13 +715,17 @@ ${nextAction}`;
 
 function buildSummaryPrompt(data: TeenData): string {
   return `Genera un resumen pastoral inteligente para el adolescente ${data.nombre} ${data.apellido}.
+${PASTORAL_STYLE_GUIDE}
+
 Responde ÚNICAMENTE con JSON válido en este formato:
 {
-  "summary": "resumen ejecutivo de 2-3 párrafos en español, cubriendo: situación actual de asistencia, patrones emocionales/vulnerabilidades detectadas, progreso en contactos y acompañamiento",
+  "summary": "resumen ejecutivo de 2-3 párrafos en español, humano y prudente, cubriendo asistencia, señales pastorales, contactos y acompañamiento",
   "pastoralMomentum": "una frase que describa la tendencia general: 'Mejorando', 'Estable', 'Requiere atención' o 'En declive'",
-  "mainChallenge": "el principal desafío pastoral detectado (una frase corta)",
+  "mainChallenge": "principal señal de cuidado o desafío pastoral observado (una frase corta)",
   "recommendedFocus": "recomendación concreta para la próxima interacción pastoral"
 }
+
+Evita etiquetas frías. No diagnostiques. Si la información es limitada, dilo con prudencia.
 
 Datos del adolescente:
 - Asistencia: ${data.pct}% (${data.presentAttendance}/${data.totalAttendance} registros)
@@ -661,10 +750,10 @@ function parseSummary(raw: string): {
     const cleaned = raw.replace(/```json\s*/gi, "").replace(/```\s*/g, "").trim();
     const parsed = JSON.parse(cleaned);
     return {
-      summary: typeof parsed.summary === "string" ? parsed.summary : "",
-      pastoralMomentum: typeof parsed.pastoralMomentum === "string" ? parsed.pastoralMomentum : "",
-      mainChallenge: typeof parsed.mainChallenge === "string" ? parsed.mainChallenge : "",
-      recommendedFocus: typeof parsed.recommendedFocus === "string" ? parsed.recommendedFocus : "",
+      summary: typeof parsed.summary === "string" ? sanitizeHumanPastoralText(parsed.summary) : "",
+      pastoralMomentum: typeof parsed.pastoralMomentum === "string" ? sanitizeHumanPastoralText(parsed.pastoralMomentum) : "",
+      mainChallenge: typeof parsed.mainChallenge === "string" ? sanitizeHumanPastoralText(parsed.mainChallenge) : "",
+      recommendedFocus: typeof parsed.recommendedFocus === "string" ? sanitizeHumanPastoralText(parsed.recommendedFocus) : "",
     };
   } catch {
     return null;
@@ -787,12 +876,14 @@ export const getTeenSummary = query({
 });
 
 function buildDropoutPrompt(data: TeenData): string {
-  return `Eres un asesor pastoral experto en prevención de abandono juvenil. Analiza los datos del adolescente ${data.nombre} ${data.apellido} y predice su riesgo de abandono del ministerio.
+  return `Eres un asesor pastoral experto en acompañamiento juvenil. Analiza los datos del adolescente ${data.nombre} ${data.apellido} y estima señales de desconexión del ministerio.
+${PASTORAL_STYLE_GUIDE}
+
 Responde ÚNICAMENTE con JSON válido en este formato:
 {
   "probability": 0-100,
   "riskLevel": "low|medium|high",
-  "primaryFactor": "factor principal detectado (una frase corta)",
+  "primaryFactor": "señal principal observada (una frase corta, sin sentencia absoluta)",
   "recommendation": "recomendación pastoral concreta para retener al adolescente"
 }
 
@@ -809,7 +900,8 @@ Datos del adolescente:
 - Intereses: ${data.gustos || "no registrados"}
 
 Probabilidad debe ser un número entero entre 0 y 100.
-riskLevel: "low" si probability < 30, "medium" si 30-69, "high" si >= 70.`;
+riskLevel: "low" si probability < 30, "medium" si 30-69, "high" si >= 70.
+La probabilidad es solo una señal de apoyo para revisión humana, no una sentencia sobre el adolescente.`;
 }
 
 function parseDropout(raw: string): {
@@ -829,8 +921,8 @@ function parseDropout(raw: string): {
     return {
       probability: p,
       riskLevel: rl,
-      primaryFactor: typeof parsed.primaryFactor === "string" ? parsed.primaryFactor : "",
-      recommendation: typeof parsed.recommendation === "string" ? parsed.recommendation : "",
+      primaryFactor: typeof parsed.primaryFactor === "string" ? sanitizeHumanPastoralText(parsed.primaryFactor) : "",
+      recommendation: typeof parsed.recommendation === "string" ? sanitizeHumanPastoralText(parsed.recommendation) : "",
     };
   } catch {
     return null;
@@ -1097,6 +1189,8 @@ ${journalsList || "  * No hay bitácoras registradas para este adolescente."}
       : "alcance completo autorizado";
 
     const systemPrompt = `Eres un asistente pastoral virtual para el ministerio de adolescentes "Cristo Vive".
+${PASTORAL_STYLE_GUIDE}
+
 Tienes acceso SOLO a datos reales y AUTORIZADOS del ministerio en formato JSON.
 Responde unicamente basandote en los datos proporcionados y dentro del alcance permitido del usuario.
 SIEMPRE responde en espanol, con un tono pastoral y profesional.
@@ -1107,6 +1201,8 @@ Si te preguntan por el modelo o proveedor, redirige con amabilidad a tu funcion 
 NO compartas informacion de otras sedes, ministerios, grupos o personas fuera del alcance autorizado.
 Si una pregunta pide datos fuera del alcance, responde que solo puedes ayudar con la informacion autorizada del ministerio dentro de su alcance actual.
 Puedes hacer calculos simples con los datos (contar, sumar, promediar).
+Separa datos observados de sugerencias pastorales cuando respondas sobre un adolescente o caso sensible.
+Incluye "requiere revisión humana" si mencionas riesgo, crisis o señales sensibles.
 
 INSTRUCCIONES DE COMANDOS INTERACTIVOS (NIVEL 2):
 1. Si el usuario te pide ver, abrir, mostrar, ir al perfil o ficha de un adolescente específico, debes incluir exactamente este comando en una sola línea al final de tu respuesta:
@@ -1135,6 +1231,7 @@ ${specificTeenContext ? `\nInformación detallada sobre adolescentes consultados
     for (const model of FREE_MODELS) {
       const raw = await callModelRaw(apiKey, model, messages, 1000);
       if (raw) {
+        const answer = sanitizeHumanPastoralText(raw);
         await ctx.runMutation(internal.auditLog.logInternal, {
           token: args.token,
           action: "ai.chat.generated",
@@ -1142,7 +1239,7 @@ ${specificTeenContext ? `\nInformación detallada sobre adolescentes consultados
           details: "Respuesta de IA pastoral generada.",
           newValue: { modelUsed: model },
         });
-        return { success: true, answer: raw, modelUsed: model };
+        return { success: true, answer, modelUsed: model };
       }
     }
     return {
@@ -1196,7 +1293,8 @@ export const generateActivityRecommendations = action({
       activeScope: args.activeScope,
     });
 
-    const prompt = `Eres un asesor de ministerio juvenil. Basado en los datos de vulnerabilidades y riesgo del ministerio, genera recomendaciones de actividades, talleres y estudios bíblicos.
+    const prompt = `Eres un asesor de ministerio juvenil. Basado en los datos de señales pastorales, vulnerabilidades y riesgo del ministerio, genera recomendaciones de actividades, talleres y estudios bíblicos.
+${PASTORAL_STYLE_GUIDE}
 
 Responde ÚNICAMENTE con JSON válido en este formato:
 {
@@ -1204,7 +1302,7 @@ Responde ÚNICAMENTE con JSON válido en este formato:
     {
       "title": "título de la actividad",
       "type": "taller | estudio | actividad | campaña",
-      "description": "descripción detallada de 2-3 oraciones",
+      "description": "descripción humana, práctica y pastoral de 2-3 oraciones",
       "bibleVerse": "Libro Capítulo:Versículo",
       "targetTags": ["tags relacionadas"],
       "urgency": "baja | media | alta"
@@ -1235,7 +1333,15 @@ ${Object.entries(data.tagFrequency)
         const cleaned = raw.replace(/```json\s*/gi, "").replace(/```\s*/g, "").trim();
         const parsed = JSON.parse(cleaned);
         if (Array.isArray(parsed.recommendations)) {
-          return { success: true, recommendations: parsed.recommendations, modelUsed: model };
+          return {
+            success: true,
+            recommendations: parsed.recommendations.map((recommendation: any) => ({
+              ...recommendation,
+              title: typeof recommendation.title === "string" ? sanitizeHumanPastoralText(recommendation.title) : "",
+              description: typeof recommendation.description === "string" ? sanitizeHumanPastoralText(recommendation.description) : "",
+            })),
+            modelUsed: model,
+          };
         }
       } catch {
         continue;
@@ -1265,7 +1371,11 @@ export const generatePersonalizedMessage = action({
     };
 
     const prompt = `Eres un asistente pastoral. Redacta un mensaje personalizado de ${toneLabels[args.tone]} para ${data.nombre} ${data.apellido}, un adolescente del ministerio juvenil.
+${PASTORAL_STYLE_GUIDE}
+
 Responde ÚNICAMENTE con el texto del mensaje en español, sin JSON, sin formato adicional. Usa un tono natural y cercano, como de un líder juvenil.
+El mensaje debe sonar humano, breve y no invasivo. No menciones vulnerabilidades, riesgo ni alertas de crisis de forma directa.
+Si hay ausencias, invita y acompaña sin culpar. Si hay crisis, usa un tono cuidadoso y anima a conversar con un líder responsable.
 
 Contexto del adolescente:
 - Asistencia: ${data.pct}% (${data.presentAttendance}/${data.totalAttendance} registros)
@@ -1281,7 +1391,7 @@ El mensaje debe ser de aproximadamente 3-4 oraciones, en español, firmado como 
     for (const model of FREE_MODELS) {
       const raw = await callModel(apiKey, model, prompt);
       if (raw) {
-        message = sanitizeModelText(raw.replace(/```\s*/g, "").trim()) || "";
+        message = sanitizeHumanPastoralText(sanitizeModelText(raw.replace(/```\s*/g, "").trim()) || "");
         modelUsed = model;
         break;
       }
@@ -1301,14 +1411,18 @@ export const structureTranscription = action({
     if (!apiKey) return structureTranscriptionFallback(args.rawText);
 
     const prompt = `Eres un asistente pastoral para una bitácora de acompañamiento juvenil.
+${PASTORAL_STYLE_GUIDE}
+
 Tu tarea es resumir, humanizar y estructurar el texto original sin inventar hechos, diagnósticos ni conclusiones absolutas.
 Corrige muletillas, repeticiones, errores leves de dictado y expresiones poco claras.
 Separa hechos, respuesta recibida, observación pastoral prudente y próxima acción.
 Usa tono humano, claro, pastoral y sobrio. Evita lenguaje alarmista.
 Si un dato no aparece en el texto, escribe "No se especifica" en lugar de inventarlo.
+No copies el texto original literalmente. Resume y redacta de nuevo con claridad pastoral.
+No uses guiones duplicados ni listas extensas; prefiere párrafos breves.
 Responde ÚNICAMENTE con JSON válido en este formato:
 {
-  "structuredContent": "Motivo del contacto:\\n...\\n\\nRespuesta recibida:\\n...\\n\\nObservación pastoral:\\n...\\n\\nPróxima acción sugerida:\\n...",
+  "structuredContent": "${JOURNAL_STRUCTURE_TEMPLATE.replace(/\n/g, "\\n")}",
   "suggestedCategory": "call | visit | chat | counseling | prayer | other",
   "summary": "resumen de 1 oración",
   "followUpNeeded": true | false
@@ -1338,9 +1452,9 @@ ${args.rawText}`;
         const parsed = JSON.parse(cleaned);
         return {
           success: true,
-          structuredContent: typeof parsed.structuredContent === "string" ? sanitizeModelText(parsed.structuredContent) || args.rawText : args.rawText,
+          structuredContent: typeof parsed.structuredContent === "string" ? sanitizeHumanPastoralText(sanitizeModelText(parsed.structuredContent) || args.rawText) : args.rawText,
           suggestedCategory: ["call", "visit", "chat", "counseling", "prayer", "other"].includes(parsed.suggestedCategory) ? parsed.suggestedCategory : inferCategoryFromText(args.rawText),
-          summary: typeof parsed.summary === "string" ? parsed.summary : "",
+          summary: typeof parsed.summary === "string" ? sanitizeHumanPastoralText(parsed.summary) : "",
           followUpNeeded: parsed.followUpNeeded === true,
           modelUsed: model,
         };

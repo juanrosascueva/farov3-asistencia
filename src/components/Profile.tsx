@@ -849,7 +849,7 @@ function AiSuggestions({ teenId }: { teenId: string }) {
     <div className="bg-card rounded-card shadow-soft p-5">
       <div className="flex items-center justify-between mb-3">
         <h2 className="font-display font-semibold text-base">
-          Sugerencias de IA
+          Sugerencias pastorales de IA
         </h2>
         {highRisk.length > 0 && (
           <span className="text-[10px] font-bold text-red-600 bg-red-50 px-2 py-1 rounded-full">
@@ -883,7 +883,7 @@ function AiSuggestions({ teenId }: { teenId: string }) {
                   {a.usedDataSources?.length > 0 && (
                     <p><span className="font-semibold">Datos usados:</span> {(a.usedDataSources as string[]).map((s) => sourceLabel[s] || s).join(", ")}</p>
                   )}
-                  <p>{a.pastoralDisclaimer || "Esta sugerencia no es un diagnóstico y no reemplaza la revisión pastoral."}</p>
+                  <p>{a.pastoralDisclaimer || "Esta sugerencia requiere revisión humana pastoral."}</p>
                 </div>
                 {a.vulnerabilityTags?.length > 0 && (
                   <div className="flex flex-wrap gap-1">

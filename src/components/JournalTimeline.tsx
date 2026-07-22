@@ -433,7 +433,7 @@ export default function JournalTimeline({ teenId }: JournalProps) {
                       )}
                       {analysis && (
                         <div className="mt-2 rounded-xl border border-purple-100 bg-purple-50/70 p-3 text-xs text-purple-900 space-y-1">
-                          <p className="font-semibold">IA pastoral: sugerencia, no diagnóstico</p>
+                          <p className="font-semibold">Sugerencia pastoral de IA</p>
                           <p><span className="font-semibold">Confianza:</span> {confidenceLabel[analysis.confidence || "low"]}</p>
                           <p><span className="font-semibold">Estado revisión:</span> {reviewStatusLabel[analysis.reviewStatus || (analysis.humanReviewRequired === false ? "reviewed" : "pending")]}</p>
                           {analysis.reasoningSummary && (
