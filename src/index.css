@@ -94,6 +94,11 @@ h3 { line-height: 1.35; font-weight: 600; }
 .game-card--primary .progress-track { background: rgb(255 255 255 / .26); }
 .game-card--primary .progress-fill { background: #FFC43D; }
 .dark .game-pill--outline { background: rgb(var(--clr-card)); }
+.feature-icon { display: inline-flex; width: 40px; height: 40px; align-items: center; justify-content: center; border-radius: 12px; }
+.feature-icon--primary { background: #EEE9FF; color: #5C41DD; }
+.feature-icon--success { background: #E6FAF2; color: #229C70; }
+.feature-icon--warning { background: #FFF3DA; color: #D97D00; }
+.feature-icon--danger { background: #FFE8E8; color: #D94349; }
 
 .chip { display: inline-flex; align-items: center; gap: 4px; }
 

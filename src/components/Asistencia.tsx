@@ -236,7 +236,7 @@ export default function Asistencia({
           <p className="text-xs font-semibold text-teal-700 tracking-wide uppercase">Tomar asistencia</p>
           <button
             onClick={() => setShowNewDate(true)}
-            className="text-xs font-semibold bg-ink dark:bg-teal-700 text-white rounded-full px-3.5 py-2 flex items-center gap-1.5 shrink-0 pressable"
+            className="game-pill game-pill--primary flex items-center gap-1.5 shrink-0 pressable"
           >
             <svg className="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
               <path d="M12 5v14M5 12h14" />
@@ -252,14 +252,14 @@ export default function Asistencia({
               <div className="flex items-center gap-1">
                 <button
                   onClick={() => setShowEditDate(true)}
-                  className="w-7 h-7 rounded-full flex items-center justify-center text-ink/30 hover:text-teal-600 hover:bg-teal-50 transition pressable"
+                  className="feature-icon feature-icon--primary hover:bg-teal-100 transition pressable"
                   title="Editar fecha"
                 >
                   <svg className="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round"><path d="M12 20h9" /><path d="M16.5 3.5a2.1 2.1 0 013 3L7 19l-4 1 1-4z" /></svg>
                 </button>
                 <button
                   onClick={() => setShowDeleteConfirm(true)}
-                  className="w-7 h-7 rounded-full flex items-center justify-center text-ink/30 hover:text-red-500 hover:bg-red-50 transition pressable"
+                  className="feature-icon feature-icon--danger hover:bg-coral-100 transition pressable"
                   title="Eliminar fecha completa"
                 >
                   <svg className="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round"><polyline points="3 6 5 6 21 6" /><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2" /></svg>
@@ -277,7 +277,7 @@ export default function Asistencia({
                   Sync...
                 </span>
               ) : (
-                <span className="flex items-center gap-1 text-sage-600 bg-sage-50 dark:bg-green-950/20 dark:text-green-400 px-2 py-0.5 rounded-full border border-sage-100 dark:border-green-900/30">
+                <span className="flex items-center gap-1 text-sage-700 bg-sage-50 px-2.5 py-1 rounded-full border border-sage-100">
                   <svg className="w-2.5 h-2.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><path d="M20 6 9 17l-5-5" /></svg>
                   Guardado
                 </span>
@@ -304,7 +304,7 @@ export default function Asistencia({
       </div>
 
       {sessions.filter((s: any) => s.date === selectedDate).length > 0 && (
-        <div className="rounded-2xl border border-ink/10 bg-card p-3">
+        <div className="game-card p-4">
           <label className="text-[11px] font-bold text-ink/45 uppercase tracking-wide">Sesión</label>
           <select
             value={selectedSessionId}
@@ -323,7 +323,7 @@ export default function Asistencia({
         </div>
       )}
 
-      {upcomingSessions.length > 0 && <section className="rounded-2xl border border-ink/10 bg-card p-4"><div className="flex items-center justify-between gap-3"><div><p className="text-xs font-bold uppercase text-teal-700">Agenda del ámbito</p><p className="mt-1 text-sm text-ink/50">Próximas actividades planificadas.</p></div><span className="text-xs text-ink/40">{scopeLabel}</span></div><div className="mt-3 grid gap-2 sm:grid-cols-2 lg:grid-cols-3">{upcomingSessions.map((session: any) => <button key={session._id} onClick={() => { setSelectedDate(session.date); setSelectedSessionId(String(session._id)); }} className="rounded-xl border border-ink/10 px-3 py-2.5 text-left hover:border-teal-300"><p className="text-sm font-bold">{MEETING_LABELS[session.type as MeetingType]}</p><p className="mt-1 text-xs text-ink/55">{session.date}{session.objective ? ` · ${session.objective}` : ""}</p><p className="mt-1 text-[11px] text-teal-700">{session.status === "completed" ? "Cerrada" : "Planificada"}{session.expectedAttendance ? ` · Esperados ${session.expectedAttendance}` : ""}</p></button>)}</div></section>}
+      {upcomingSessions.length > 0 && <section className="game-card p-4"><div className="flex items-center justify-between gap-3"><div className="flex items-center gap-3"><span className="feature-icon feature-icon--primary"><svg className="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8"><rect x="3" y="4" width="18" height="17" rx="2"/><path d="M8 2v4M16 2v4M3 10h18"/></svg></span><div><p className="text-xs font-bold uppercase text-teal-700">Agenda del ámbito</p><p className="mt-1 text-sm text-ink/50">Próximas actividades planificadas.</p></div></div><span className="text-xs text-ink/40">{scopeLabel}</span></div><div className="mt-3 grid gap-2 sm:grid-cols-2 lg:grid-cols-3">{upcomingSessions.map((session: any) => <button key={session._id} onClick={() => { setSelectedDate(session.date); setSelectedSessionId(String(session._id)); }} className="rounded-xl border border-ink/10 px-3 py-2.5 text-left hover:border-teal-300"><p className="text-sm font-bold">{MEETING_LABELS[session.type as MeetingType]}</p><p className="mt-1 text-xs text-ink/55">{session.date}{session.objective ? ` · ${session.objective}` : ""}</p><p className="mt-1 text-[11px] text-teal-700">{session.status === "completed" ? "Cerrada" : "Planificada"}{session.expectedAttendance ? ` · Esperados ${session.expectedAttendance}` : ""}</p></button>)}</div></section>}
 
       {needsContact.length > 0 && (
         <div className="rounded-2xl border border-amber-100 bg-amber-50 p-3.5">
