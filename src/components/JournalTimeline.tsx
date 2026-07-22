@@ -293,7 +293,7 @@ export default function JournalTimeline({ teenId }: JournalProps) {
                 disabled={structuring}
                 className="mt-2 text-[10px] font-semibold text-purple-700 bg-purple-50 hover:bg-purple-100 border border-purple-200 px-2.5 py-1 rounded-full transition disabled:opacity-50"
               >
-                {structuring ? "Estructurando..." : "✨ Estructurar con IA"}
+                {structuring ? "Estructurando..." : "✨ Estructurar bitácora con IA"}
               </button>
             )}
           </div>

@@ -595,11 +595,28 @@ function structureTranscriptionFallback(rawText: string) {
     .map((part) => part.trim())
     .filter(Boolean);
 
-  const structuredContent = sentenceParts.length > 1
+  const mainContent = sentenceParts.length > 1
     ? sentenceParts.map((part) => `- ${part.charAt(0).toUpperCase()}${part.slice(1)}`).join("\n")
     : normalized.charAt(0).toUpperCase() + normalized.slice(1);
 
   const followUpNeeded = /(seguir|acompañar|acompanar|volver|pendiente|orar|visitar|llamar|contactar)/i.test(normalized);
+  const contactReason = /(falta|ausencia|no asist|no vino|no viene)/i.test(normalized)
+    ? "Se registró contacto o seguimiento relacionado con ausencias recientes."
+    : "Se registró una interacción de acompañamiento pastoral.";
+  const nextAction = followUpNeeded
+    ? "Dar seguimiento según lo conversado y registrar el avance en una próxima bitácora."
+    : "Mantener observación pastoral y registrar cualquier novedad relevante.";
+  const structuredContent = `Motivo del contacto:
+${contactReason}
+
+Respuesta recibida:
+${mainContent}
+
+Observación pastoral:
+La información registrada debe revisarse pastoralmente sin asumir conclusiones no confirmadas.
+
+Próxima acción sugerida:
+${nextAction}`;
 
   return {
     success: true,
@@ -1283,18 +1300,32 @@ export const structureTranscription = action({
     const apiKey = process.env.OPENROUTER_API_KEY;
     if (!apiKey) return structureTranscriptionFallback(args.rawText);
 
-    const prompt = `Eres un asistente pastoral. Estructura la siguiente transcripción de voz de una bitácora de acompañamiento juvenil.
-Corrige muletillas, repeticiones y errores leves de dictado, pero sin inventar hechos.
-Ordena el contenido de forma breve, clara y pastoral.
-Si hay varios hechos, usa viñetas simples con guion.
-No agregues encabezados largos ni lenguaje rebuscado.
+    const prompt = `Eres un asistente pastoral para una bitácora de acompañamiento juvenil.
+Tu tarea es resumir, humanizar y estructurar el texto original sin inventar hechos, diagnósticos ni conclusiones absolutas.
+Corrige muletillas, repeticiones, errores leves de dictado y expresiones poco claras.
+Separa hechos, respuesta recibida, observación pastoral prudente y próxima acción.
+Usa tono humano, claro, pastoral y sobrio. Evita lenguaje alarmista.
+Si un dato no aparece en el texto, escribe "No se especifica" en lugar de inventarlo.
 Responde ÚNICAMENTE con JSON válido en este formato:
 {
-  "structuredContent": "texto corregido y estructurado con viñetas si aplica, en español",
+  "structuredContent": "Motivo del contacto:\\n...\\n\\nRespuesta recibida:\\n...\\n\\nObservación pastoral:\\n...\\n\\nPróxima acción sugerida:\\n...",
   "suggestedCategory": "call | visit | chat | counseling | prayer | other",
   "summary": "resumen de 1 oración",
   "followUpNeeded": true | false
 }
+
+Formato obligatorio para structuredContent:
+Motivo del contacto:
+Explica en 1 o 2 frases por qué se registró este contacto o acompañamiento.
+
+Respuesta recibida:
+Resume de forma humanizada lo que la persona comunicó. Usa viñetas solo si hay varios puntos.
+
+Observación pastoral:
+Redacta una lectura prudente basada solo en los datos. No diagnostiques. No afirmes intenciones no expresadas.
+
+Próxima acción sugerida:
+Propón una acción concreta, breve y pastoralmente responsable.
 
 Transcripción original:
 ${args.rawText}`;
