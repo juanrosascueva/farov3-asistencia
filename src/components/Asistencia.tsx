@@ -59,6 +59,8 @@ export default function Asistencia({
   const [showNewDate, setShowNewDate] = useState(false);
   const [newDate, setNewDate] = useState(todayISO());
   const [newMeetingType, setNewMeetingType] = useState<MeetingType>("culto_adolescentes");
+  const [newObjective, setNewObjective] = useState("");
+  const [newExpectedAttendance, setNewExpectedAttendance] = useState("");
   const [selectedSessionId, setSelectedSessionId] = useState<string>("");
   const [showEditDate, setShowEditDate] = useState(false);
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
@@ -171,6 +173,8 @@ export default function Asistencia({
       ministryId: scope.ministryId ? (scope.ministryId as any) : undefined,
       groupId: scope.groupId ? (scope.groupId as any) : undefined,
       title: MEETING_LABELS[newMeetingType],
+      objective: newObjective || undefined,
+      expectedAttendance: newExpectedAttendance ? Number(newExpectedAttendance) : undefined,
     });
     setSelectedDate(newDate);
     setSelectedSessionId(String(id));
@@ -488,6 +492,10 @@ export default function Asistencia({
                   <option key={value} value={value}>{label}</option>
                 ))}
               </select>
+              <label className="block text-xs font-semibold text-ink/60">Objetivo de la actividad (opcional)</label>
+              <input value={newObjective} onChange={(e) => setNewObjective(e.target.value)} className="w-full rounded-xl border border-ink/10 px-3 py-2 text-sm" placeholder="Ej. Integrar a visitantes" />
+              <label className="block text-xs font-semibold text-ink/60">Asistencia esperada (opcional)</label>
+              <input value={newExpectedAttendance} onChange={(e) => setNewExpectedAttendance(e.target.value)} type="number" min="0" className="w-full rounded-xl border border-ink/10 px-3 py-2 text-sm" placeholder="Ej. 20" />
               <p className="mt-2 text-xs text-ink/45">
                 Se registrará en: <span className="font-semibold text-ink/65">{scopeLabel}</span>
               </p>

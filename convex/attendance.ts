@@ -102,6 +102,8 @@ export const createSession = mutation({
     ministryId: optionalMinistryId,
     groupId: optionalGroupId,
     title: v.optional(v.string()),
+    objective: v.optional(v.string()),
+    expectedAttendance: v.optional(v.number()),
   },
   handler: async (ctx, args) => {
     if (!/^\d{4}-\d{2}-\d{2}$/.test(args.date)) throw new Error("Formato de fecha inválido.");
@@ -113,12 +115,15 @@ export const createSession = mutation({
       ministryId: cleanOptionalId(args.ministryId) as any,
       groupId: cleanOptionalId(args.groupId) as any,
       title: cleanText(args.title),
+      objective: cleanText(args.objective),
+      expectedAttendance: args.expectedAttendance,
     };
     if (!canAccessScope(access, payload)) throw new Error("No tienes permisos para crear sesiones en este ámbito.");
     const id = await ctx.db.insert("meetingSessions", {
       ...payload,
       checkInToken: newCheckInToken(),
       checkInEnabled: true,
+      status: "planned" as const,
       createdBy: access.user._id,
       createdAt: new Date().toISOString(),
     });
@@ -131,6 +136,30 @@ export const createSession = mutation({
       details: `${payload.date} ${payload.type}`,
     });
     return id;
+  },
+});
+
+export const completeSession = mutation({
+  args: { token: v.string(), sessionId: v.id("meetingSessions"), resultNotes: v.optional(v.string()) },
+  handler: async (ctx, args) => {
+    const access = await requireAccess(ctx, args.token, "helper"); const session = await ctx.db.get(args.sessionId);
+    if (!session || !canAccessScope(access, session)) throw new Error("No tienes acceso a esta sesión.");
+    const now = new Date().toISOString(); await ctx.db.patch(session._id, { status: "completed", resultNotes: cleanText(args.resultNotes), completedAt: now });
+    const records = await ctx.db.query("attendance").withIndex("by_sessionId", q => q.eq("sessionId", session._id)).collect();
+    await logAudit(ctx, { token: args.token, action: "attendance.session_completed", entityType: "meetingSession", entityId: String(session._id), newValue: { status: "completed", attendance: records.length }, details: args.resultNotes });
+    return { present: records.filter(r => r.status === "present").length, absent: records.filter(r => r.status === "absent").length, excused: records.filter(r => r.status === "excused").length };
+  },
+});
+
+export const retentionSummary = query({
+  args: { token: v.string(), campusId: optionalCampusId, ministryId: optionalMinistryId, groupId: optionalGroupId },
+  handler: async (ctx, args) => {
+    const access = await getEffectiveAccess(ctx, args.token); if (!access) return { seven: 0, thirty: 0, ninety: 0, visitors: 0 };
+    const scope = { campusId: cleanOptionalId(args.campusId), ministryId: cleanOptionalId(args.ministryId), groupId: cleanOptionalId(args.groupId) };
+    const teens = (await ctx.db.query("teens").collect()).filter(t => (access.isGlobal || canAccessTeen(access, t)) && matchesActiveScope(t, scope) && (t.estado === "visitante" || t.estado === "nuevo"));
+    const attendance = await ctx.db.query("attendance").collect(); const today = new Date().toISOString().slice(0, 10);
+    const retained = (days: number) => teens.filter(teen => { const history = attendance.filter(r => r.teenId === teen._id && r.status === "present").sort((a,b)=>a.date.localeCompare(b.date)); return history.length > 1 && daysBetween(history[0].date, today) >= days && history.some(r => daysBetween(history[0].date, r.date) >= days); }).length;
+    return { visitors: teens.length, seven: retained(7), thirty: retained(30), ninety: retained(90) };
   },
 });
 
