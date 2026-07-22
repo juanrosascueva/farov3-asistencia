@@ -162,14 +162,14 @@ export default function ChatPanel({
   return (
     <div className="fixed bottom-[calc(5.5rem+env(safe-area-inset-bottom))] left-4 right-4 sm:left-auto sm:right-6 lg:bottom-6 sm:w-[360px] z-50">
       <div className="bg-white border border-ink/10 rounded-2xl shadow-2xl flex flex-col overflow-hidden max-h-[min(28rem,calc(100vh-7rem-env(safe-area-inset-bottom)))] sm:max-h-[500px]">
-        <div className="flex items-center justify-between px-4 py-3 border-b border-ink/5 bg-teal-50">
+        <div className="flex items-center justify-between px-4 py-3 border-b border-ink/5 bg-primary-50">
           <div className="flex items-center gap-2">
-            <svg className="w-5 h-5 text-teal-600" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+            <svg className="w-5 h-5 text-primary-600" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
               <path d="M12 2l1.5 4.5L18 8l-4.5 1.5L12 14l-1.5-4.5L6 8l4.5-1.5L12 2z" />
               <path d="M18 14l.8 2.2L21 17l-2.2.8L18 20l-.8-2.2L15 17l2.2-.8L18 14z" />
               <path d="M6 14l.8 2.2L9 17l-2.2.8L6 20l-.8-2.2L3 17l2.2-.8L6 14z" />
             </svg>
-            <span className="text-sm font-bold text-teal-800">Asistente Pastoral</span>
+            <span className="text-sm font-bold text-primary-800">Asistente Pastoral</span>
           </div>
           <button onClick={onClose} className="w-7 h-7 rounded-lg flex items-center justify-center text-ink/40 hover:text-ink hover:bg-ink/5 transition">
             <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M18 6L6 18M6 6l12 12" /></svg>
@@ -180,12 +180,12 @@ export default function ChatPanel({
           {messages.map((msg, i) => (
             <div key={i} className={`flex flex-col ${msg.role === "user" ? "items-end" : "items-start"}`}>
               <div className={`max-w-[85%] rounded-xl px-3.5 py-2.5 text-sm leading-relaxed whitespace-pre-line ${
-                msg.role === "user" ? "bg-teal-600 text-white rounded-br-md" : "bg-ink/5 text-ink/80 rounded-bl-md"
+                msg.role === "user" ? "bg-primary-600 text-white rounded-br-md" : "bg-ink/5 text-ink/80 rounded-bl-md"
               }`}>
                 {msg.content}
               </div>
               {msg.role === "assistant" && msg.modelUsed && (
-                <span className="text-[9px] text-ink/30 mt-0.5 mb-0.5 ml-2 block self-start">
+                <span className="text-micro text-ink/30 mt-0.5 mb-0.5 ml-2 block self-start">
                   IA: {msg.modelUsed.split("/").pop()}
                 </span>
               )}
@@ -194,7 +194,7 @@ export default function ChatPanel({
                   href={`https://wa.me/${msg.whatsappPhone.replace(/\D/g, "")}?text=${encodeURIComponent(msg.whatsappMessage)}`}
                   target="_blank"
                   rel="noreferrer"
-                  className="mt-1.5 mb-2 ml-2 text-[11px] font-semibold bg-emerald-600 hover:bg-emerald-700 text-white px-3 py-1.5 rounded-full inline-flex items-center gap-1.5 self-start transition pressable shrink-0"
+                  className="mt-1.5 mb-2 ml-2 text-xs font-semibold bg-success-600 hover:bg-success-700 text-white px-3 py-1.5 rounded-full inline-flex items-center gap-1.5 self-start transition pressable shrink-0"
                 >
                   <svg className="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                     <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z" />
@@ -230,7 +230,7 @@ export default function ChatPanel({
             <button
               onClick={handleSend}
               disabled={!input.trim() || sending}
-              className="shrink-0 w-11 h-11 rounded-xl bg-teal-600 text-white flex items-center justify-center hover:bg-teal-700 disabled:opacity-40 transition"
+              className="shrink-0 w-11 h-11 rounded-xl bg-primary-600 text-white flex items-center justify-center hover:bg-primary-700 disabled:opacity-40 transition"
             >
               <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M22 2L11 13" /><path d="M22 2l-7 20-4-9-9-4 20-7z" /></svg>
             </button>

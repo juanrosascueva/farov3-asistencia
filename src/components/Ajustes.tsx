@@ -102,7 +102,7 @@ export default function Ajustes({ teens, attendanceMap, dark, setDark }: Ajustes
   return (
     <div className="space-y-5 max-w-lg">
       <div>
-        <p className="text-xs font-semibold text-teal-700 tracking-wide uppercase">
+        <p className="text-xs font-semibold text-primary-700 tracking-wide uppercase">
           Configuración
         </p>
         <h1 className="font-display text-2xl font-bold mt-0.5">Ajustes</h1>
@@ -113,7 +113,7 @@ export default function Ajustes({ teens, attendanceMap, dark, setDark }: Ajustes
           onClick={handleExportJson}
           className="w-full flex items-center gap-3 p-4 text-left"
         >
-          <svg className="w-5 h-5 text-teal-600" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><path d="M12 3v12" /><path d="M7 10l5 5 5-5" /><path d="M5 21h14" /></svg>
+          <svg className="w-5 h-5 text-primary-600" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><path d="M12 3v12" /><path d="M7 10l5 5 5-5" /><path d="M5 21h14" /></svg>
           <div className="flex-1">
             <p className="text-sm font-semibold">Exportar datos (JSON)</p>
             <p className="text-xs text-ink/40">Respaldo completo de adolescentes y asistencia</p>
@@ -121,7 +121,7 @@ export default function Ajustes({ teens, attendanceMap, dark, setDark }: Ajustes
         </button>
 
         <button onClick={handleExportCsv} className="w-full flex items-center gap-3 p-4 text-left">
-          <svg className="w-5 h-5 text-teal-600" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><path d="M12 3v12" /><path d="M7 10l5 5 5-5" /><path d="M5 21h14" /></svg>
+          <svg className="w-5 h-5 text-primary-600" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><path d="M12 3v12" /><path d="M7 10l5 5 5-5" /><path d="M5 21h14" /></svg>
           <div className="flex-1">
             <p className="text-sm font-semibold">Exportar asistencia (CSV)</p>
             <p className="text-xs text-ink/40">Tabla de asistencia para abrir en Excel/Sheets</p>
@@ -130,12 +130,12 @@ export default function Ajustes({ teens, attendanceMap, dark, setDark }: Ajustes
 
         <label className={`w-full flex items-center gap-3 p-4 text-left ${importing ? "opacity-50 cursor-not-allowed" : "cursor-pointer"}`}>
           {importing ? (
-            <svg className="animate-spin h-5 w-5 text-teal-600 shrink-0" viewBox="0 0 24 24" fill="none">
+            <svg className="animate-spin h-5 w-5 text-primary-600 shrink-0" viewBox="0 0 24 24" fill="none">
               <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
               <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
             </svg>
           ) : (
-            <svg className="w-5 h-5 text-teal-600 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><path d="M12 3v12" /><path d="M7 10l5 5 5-5" /><path d="M5 21h14" /></svg>
+            <svg className="w-5 h-5 text-primary-600 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><path d="M12 3v12" /><path d="M7 10l5 5 5-5" /><path d="M5 21h14" /></svg>
           )}
           <div className="flex-1">
             <p className="text-sm font-semibold">{importing ? "Importando respaldo..." : "Importar respaldo (JSON)"}</p>
@@ -152,7 +152,7 @@ export default function Ajustes({ teens, attendanceMap, dark, setDark }: Ajustes
         </div>
         <button
           onClick={() => setDark?.(!dark)}
-          className={`w-11 h-6 rounded-full relative transition-colors ${dark ? "bg-teal-600" : "bg-ink/20"}`}
+          className={`w-11 h-6 rounded-full relative transition-colors ${dark ? "bg-primary-600" : "bg-ink/20"}`}
         >
           <div className={`w-5 h-5 bg-card rounded-full absolute top-0.5 shadow transition-transform ${dark ? "left-[22px]" : "left-0.5"}`} />
         </button>
@@ -168,7 +168,7 @@ export default function Ajustes({ teens, attendanceMap, dark, setDark }: Ajustes
           </p>
         </div>
         <div className="flex items-center gap-4">
-          <span className="text-2xl font-display font-bold text-teal-700 w-14">
+          <span className="text-2xl font-display font-bold text-primary-700 w-14">
             {pastoralTargetCoverage}%
           </span>
           <input
@@ -178,11 +178,11 @@ export default function Ajustes({ teens, attendanceMap, dark, setDark }: Ajustes
             step={5}
             value={pastoralTargetCoverage}
             onChange={(e) => setPastoralTargetCoverage(Number(e.target.value))}
-            className="flex-1 h-2 rounded-full appearance-none bg-ink/10 cursor-pointer accent-teal-600
-              [&::-webkit-slider-thumb]:appearance-none [&::-webkit-slider-thumb]:w-5 [&::-webkit-slider-thumb]:h-5 [&::-webkit-slider-thumb]:rounded-full [&::-webkit-slider-thumb]:bg-teal-600 [&::-webkit-slider-thumb]:shadow"
+            className="flex-1 h-2 rounded-full appearance-none bg-ink/10 cursor-pointer accent-primary-600
+              [&::-webkit-slider-thumb]:appearance-none [&::-webkit-slider-thumb]:w-5 [&::-webkit-slider-thumb]:h-5 [&::-webkit-slider-thumb]:rounded-full [&::-webkit-slider-thumb]:bg-primary-600 [&::-webkit-slider-thumb]:shadow"
           />
         </div>
-        <div className="flex items-center justify-between text-[11px] text-ink/40">
+        <div className="flex items-center justify-between text-xs text-ink/40">
           <span>50%</span>
           <span className="font-semibold text-ink/60">Meta actual: {pastoralTargetCoverage}%</span>
           <span>100%</span>
@@ -270,7 +270,7 @@ export default function Ajustes({ teens, attendanceMap, dark, setDark }: Ajustes
                     key={v}
                     type="button"
                     onClick={() => setTplText((prev) => prev + " " + v)}
-                    className="text-[11px] font-mono bg-ink/5 hover:bg-ink/10 rounded-md px-2 py-0.5 text-ink/60"
+                    className="text-xs font-mono bg-ink/5 hover:bg-ink/10 rounded-md px-2 py-0.5 text-ink/60"
                   >
                     {v}
                   </button>
@@ -301,7 +301,7 @@ export default function Ajustes({ teens, attendanceMap, dark, setDark }: Ajustes
                   setShowTplForm(false);
                   setEditTpl(null);
                 }}
-                className="flex-1 bg-ink text-white rounded-xl py-2.5 text-sm font-semibold"
+                className="flex-1 bg-primary-600 text-white rounded-xl py-2.5 text-sm font-semibold"
               >
                 {editTpl ? "Guardar cambios" : "Agregar plantilla"}
               </button>
@@ -319,7 +319,7 @@ export default function Ajustes({ teens, attendanceMap, dark, setDark }: Ajustes
               setTplName(""); setTplEmoji("💬"); setTplCategory("general"); setTplRecipient("teen"); setTplText("");
               setEditTpl(null); setShowTplForm(true);
             }}
-            className="flex items-center gap-2 text-sm font-semibold text-teal-700 hover:text-teal-600 transition"
+            className="flex items-center gap-2 text-sm font-semibold text-primary-700 hover:text-primary-600 transition"
           >
             <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><path d="M12 5v14M5 12h14" /></svg>
             Nueva plantilla
@@ -332,7 +332,7 @@ export default function Ajustes({ teens, attendanceMap, dark, setDark }: Ajustes
             if (group.length === 0) return null;
             return (
               <div key={cat}>
-                <p className="text-[11px] font-semibold text-ink/40 uppercase tracking-wide mb-1.5">
+                <p className="text-xs font-semibold text-ink/40 uppercase tracking-wide mb-1.5">
                   {cat === "absence" ? "Ausencias" : cat === "streak" ? "Rachas" : cat === "birthday" ? "Cumpleaños" : "General"}
                 </p>
                 <div className="space-y-1">
@@ -356,14 +356,14 @@ export default function Ajustes({ teens, attendanceMap, dark, setDark }: Ajustes
                           setTplEmoji(t.emoji);
                           setShowTplForm(true);
                         }}
-                        className="w-6 h-6 rounded-full bg-ink/5 flex items-center justify-center text-ink/30 hover:text-teal-600 hover:bg-teal-50 transition"
+                        className="w-6 h-6 rounded-full bg-ink/5 flex items-center justify-center text-ink/30 hover:text-primary-600 hover:bg-primary-50 transition"
                         title="Editar"
                       >
                         <svg className="w-3 h-3" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><path d="M12 20h9" /><path d="M16.5 3.5a2.1 2.1 0 013 3L7 19l-4 1 1-4z" /></svg>
                       </button>
                       <button
                         onClick={() => deleteTemplate(t.id)}
-                        className="w-6 h-6 rounded-full bg-ink/5 flex items-center justify-center text-ink/30 hover:text-coral-600 hover:bg-coral-50 transition"
+                        className="w-6 h-6 rounded-full bg-ink/5 flex items-center justify-center text-ink/30 hover:text-danger-600 hover:bg-danger-50 transition"
                         title="Eliminar"
                       >
                         <svg className="w-3 h-3" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M18 6L6 18M6 6l12 12" /></svg>
@@ -378,21 +378,21 @@ export default function Ajustes({ teens, attendanceMap, dark, setDark }: Ajustes
 
         <button
           onClick={resetTemplates}
-          className="text-xs font-semibold text-ink/40 hover:text-coral-600 transition"
+          className="text-xs font-semibold text-ink/40 hover:text-danger-600 transition"
         >
           Restablecer plantillas de fábrica
         </button>
       </div>
 
-      <div className="bg-coral-50 border border-coral-100 rounded-card p-4">
-        <p className="text-sm font-semibold text-coral-700">Archivar adolescentes activos</p>
-        <p className="text-xs text-coral-700/70 mt-0.5 mb-3">Esta acción oculta las fichas activas, pero conserva asistencia, bitácoras y auditoría.</p>
-        <button onClick={() => setShowReset(true)} className="text-xs font-semibold bg-coral-600 text-white rounded-full px-3.5 py-2">Archivar todo</button>
+      <div className="bg-danger-50 border border-danger-100 rounded-card p-4">
+        <p className="text-sm font-semibold text-danger-700">Archivar adolescentes activos</p>
+        <p className="text-xs text-danger-700/70 mt-0.5 mb-3">Esta acción oculta las fichas activas, pero conserva asistencia, bitácoras y auditoría.</p>
+        <button onClick={() => setShowReset(true)} className="text-xs font-semibold bg-danger-600 text-white rounded-full px-3.5 py-2">Archivar todo</button>
       </div>
 
-      <div className="bg-teal-50/70 border border-teal-100 rounded-card p-5"><p className="text-xs font-semibold text-teal-700 uppercase tracking-wide">Consentimientos y ciclo de ficha</p><p className="mt-1 text-sm text-ink/65">{teens.filter((teen: any) => !teen.consentimientoDatos || !teen.consentimientoFoto).length} ficha(s) tienen consentimiento pendiente. Revisa la ficha y valida con el apoderado antes de usar mensajería o fotografías.</p><p className="mt-3 text-xs text-ink/50">Política operativa: egresados, trasladados e inactivos conservan su historial, salen de las listas activas y se excluyen de los indicadores operativos.</p></div>
+      <div className="bg-primary-50/70 border border-primary-100 rounded-card p-5"><p className="text-xs font-semibold text-primary-700 uppercase tracking-wide">Consentimientos y ciclo de ficha</p><p className="mt-1 text-sm text-ink/65">{teens.filter((teen: any) => !teen.consentimientoDatos || !teen.consentimientoFoto).length} ficha(s) tienen consentimiento pendiente. Revisa la ficha y valida con el apoderado antes de usar mensajería o fotografías.</p><p className="mt-3 text-xs text-ink/50">Política operativa: egresados, trasladados e inactivos conservan su historial, salen de las listas activas y se excluyen de los indicadores operativos.</p></div>
 
-      <p className="text-center text-[11px] text-ink/30 pt-2">Congregación Cristo Vive · Control de asistencia</p>
+      <p className="text-center text-xs text-ink/30 pt-2">Congregación Cristo Vive · Control de asistencia</p>
 
       {showReset && (
         <Modal title="Archivar adolescentes activos" onClose={() => setShowReset(false)}>
@@ -436,7 +436,7 @@ function ResetForm({ onCancel }: { onCancel: () => void }) {
         <button
           onClick={handleReset}
           disabled={resetting}
-          className="flex-1 bg-coral-600 text-white rounded-xl py-2.5 text-sm font-semibold disabled:opacity-50 pressable flex items-center justify-center gap-1.5"
+          className="flex-1 bg-danger-600 text-white rounded-xl py-2.5 text-sm font-semibold disabled:opacity-50 pressable flex items-center justify-center gap-1.5"
         >
           {resetting && (
             <svg className="animate-spin h-3.5 w-3.5 text-white" viewBox="0 0 24 24" fill="none">

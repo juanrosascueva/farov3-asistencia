@@ -14,15 +14,15 @@ import type {
 } from "./types";
 
 export const TEEN_STATUS_META: Record<TeenStatus, { label: string; cls: string }> = {
-  activo: { label: "Activo", cls: "bg-green-50 text-green-700 border-green-100" },
-  visitante: { label: "Visitante", cls: "bg-cyan-50 text-cyan-700 border-cyan-100" },
-  nuevo: { label: "Nuevo", cls: "bg-teal-50 text-teal-700 border-teal-100" },
-  seguimiento: { label: "Seguimiento", cls: "bg-amber-50 text-amber-700 border-amber-100" },
-  inactivo: { label: "Inactivo", cls: "bg-slate-100 text-slate-700 border-slate-200" },
-  trasladado: { label: "Trasladado", cls: "bg-purple-50 text-purple-700 border-purple-100" },
-  archivado: { label: "Archivado", cls: "bg-slate-100 text-slate-500 border-slate-200" },
-  eliminado: { label: "Eliminado", cls: "bg-red-50 text-red-700 border-red-100" },
-  egresado: { label: "Egresado", cls: "bg-blue-50 text-blue-700 border-blue-100" },
+  activo: { label: "Activo", cls: "bg-success-50 text-success-700 border-success-100" },
+  visitante: { label: "Visitante", cls: "bg-info-50 text-info-700 border-info-100" },
+  nuevo: { label: "Nuevo", cls: "bg-primary-50 text-primary-700 border-primary-100" },
+  seguimiento: { label: "Seguimiento", cls: "bg-warning-50 text-warning-700 border-warning-100" },
+  inactivo: { label: "Inactivo", cls: "bg-neutral-100 text-neutral-700 border-neutral-200" },
+  trasladado: { label: "Trasladado", cls: "bg-primary-50 text-primary-700 border-primary-100" },
+  archivado: { label: "Archivado", cls: "bg-neutral-100 text-neutral-500 border-neutral-200" },
+  eliminado: { label: "Eliminado", cls: "bg-danger-50 text-danger-700 border-danger-100" },
+  egresado: { label: "Egresado", cls: "bg-info-50 text-info-700 border-info-100" },
 };
 
 export const SPIRITUAL_STAGE_LABELS: Record<SpiritualStage, string> = {
@@ -317,10 +317,10 @@ const BADGE_DEFS: BadgeMeta[] = [
 ];
 
 const STREAK_TIERS: Record<string, StreakTier> = {
-  bronze: { label: "Bronce", icon: "🔥", color: "text-amber-700" },
-  silver: { label: "Plata", icon: "🔥⚡", color: "text-slate-500" },
+  bronze: { label: "Bronce", icon: "🔥", color: "text-warning-700" },
+  silver: { label: "Plata", icon: "🔥⚡", color: "text-neutral-500" },
   gold: { label: "Oro", icon: "🔥🌟", color: "text-yellow-600" },
-  diamond: { label: "Diamante", icon: "💎🔥", color: "text-cyan-600" },
+  diamond: { label: "Diamante", icon: "💎🔥", color: "text-info-600" },
 };
 
 const LEVELS: { min: number; max: number; name: string }[] = [

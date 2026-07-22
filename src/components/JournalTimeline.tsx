@@ -17,18 +17,18 @@ const categoryMeta: Record<
   string,
   { label: string; icon: string; color: string }
 > = {
-  call: { label: "Llamada", icon: "📞", color: "bg-teal-50 border-teal-100" },
-  visit: { label: "Visita", icon: "🏠", color: "bg-sage-50 border-sage-100" },
-  chat: { label: "WhatsApp", icon: "📱", color: "bg-green-50 border-green-100" },
-  counseling: { label: "Consejería", icon: "💬", color: "bg-teal-50 border-teal-100" },
-  prayer: { label: "Oración", icon: "🙏", color: "bg-coral-50 border-coral-100" },
+  call: { label: "Llamada", icon: "📞", color: "bg-primary-50 border-primary-100" },
+  visit: { label: "Visita", icon: "🏠", color: "bg-success-50 border-success-100" },
+  chat: { label: "WhatsApp", icon: "📱", color: "bg-success-50 border-success-100" },
+  counseling: { label: "Consejería", icon: "💬", color: "bg-primary-50 border-primary-100" },
+  prayer: { label: "Oración", icon: "🙏", color: "bg-danger-50 border-danger-100" },
   other: { label: "Nota", icon: "📝", color: "bg-ink/5 border-ink/10" },
 };
 
 const riskColors: Record<string, string> = {
-  low: "bg-green-50 text-green-700 border-green-200",
-  medium: "bg-amber-50 text-amber-700 border-amber-200",
-  high: "bg-red-50 text-red-700 border-red-200",
+  low: "bg-success-50 text-success-700 border-success-200",
+  medium: "bg-warning-50 text-warning-700 border-warning-200",
+  high: "bg-danger-50 text-danger-700 border-danger-200",
 };
 
 const confidenceLabel: Record<string, string> = {
@@ -145,7 +145,7 @@ export default function JournalTimeline({ teenId }: JournalProps) {
         </h2>
         <button
           onClick={() => setShowForm(!showForm)}
-          className="text-xs font-semibold bg-ink text-white rounded-full px-3.5 py-2 flex items-center gap-1.5"
+          className="text-xs font-semibold bg-primary-600 text-white rounded-full px-3.5 py-2 flex items-center gap-1.5"
         >
           <svg
             className="w-3.5 h-3.5"
@@ -267,7 +267,7 @@ export default function JournalTimeline({ teenId }: JournalProps) {
                   recognition.start();
                 }}
                 className={`absolute right-2 bottom-2.5 w-7 h-7 rounded-lg flex items-center justify-center transition ${
-                  listening ? "bg-red-100 text-red-600 animate-pulse" : "bg-ink/5 text-ink/40 hover:text-ink hover:bg-ink/10"
+                  listening ? "bg-danger-100 text-danger-600 animate-pulse" : "bg-ink/5 text-ink/40 hover:text-ink hover:bg-ink/10"
                 }`}
                 title={listening ? "Detener grabación" : "Transcribir por voz"}
               >
@@ -293,7 +293,7 @@ export default function JournalTimeline({ teenId }: JournalProps) {
                   setStructuring(false);
                 }}
                 disabled={structuring}
-                className="mt-2 text-[10px] font-semibold text-purple-700 bg-purple-50 hover:bg-purple-100 border border-purple-200 px-2.5 py-1 rounded-full transition disabled:opacity-50"
+                className="mt-2 text-[10px] font-semibold text-primary-700 bg-primary-50 hover:bg-primary-100 border border-primary-200 px-2.5 py-1 rounded-full transition disabled:opacity-50"
               >
                 {structuring ? "Estructurando..." : "✨ Estructurar bitácora con IA"}
               </button>
@@ -304,7 +304,7 @@ export default function JournalTimeline({ teenId }: JournalProps) {
               type="checkbox"
               checked={followUp}
               onChange={(e) => setFollowUp(e.target.checked)}
-              className="w-4 h-4 rounded border-ink/20 text-coral-600 focus:ring-coral-500"
+              className="w-4 h-4 rounded border-ink/20 text-danger-600 focus:ring-danger-500"
             />
             <span className="text-sm text-ink/70">
               <span className="font-semibold">Marcar como seguimiento histórico</span>
@@ -318,7 +318,7 @@ export default function JournalTimeline({ teenId }: JournalProps) {
               type="checkbox"
               checked={isConfidential}
               onChange={(e) => setIsConfidential(e.target.checked)}
-              className="w-4 h-4 rounded border-ink/20 text-teal-600 focus:ring-teal-500"
+              className="w-4 h-4 rounded border-ink/20 text-primary-600 focus:ring-primary-500"
             />
             <span className="text-sm text-ink/70">
               <span className="font-semibold">Entrada confidencial</span>
@@ -329,7 +329,7 @@ export default function JournalTimeline({ teenId }: JournalProps) {
           </label>
           <button
             type="submit"
-            className="w-full bg-ink text-white rounded-xl py-2.5 text-sm font-semibold"
+            className="w-full bg-primary-600 text-white rounded-xl py-2.5 text-sm font-semibold"
           >
             Guardar entrada
           </button>
@@ -383,19 +383,19 @@ export default function JournalTimeline({ teenId }: JournalProps) {
                   <div className="flex items-start gap-2">
                     <div className="flex-1 min-w-0">
                       <div className="flex items-center gap-2 mb-0.5 flex-wrap">
-                        <span className="text-[11px] font-semibold text-ink/50">
+                        <span className="text-xs font-semibold text-ink/50">
                           {fmtDate(entry.entryDate)}
                         </span>
                         <span className="text-[10px] font-medium text-ink/30 px-1.5 py-0.5 rounded-full bg-ink/5">
                           {meta.label}
                         </span>
                         {entry.followUp && (
-                          <span className="text-[10px] font-semibold text-coral-600 bg-coral-50 px-1.5 py-0.5 rounded-full">
+                          <span className="text-[10px] font-semibold text-danger-600 bg-danger-50 px-1.5 py-0.5 rounded-full">
                             📌 Seguimiento
                           </span>
                         )}
                         {entry.isConfidential && (
-                          <span className="text-[10px] font-semibold text-teal-700 bg-teal-50 px-1.5 py-0.5 rounded-full">
+                          <span className="text-[10px] font-semibold text-primary-700 bg-primary-50 px-1.5 py-0.5 rounded-full">
                             🔒 Confidencial
                           </span>
                         )}
@@ -405,12 +405,12 @@ export default function JournalTimeline({ teenId }: JournalProps) {
                           </span>
                         )}
                         {analysis?.humanReviewRequired !== false && (
-                          <span className="text-[10px] font-bold text-purple-700 bg-purple-50 border border-purple-100 px-1.5 py-0.5 rounded-full">
+                          <span className="text-[10px] font-bold text-primary-700 bg-primary-50 border border-primary-100 px-1.5 py-0.5 rounded-full">
                             Requiere revisión humana
                           </span>
                         )}
                         {analysis?.isCrisis && (
-                          <span className="text-[10px] font-bold text-red-700 bg-red-100 px-1.5 py-0.5 rounded-full">
+                          <span className="text-[10px] font-bold text-danger-700 bg-danger-100 px-1.5 py-0.5 rounded-full">
                             🚨 Crisis
                           </span>
                         )}
@@ -434,7 +434,7 @@ export default function JournalTimeline({ teenId }: JournalProps) {
                         </div>
                       )}
                       {analysis && (
-                        <div className="mt-2 rounded-xl border border-purple-100 bg-purple-50/70 p-3 text-xs text-purple-900 space-y-1">
+                        <div className="mt-2 rounded-xl border border-primary-100 bg-primary-50/70 p-3 text-xs text-primary-900 space-y-1">
                           <p className="font-semibold">Sugerencia pastoral de IA</p>
                           <p><span className="font-semibold">Confianza:</span> {confidenceLabel[analysis.confidence || "low"]}</p>
                           <p><span className="font-semibold">Estado revisión:</span> {reviewStatusLabel[analysis.reviewStatus || (analysis.humanReviewRequired === false ? "reviewed" : "pending")]}</p>
@@ -447,12 +447,12 @@ export default function JournalTimeline({ teenId }: JournalProps) {
                           {analysis.usedDataSources && analysis.usedDataSources.length > 0 && (
                             <p><span className="font-semibold">Datos usados:</span> {analysis.usedDataSources.map((s) => sourceLabel[s] || s).join(", ")}</p>
                           )}
-                          <p className="text-purple-800/80">{analysis.pastoralDisclaimer || "Esta sugerencia requiere revisión humana pastoral."}</p>
+                          <p className="text-primary-800/80">{analysis.pastoralDisclaimer || "Esta sugerencia requiere revisión humana pastoral."}</p>
                           {analysis.humanReviewRequired !== false && token && (
                             <button
                               type="button"
                               onClick={() => setReviewDraft({ analysisId: String((analysis as any)._id), notes: "" })}
-                              className="mt-2 rounded-lg bg-purple-700 px-3 py-1.5 text-[11px] font-semibold text-white"
+                              className="mt-2 rounded-lg bg-primary-700 px-3 py-1.5 text-xs font-semibold text-white"
                             >
                               Marcar revisado
                             </button>
@@ -462,7 +462,7 @@ export default function JournalTimeline({ teenId }: JournalProps) {
                     </div>
                     <button
                       onClick={() => deleteEntry({ id: entry._id, token: token ?? undefined })}
-                      className="shrink-0 w-8 h-8 rounded-full bg-ink/5 flex items-center justify-center text-ink/30 hover:text-coral-600 hover:bg-coral-50 transition mt-1"
+                      className="shrink-0 w-8 h-8 rounded-full bg-ink/5 flex items-center justify-center text-ink/30 hover:text-danger-600 hover:bg-danger-50 transition mt-1"
                       title="Eliminar"
                     >
                       <svg
@@ -497,7 +497,7 @@ export default function JournalTimeline({ teenId }: JournalProps) {
               rows={4}
               autoFocus
               placeholder="Nota de revisión humana..."
-              className="w-full resize-none rounded-xl border border-ink/10 bg-card px-3.5 py-3 text-sm outline-none transition focus:border-teal-500 focus:ring-2 focus:ring-teal-500/20"
+              className="w-full resize-none rounded-xl border border-ink/10 bg-card px-3.5 py-3 text-sm outline-none transition focus:border-primary-500 focus:ring-2 focus:ring-primary-500/20"
             />
             <div className="flex flex-col-reverse gap-2 sm:flex-row sm:justify-end">
               <button onClick={() => setReviewDraft(null)} className="rounded-xl border border-ink/10 px-4 py-2.5 text-sm font-semibold text-ink/60 hover:bg-ink/5 transition">
@@ -509,7 +509,7 @@ export default function JournalTimeline({ teenId }: JournalProps) {
                   await reviewAnalysis({ token, analysisId: reviewDraft.analysisId as any, notes: reviewDraft.notes.trim(), status: "reviewed" });
                   setReviewDraft(null);
                 }}
-                className="rounded-xl bg-teal-600 px-4 py-2.5 text-sm font-bold text-white hover:bg-teal-700 transition pressable"
+                className="rounded-xl bg-primary-600 px-4 py-2.5 text-sm font-bold text-white hover:bg-primary-700 transition pressable"
               >
                 Guardar revisión
               </button>

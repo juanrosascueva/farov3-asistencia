@@ -44,23 +44,23 @@ export default function PastoralStats({ teens, allJournal, followUps, pastoralTa
       <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-3">
         <div className="bg-card rounded-card shadow-soft p-4">
           <div className="flex items-start justify-between">
-            <p className="text-2xl font-bold font-display text-teal-700">{coveragePct}%</p>
-            <span className="text-[11px] font-semibold bg-ink/5 text-ink/50 rounded-full px-2 py-0.5">
+            <p className="text-2xl font-bold font-display text-primary-700">{coveragePct}%</p>
+            <span className="text-xs font-semibold bg-ink/5 text-ink/50 rounded-full px-2 py-0.5">
               Meta: {pastoralTargetCoverage}%
             </span>
           </div>
           <p className="text-xs font-semibold text-ink/60 mt-0.5">Cobertura (30d)</p>
           <div className="mt-3 h-2 bg-ink/5 rounded-full overflow-hidden">
             <div
-              className={`h-full rounded-full transition-all ${coveragePct >= pastoralTargetCoverage ? "bg-teal-600" : "bg-amber-500"}`}
+              className={`h-full rounded-full transition-all ${coveragePct >= pastoralTargetCoverage ? "bg-primary-600" : "bg-warning-500"}`}
               style={{ width: `${Math.min(100, coveragePct)}%` }}
             />
           </div>
           <div className="flex flex-col gap-1 sm:flex-row sm:items-center sm:justify-between mt-1">
-            <p className="text-[11px] text-ink/40">
+            <p className="text-xs text-ink/40">
               {teensWithRecentJournal.size}/{teens.length} jóvenes
             </p>
-            <p className={`text-[11px] font-semibold ${coveragePct >= pastoralTargetCoverage ? "text-teal-600" : "text-amber-600"}`}>
+            <p className={`text-xs font-semibold ${coveragePct >= pastoralTargetCoverage ? "text-primary-600" : "text-warning-600"}`}>
               {coveragePct >= pastoralTargetCoverage
                 ? "¡Meta alcanzada! 🎉"
                 : `Falta ${pastoralTargetCoverage - coveragePct}% para cumplir la meta`}
@@ -128,9 +128,9 @@ export default function PastoralStats({ teens, allJournal, followUps, pastoralTa
 
 function KpiCard({ label, value, sub, color }: { label: string; value: string | number; sub: string; color: string }) {
   const colors: Record<string, string> = {
-    teal: "text-teal-700 bg-teal-50",
-    sage: "text-sage-600 bg-sage-50",
-    coral: "text-coral-600 bg-coral-50",
+    teal: "text-primary-700 bg-primary-50",
+    sage: "text-success-600 bg-success-50",
+    coral: "text-danger-600 bg-danger-50",
   };
   return (
     <div className="bg-card rounded-card shadow-soft p-4">
@@ -138,7 +138,7 @@ function KpiCard({ label, value, sub, color }: { label: string; value: string | 
         {value}
       </p>
       <p className="text-xs font-semibold text-ink/60 mt-0.5">{label}</p>
-      <p className="text-[11px] text-ink/40">{sub}</p>
+      <p className="text-xs text-ink/40">{sub}</p>
     </div>
   );
 }

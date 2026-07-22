@@ -304,7 +304,7 @@ export default function TeenForm({ teen, quickVisitor = false, onClose, onSucces
         type="submit"
         form={FORM_ID}
         disabled={submitting || stepErrors.length > 0}
-        className="rounded-xl bg-ink dark:bg-teal-600 dark:hover:bg-teal-500 text-white px-4 py-2.5 text-sm font-semibold disabled:opacity-40 w-full sm:w-auto"
+        className="rounded-xl bg-primary-600 dark:bg-primary-600 dark:hover:bg-primary-500 text-white px-4 py-2.5 text-sm font-semibold disabled:opacity-40 w-full sm:w-auto"
       >
         {submitting ? "Guardando..." : "Registrar visitante"}
       </button>
@@ -324,7 +324,7 @@ export default function TeenForm({ teen, quickVisitor = false, onClose, onSucces
             type="button"
             onClick={() => setStep(index)}
             className={`flex-1 h-2 rounded-full transition ${
-              index <= step ? "bg-teal-600" : "bg-ink/10"
+              index <= step ? "bg-primary-600" : "bg-ink/10"
             }`}
             aria-label={`Ir a paso ${item.label}`}
           />
@@ -365,7 +365,7 @@ export default function TeenForm({ teen, quickVisitor = false, onClose, onSucces
           type="button"
           disabled={!canGoNext}
           onClick={() => setStep((s) => s + 1)}
-          className="rounded-xl bg-ink dark:bg-teal-600 dark:hover:bg-teal-500 text-white px-4 py-2.5 text-sm font-semibold disabled:opacity-40 w-full sm:w-auto order-1 sm:order-none"
+          className="rounded-xl bg-primary-600 dark:bg-primary-600 dark:hover:bg-primary-500 text-white px-4 py-2.5 text-sm font-semibold disabled:opacity-40 w-full sm:w-auto order-1 sm:order-none"
         >
           Siguiente
         </button>
@@ -374,7 +374,7 @@ export default function TeenForm({ teen, quickVisitor = false, onClose, onSucces
           type="submit"
           form={FORM_ID}
           disabled={submitting || stepErrors.length > 0}
-          className="rounded-xl bg-ink dark:bg-teal-600 dark:hover:bg-teal-500 text-white px-4 py-2.5 text-sm font-semibold disabled:opacity-40 flex items-center justify-center gap-2 w-full sm:w-auto order-1 sm:order-none"
+          className="rounded-xl bg-primary-600 dark:bg-primary-600 dark:hover:bg-primary-500 text-white px-4 py-2.5 text-sm font-semibold disabled:opacity-40 flex items-center justify-center gap-2 w-full sm:w-auto order-1 sm:order-none"
         >
           {submitting && (
             <svg className="animate-spin h-4 w-4 text-white" viewBox="0 0 24 24" fill="none">
@@ -462,13 +462,13 @@ export default function TeenForm({ teen, quickVisitor = false, onClose, onSucces
                   onClick={() => setStep(index)}
                   className={`inline-flex items-center gap-2 rounded-full px-3 py-1.5 text-xs font-semibold border transition ${
                     step === index
-                      ? "bg-teal-600 text-white border-teal-600"
+                      ? "bg-primary-600 text-white border-primary-600"
                       : index < step
-                      ? "bg-teal-50 text-teal-700 border-teal-100"
+                      ? "bg-primary-50 text-primary-700 border-primary-100"
                       : "bg-card text-ink/50 border-ink/10"
                   }`}
                 >
-                  <span className="inline-flex w-5 h-5 items-center justify-center rounded-full bg-white/20 text-[11px]">
+                  <span className="inline-flex w-5 h-5 items-center justify-center rounded-full bg-white/20 text-xs">
                     {index + 1}
                   </span>
                   {item.label}
@@ -672,7 +672,7 @@ function SectionHeader({ title, helper }: { title: string; helper: string }) {
 }
 
 function Alert({ tone, message }: { tone: "amber" | "red"; message: string }) {
-  const cls = tone === "red" ? "border-red-200 bg-red-50 text-red-700" : "border-amber-200 bg-amber-50 text-amber-800";
+  const cls = tone === "red" ? "border-danger-200 bg-danger-50 text-danger-700" : "border-warning-200 bg-warning-50 text-warning-800";
   return <div className={`rounded-2xl border p-3 text-sm ${cls}`}>{message}</div>;
 }
 
@@ -686,19 +686,19 @@ function DuplicateWarning({
   onConfirm: () => void;
 }) {
   return (
-    <details className="rounded-2xl border border-amber-200 bg-amber-50 p-4 group">
+    <details className="rounded-2xl border border-warning-200 bg-warning-50 p-4 group">
       <summary className="list-none cursor-pointer flex items-start justify-between gap-3">
         <div>
-          <p className="text-sm font-semibold text-amber-800">Posibles duplicados detectados</p>
-          <p className="text-xs text-amber-800/80 mt-1">
+          <p className="text-sm font-semibold text-warning-800">Posibles duplicados detectados</p>
+          <p className="text-xs text-warning-800/80 mt-1">
             {matches.length} coincidencia{matches.length > 1 ? "s" : ""} encontrada{matches.length > 1 ? "s" : ""}.
           </p>
         </div>
-        <span className="text-xs font-semibold text-amber-700 shrink-0 group-open:hidden">Ver</span>
+        <span className="text-xs font-semibold text-warning-700 shrink-0 group-open:hidden">Ver</span>
       </summary>
-      <div className="mt-3 space-y-2 text-xs text-amber-800/90">
+      <div className="mt-3 space-y-2 text-xs text-warning-800/90">
         {matches.map((match) => (
-          <div key={match.teenId} className="rounded-xl bg-white/70 px-3 py-2 border border-amber-100">
+          <div key={match.teenId} className="rounded-xl bg-white/70 px-3 py-2 border border-warning-100">
             <p className="font-semibold">{match.nombre} {match.apellido}</p>
             <p>{match.reasons.join(" · ")}</p>
           </div>
@@ -707,7 +707,7 @@ function DuplicateWarning({
           type="button"
           onClick={onConfirm}
           className={`rounded-xl px-3 py-2 text-xs font-semibold border ${
-            confirmed ? "bg-green-50 text-green-700 border-green-200" : "bg-white text-amber-800 border-amber-200"
+            confirmed ? "bg-success-50 text-success-700 border-success-200" : "bg-white text-warning-800 border-warning-200"
           }`}
         >
           {confirmed ? "Duplicado confirmado: guardar permitido" : "Confirmar que deseo guardar de todos modos"}
@@ -784,7 +784,7 @@ function ToggleField({ label, checked, onChange }: { label: string; checked: boo
       <button
         type="button"
         onClick={() => onChange(!checked)}
-        className={`relative h-6 w-11 rounded-full transition shrink-0 ${checked ? "bg-teal-600" : "bg-ink/15"}`}
+        className={`relative h-6 w-11 rounded-full transition shrink-0 ${checked ? "bg-primary-600" : "bg-ink/15"}`}
       >
         <span className={`absolute top-0.5 h-5 w-5 rounded-full bg-white shadow transition ${checked ? "left-[22px]" : "left-0.5"}`} />
       </button>
@@ -814,7 +814,7 @@ function TextArea({
         rows={rows}
         className="w-full bg-card border border-ink/10 rounded-xl px-3.5 py-2.5 text-base resize-none"
       />
-      {helper && <p className="text-[11px] text-ink/40 mt-1">{helper}</p>}
+      {helper && <p className="text-xs text-ink/40 mt-1">{helper}</p>}
     </div>
   );
 }

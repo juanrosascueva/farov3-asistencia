@@ -78,7 +78,7 @@ export default function AuditPanel() {
   return (
     <div className="space-y-5">
       <div>
-        <p className="text-xs font-semibold text-teal-700 tracking-wide uppercase">
+        <p className="text-xs font-semibold text-primary-700 tracking-wide uppercase">
           Seguridad
         </p>
         <h1 className="font-display text-2xl font-bold mt-0.5">Auditoría</h1>

@@ -30,7 +30,7 @@ export default function WhatsAppModal({
       href={url}
       target="_blank"
       rel="noopener noreferrer"
-      className="block w-full text-center bg-green-600 text-white rounded-xl py-3 text-sm font-semibold hover:bg-green-700 transition"
+      className="block w-full text-center bg-success-600 text-white rounded-xl py-3 text-sm font-semibold hover:bg-success-700 transition"
     >
       <span className="flex items-center justify-center gap-2">
         <WhatsAppIcon />
@@ -50,7 +50,7 @@ export default function WhatsAppModal({
               onClick={() => setTarget("teen")}
               className={`flex-1 text-xs font-semibold rounded-xl py-2 border transition ${
                 target === "teen"
-                  ? "bg-teal-600 text-white border-teal-600"
+                  ? "bg-primary-600 text-white border-primary-600"
                   : "bg-card text-ink/60 border-ink/10"
               }`}
             >
@@ -63,7 +63,7 @@ export default function WhatsAppModal({
               onClick={() => setTarget("parent")}
               className={`flex-1 text-xs font-semibold rounded-xl py-2 border transition ${
                 target === "parent"
-                  ? "bg-teal-600 text-white border-teal-600"
+                  ? "bg-primary-600 text-white border-primary-600"
                   : "bg-card text-ink/60 border-ink/10"
               }`}
             >
@@ -82,7 +82,7 @@ export default function WhatsAppModal({
               onClick={() => setSelected(t)}
               className={`w-full text-left p-3 rounded-xl border text-sm transition ${
                 selected.id === t.id
-                  ? "bg-teal-50 border-teal-200 text-teal-800"
+                  ? "bg-primary-50 border-primary-200 text-primary-800"
                   : "bg-card border-ink/10 text-ink/70 hover:border-ink/20"
               }`}
             >

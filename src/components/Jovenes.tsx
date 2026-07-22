@@ -178,7 +178,7 @@ export default function Jovenes({
     <div className="space-y-5 overflow-hidden">
       <div className="space-y-3">
         <div>
-          <p className="text-xs font-semibold text-teal-700 tracking-wide uppercase">
+          <p className="text-xs font-semibold text-primary-700 tracking-wide uppercase">
             Mi grupo
           </p>
           <h1 className="font-display text-2xl font-bold mt-0.5">
@@ -195,7 +195,7 @@ export default function Jovenes({
           </button>
           <button
             onClick={() => setShowQuickVisitor(true)}
-            className="text-xs font-semibold bg-teal-50 border border-teal-100 text-teal-700 rounded-full px-3.5 py-2 flex items-center justify-center gap-1.5 min-w-0"
+            className="text-xs font-semibold bg-primary-50 border border-primary-100 text-primary-700 rounded-full px-3.5 py-2 flex items-center justify-center gap-1.5 min-w-0"
           >
             <svg className="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
               <path d="M12 5v14M5 12h14" />
@@ -216,7 +216,7 @@ export default function Jovenes({
           </button>
           <button
             onClick={() => setShowForm(true)}
-            className="text-xs font-semibold bg-ink text-white rounded-full px-3.5 py-2 flex items-center justify-center gap-1.5 min-w-0"
+            className="text-xs font-semibold bg-primary-600 text-white rounded-full px-3.5 py-2 flex items-center justify-center gap-1.5 min-w-0"
           >
             <svg
               className="w-3.5 h-3.5"
@@ -237,7 +237,7 @@ export default function Jovenes({
       <div className="space-y-2">
         <div className="relative flex-1">
           <svg
-            className="w-4 h-4 absolute left-3.5 top-1/2 -translate-y-1/2 text-ink/30"
+            className="w-4 h-4 absolute left-3.5 top-1/2 -tranneutral-y-1/2 text-ink/30"
             viewBox="0 0 24 24"
             fill="none"
             stroke="currentColor"
@@ -252,7 +252,7 @@ export default function Jovenes({
             value={query}
             onChange={(e) => setQuery(e.target.value)}
             placeholder="Buscar por nombre..."
-            className="w-full bg-card border border-ink/10 rounded-xl pl-10 pr-4 py-2.5 text-sm outline-none transition focus:border-teal-500 focus:ring-2 focus:ring-teal-500/20"
+            className="w-full bg-card border border-ink/10 rounded-xl pl-10 pr-4 py-2.5 text-sm outline-none transition focus:border-primary-500 focus:ring-2 focus:ring-primary-500/20"
           />
         </div>
         <div className="flex flex-wrap items-center gap-2">
@@ -260,14 +260,14 @@ export default function Jovenes({
             <button
               type="button"
               onClick={() => setShowSortMenu((value) => !value)}
-              className="w-full flex items-center bg-card border border-ink/10 rounded-xl px-2.5 h-10 hover:border-ink/20 focus:border-teal-500 focus:ring-2 focus:ring-teal-500/20 outline-none transition text-left"
+              className="w-full flex items-center bg-card border border-ink/10 rounded-xl px-2.5 h-10 hover:border-ink/20 focus:border-primary-500 focus:ring-2 focus:ring-primary-500/20 outline-none transition text-left"
             >
             <svg className="w-3.5 h-3.5 text-ink/40 mr-1.5 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
               <line x1="21" y1="10" x2="3" y2="10" /><line x1="21" y1="6" x2="3" y2="6" /><line x1="21" y1="14" x2="3" y2="14" /><line x1="21" y1="18" x2="3" y2="18" />
             </svg>
             <span className="text-xs text-ink/50 mr-1 hidden sm:inline">Ordenar:</span>
             <span className="min-w-0 flex-1 truncate text-xs font-semibold text-ink/75">{sortLabels[sortMode]}</span>
-            <svg className="w-3 h-3 absolute right-2 top-1/2 -translate-y-1/2 text-ink/40 pointer-events-none" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+            <svg className="w-3 h-3 absolute right-2 top-1/2 -tranneutral-y-1/2 text-ink/40 pointer-events-none" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
               <path d="M6 9l6 6 6-6" />
             </svg>
             </button>
@@ -282,7 +282,7 @@ export default function Jovenes({
                       setShowSortMenu(false);
                     }}
                     className={`w-full px-3 py-2 text-left text-xs font-semibold transition ${
-                      sortMode === mode ? "bg-teal-50 text-teal-700" : "text-ink/65 hover:bg-ink/5"
+                      sortMode === mode ? "bg-primary-50 text-primary-700" : "text-ink/65 hover:bg-ink/5"
                     }`}
                   >
                     {sortLabels[mode]}
@@ -299,7 +299,7 @@ export default function Jovenes({
               setPppRecalculating(false);
             }}
             disabled={pppRecalculating}
-            className="shrink-0 h-10 px-3 sm:px-3.5 flex items-center justify-center gap-1.5 text-xs font-semibold bg-teal-50 text-teal-700 border border-teal-200 rounded-xl hover:bg-teal-100 transition disabled:opacity-50 pressable"
+            className="shrink-0 h-10 px-3 sm:px-3.5 flex items-center justify-center gap-1.5 text-xs font-semibold bg-primary-50 text-primary-700 border border-primary-200 rounded-xl hover:bg-primary-100 transition disabled:opacity-50 pressable"
             title="Actualizar y recalcular prioridades pastorales de los adolescentes"
           >
             <svg className={`w-3.5 h-3.5 ${pppRecalculating ? "animate-spin" : ""}`} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
@@ -315,7 +315,7 @@ export default function Jovenes({
               <path d="M22 3H2l8 9.46V19l4 2v-8.54L22 3z" />
             </svg>
             {activeFilterCount > 0 && (
-              <span className="absolute -top-1.5 -right-1.5 w-4.5 h-4.5 flex items-center justify-center text-[10px] font-bold text-white bg-teal-600 rounded-full">
+              <span className="absolute -top-1.5 -right-1.5 w-4.5 h-4.5 flex items-center justify-center text-[10px] font-bold text-white bg-primary-600 rounded-full">
                 {activeFilterCount}
               </span>
             )}
@@ -324,14 +324,14 @@ export default function Jovenes({
       </div>
 
       {canAssignLeaders && selectedTeenIds.length > 0 && (
-        <div className="flex flex-wrap items-center gap-2 rounded-xl border border-teal-200 bg-teal-50 p-3">
-          <span className="text-sm font-bold text-teal-800">{selectedTeenIds.length} seleccionado{selectedTeenIds.length > 1 ? "s" : ""}</span>
-          <select value={bulkLeaderId} onChange={(event) => setBulkLeaderId(event.target.value)} className="min-w-44 rounded-lg border border-teal-200 bg-card px-3 py-2 text-sm font-semibold text-ink">
+        <div className="flex flex-wrap items-center gap-2 rounded-xl border border-primary-200 bg-primary-50 p-3">
+          <span className="text-sm font-bold text-primary-800">{selectedTeenIds.length} seleccionado{selectedTeenIds.length > 1 ? "s" : ""}</span>
+          <select value={bulkLeaderId} onChange={(event) => setBulkLeaderId(event.target.value)} className="min-w-44 rounded-lg border border-primary-200 bg-card px-3 py-2 text-sm font-semibold text-ink">
             <option value="">Elegir líder...</option>{assignableUsers.map((person: any) => <option key={person._id} value={person._id}>{person.name}</option>)}
           </select>
-          <button disabled={!bulkLeaderId} onClick={async () => { if (!token) return; await bulkAssignLeader({ token, teenIds: selectedTeenIds as any, liderPrincipalId: bulkLeaderId as any, useGroupLeader: false }); setSelectedTeenIds([]); setBulkLeaderId(""); }} className="rounded-lg bg-teal-700 px-3 py-2 text-sm font-bold text-white disabled:opacity-40">Asignar líder</button>
-          <button onClick={async () => { if (!token) return; await bulkAssignLeader({ token, teenIds: selectedTeenIds as any, useGroupLeader: true }); setSelectedTeenIds([]); }} className="rounded-lg border border-teal-200 bg-card px-3 py-2 text-sm font-bold text-teal-800">Usar líder del grupo</button>
-          <button onClick={() => setSelectedTeenIds([])} className="px-2 py-2 text-xs font-bold text-teal-700">Cancelar</button>
+          <button disabled={!bulkLeaderId} onClick={async () => { if (!token) return; await bulkAssignLeader({ token, teenIds: selectedTeenIds as any, liderPrincipalId: bulkLeaderId as any, useGroupLeader: false }); setSelectedTeenIds([]); setBulkLeaderId(""); }} className="rounded-lg bg-primary-700 px-3 py-2 text-sm font-bold text-white disabled:opacity-40">Asignar líder</button>
+          <button onClick={async () => { if (!token) return; await bulkAssignLeader({ token, teenIds: selectedTeenIds as any, useGroupLeader: true }); setSelectedTeenIds([]); }} className="rounded-lg border border-primary-200 bg-card px-3 py-2 text-sm font-bold text-primary-800">Usar líder del grupo</button>
+          <button onClick={() => setSelectedTeenIds([])} className="px-2 py-2 text-xs font-bold text-primary-700">Cancelar</button>
         </div>
       )}
 
@@ -344,9 +344,9 @@ export default function Jovenes({
           ]
             .filter((x) => x.label)
             .map((x) => (
-              <span key={x.label} className="inline-flex items-center gap-1 text-xs font-semibold bg-teal-50 text-teal-700 border border-teal-100 rounded-full pl-2.5 pr-1 py-1 dark:bg-teal-950/30 dark:text-teal-400 dark:border-teal-900/40">
+              <span key={x.label} className="inline-flex items-center gap-1 text-xs font-semibold bg-primary-50 text-primary-700 border border-primary-100 rounded-full pl-2.5 pr-1 py-1 dark:bg-primary-950/30 dark:text-primary-400 dark:border-primary-900/40">
                 {x.label}
-                <button onClick={x.onClear} className="w-4 h-4 flex items-center justify-center rounded-full hover:bg-teal-200/60 transition">
+                <button onClick={x.onClear} className="w-4 h-4 flex items-center justify-center rounded-full hover:bg-primary-200/60 transition">
                   <svg className="w-3 h-3" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
                     <path d="M18 6L6 18M6 6l12 12" />
                   </svg>
@@ -355,7 +355,7 @@ export default function Jovenes({
             ))}
           <button
             onClick={() => { setFiltroFidelidad("all"); setFiltroPastoral("all"); setFiltroEdad("all"); }}
-            className="text-[11px] font-semibold text-ink/40 hover:text-ink/60 underline underline-offset-2"
+            className="text-xs font-semibold text-ink/40 hover:text-ink/60 underline underline-offset-2"
           >
             Limpiar todo
           </button>
@@ -373,7 +373,7 @@ export default function Jovenes({
       {/* Panel de filtros */}
       <div
         className={`fixed inset-x-4 top-24 z-50 max-h-[calc(100vh-7rem)] overflow-hidden rounded-2xl border border-ink/10 bg-card shadow-2xl transition-all duration-200 ease-out sm:inset-auto sm:right-8 sm:top-36 sm:w-[360px] sm:max-h-[calc(100vh-10rem)] ${
-          showFilters ? "translate-y-0 opacity-100 sm:translate-x-0" : "-translate-y-2 opacity-0 pointer-events-none sm:translate-x-4 sm:translate-y-0"
+          showFilters ? "tranneutral-y-0 opacity-100 sm:tranneutral-x-0" : "-tranneutral-y-2 opacity-0 pointer-events-none sm:tranneutral-x-4 sm:tranneutral-y-0"
         }`}
       >
         <div className="flex max-h-[inherit] flex-col">
@@ -393,7 +393,7 @@ export default function Jovenes({
 
           <div className="flex-1 overflow-y-auto space-y-5 px-4 py-4">
             <div>
-              <p className="text-[11px] font-semibold text-ink/40 uppercase tracking-wide mb-2">Fidelidad</p>
+              <p className="text-xs font-semibold text-ink/40 uppercase tracking-wide mb-2">Fidelidad</p>
               <div className="flex flex-wrap gap-1.5">
                 {(["all", 1, 2, 3, 4] as const).map((v) => (
                   <button
@@ -401,7 +401,7 @@ export default function Jovenes({
                     onClick={() => setFiltroFidelidad(v)}
                     className={`text-xs font-semibold rounded-full px-3 py-1.5 transition pressable ${
                       filtroFidelidad === v
-                        ? "bg-teal-600 text-white"
+                        ? "bg-primary-600 text-white"
                         : "bg-ink/5 text-ink/60 hover:bg-ink/10"
                     }`}
                   >
@@ -412,7 +412,7 @@ export default function Jovenes({
             </div>
 
             <div>
-              <p className="text-[11px] font-semibold text-ink/40 uppercase tracking-wide mb-2">Estado Pastoral</p>
+              <p className="text-xs font-semibold text-ink/40 uppercase tracking-wide mb-2">Estado Pastoral</p>
               <div className="flex flex-wrap gap-1.5">
                 {(["all", 0, 1, 2, 3, 4, 5] as const).map((v) => (
                   <button
@@ -420,7 +420,7 @@ export default function Jovenes({
                     onClick={() => setFiltroPastoral(v)}
                     className={`text-xs font-semibold rounded-full px-3 py-1.5 transition pressable ${
                       filtroPastoral === v
-                        ? "bg-teal-600 text-white"
+                        ? "bg-primary-600 text-white"
                         : "bg-ink/5 text-ink/60 hover:bg-ink/10"
                     }`}
                   >
@@ -431,7 +431,7 @@ export default function Jovenes({
             </div>
 
             <div>
-              <p className="text-[11px] font-semibold text-ink/40 uppercase tracking-wide mb-2">Grupo de Edad</p>
+              <p className="text-xs font-semibold text-ink/40 uppercase tracking-wide mb-2">Grupo de Edad</p>
               <div className="flex flex-wrap gap-1.5">
                 {(["all", "12-13", "14-15", "16-17", "18+"] as const).map((v) => (
                   <button
@@ -439,7 +439,7 @@ export default function Jovenes({
                     onClick={() => setFiltroEdad(v)}
                     className={`text-xs font-semibold rounded-full px-3 py-1.5 transition pressable ${
                       filtroEdad === v
-                        ? "bg-teal-600 text-white"
+                        ? "bg-primary-600 text-white"
                         : "bg-ink/5 text-ink/60 hover:bg-ink/10"
                     }`}
                   >
@@ -464,7 +464,7 @@ export default function Jovenes({
           </button>
           <button
             onClick={() => setShowFilters(false)}
-            className="flex-1 bg-teal-600 hover:bg-teal-700 text-white rounded-xl py-2 text-xs font-semibold pressable"
+            className="flex-1 bg-primary-600 hover:bg-primary-700 text-white rounded-xl py-2 text-xs font-semibold pressable"
           >
             Aplicar
           </button>
@@ -472,9 +472,9 @@ export default function Jovenes({
       </div>
 
       {upcoming.length > 0 && (
-          <div className="bg-teal-50 border border-teal-100 rounded-card p-3.5 flex items-start gap-3">
+          <div className="bg-primary-50 border border-primary-100 rounded-card p-3.5 flex items-start gap-3">
           <svg
-            className="w-5 h-5 text-teal-600 shrink-0 mt-0.5"
+            className="w-5 h-5 text-primary-600 shrink-0 mt-0.5"
             viewBox="0 0 24 24"
             fill="none"
             stroke="currentColor"
@@ -490,15 +490,15 @@ export default function Jovenes({
             <circle cx="12" cy="5" r="1.3" />
           </svg>
             <div className="text-sm min-w-0 flex-1">
-              <p className="font-semibold text-teal-700">Próximos cumpleaños</p>
+              <p className="font-semibold text-primary-700">Próximos cumpleaños</p>
               <div className="mt-1 flex flex-wrap gap-1.5">
                 {upcoming.slice(0, 4).map((u) => (
-                  <span key={u.t._id} className="inline-flex rounded-full border border-teal-100 bg-white/70 px-2 py-1 text-[11px] font-semibold text-teal-700">
+                  <span key={u.t._id} className="inline-flex rounded-full border border-primary-100 bg-white/70 px-2 py-1 text-xs font-semibold text-primary-700">
                     {esc(u.t.nombre)} ({u.days === 0 ? "hoy" : `en ${u.days}d`})
                   </span>
                 ))}
                 {upcoming.length > 4 && (
-                  <span className="inline-flex rounded-full border border-teal-100 bg-white/70 px-2 py-1 text-[11px] font-semibold text-teal-700">
+                  <span className="inline-flex rounded-full border border-primary-100 bg-white/70 px-2 py-1 text-xs font-semibold text-primary-700">
                     +{upcoming.length - 4} más
                   </span>
                 )}
@@ -540,7 +540,7 @@ export default function Jovenes({
                 onClick={() => onOpenProfile(t._id)}
                 className="bg-card rounded-card shadow-soft p-4 cursor-pointer premium-card pressable"
               >
-                {canAssignLeaders && <label onClick={(event) => event.stopPropagation()} className="mb-3 flex items-center gap-2 text-[11px] font-semibold text-ink/45"><input type="checkbox" checked={selectedTeenIds.includes(String(t._id))} onChange={(event) => setSelectedTeenIds((current) => event.target.checked ? [...current, String(t._id)] : current.filter((id) => id !== String(t._id)))} className="h-4 w-4 rounded border-ink/20 text-teal-600 focus:ring-teal-500" />Seleccionar</label>}
+                {canAssignLeaders && <label onClick={(event) => event.stopPropagation()} className="mb-3 flex items-center gap-2 text-xs font-semibold text-ink/45"><input type="checkbox" checked={selectedTeenIds.includes(String(t._id))} onChange={(event) => setSelectedTeenIds((current) => event.target.checked ? [...current, String(t._id)] : current.filter((id) => id !== String(t._id)))} className="h-4 w-4 rounded border-ink/20 text-primary-600 focus:ring-primary-500" />Seleccionar</label>}
                 <div className="flex items-start gap-3">
                   <div className="relative shrink-0">
                     <div
@@ -563,14 +563,14 @@ export default function Jovenes({
                       {esc(t.nombre)} {esc(t.apellido)}
                     </p>
                     <div className="flex flex-wrap items-center gap-1 mt-1">
-                      <span className={`inline-flex items-center gap-1 text-[11px] font-semibold px-1.5 py-0.5 rounded-full border ${TEEN_STATUS_META[status].cls}`}>
+                      <span className={`inline-flex items-center gap-1 text-xs font-semibold px-1.5 py-0.5 rounded-full border ${TEEN_STATUS_META[status].cls}`}>
                         {TEEN_STATUS_META[status].label}
                       </span>
-                      <span className="inline-flex items-center gap-1 text-[11px] font-semibold px-1.5 py-0.5 rounded-full border bg-ink/[0.03] text-ink/60 border-ink/10">
+                      <span className="inline-flex items-center gap-1 text-xs font-semibold px-1.5 py-0.5 rounded-full border bg-ink/[0.03] text-ink/60 border-ink/10">
                         Ficha {completeness.percent}%
                       </span>
                       {((t as any).fichaCompleta === false || (t as any).registroRapido) && (
-                        <span className="inline-flex items-center gap-1 text-[11px] font-semibold px-1.5 py-0.5 rounded-full border bg-red-50 text-red-700 border-red-100">
+                        <span className="inline-flex items-center gap-1 text-xs font-semibold px-1.5 py-0.5 rounded-full border bg-danger-50 text-danger-700 border-danger-100">
                           Ficha incompleta
                         </span>
                       )}
@@ -578,7 +578,7 @@ export default function Jovenes({
                     {(s.presentStreak > 2 || risk.score >= 2 || hasFollowUp) && (
                       <div className="flex flex-wrap items-center gap-1 mt-1">
                         {s.presentStreak > 2 && (
-                          <span className="inline-flex items-center gap-0.5 text-[11px] font-semibold bg-orange-50 text-orange-600 border border-orange-200/60 rounded-full px-1.5 py-0.5 dark:bg-orange-950/20 dark:text-orange-400 dark:border-orange-900/40">
+                          <span className="inline-flex items-center gap-0.5 text-xs font-semibold bg-warning-50 text-warning-600 border border-warning-200/60 rounded-full px-1.5 py-0.5 dark:bg-warning-950/20 dark:text-warning-400 dark:border-warning-900/40">
                             <svg className="w-3 h-3" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
                               <path d="M8.5 14.5A2.5 2.5 0 0011 12c0-1.38-.8-2-1.83-2.37A4.5 4.5 0 008.5 6.5 4.5 4.5 0 006 11c-.1 1.37.57 2.5 1.5 3.5z" />
                               <path d="M12 22c-3.31 0-6-2.69-6-6 0-2.5 2-5 3.5-7C10 11 10 12 10 13c0 1.1.9 2 2 2s2-.9 2-2c0-1 0-2 1.5-4C16 11 18 13.5 18 16c0 3.31-2.69 6-6 6z" />
@@ -587,7 +587,7 @@ export default function Jovenes({
                           </span>
                         )}
                         {risk.score === 2 && (
-                          <span className="inline-flex items-center gap-0.5 text-[11px] font-semibold bg-amber-50 text-amber-700 border border-amber-200 rounded-full px-1.5 py-0.5 dark:bg-amber-950/30 dark:text-amber-400 dark:border-amber-900/40">
+                          <span className="inline-flex items-center gap-0.5 text-xs font-semibold bg-warning-50 text-warning-700 border border-warning-200 rounded-full px-1.5 py-0.5 dark:bg-warning-950/30 dark:text-warning-400 dark:border-warning-900/40">
                             <svg className="w-3 h-3" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
                               <path d="M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z" />
                               <line x1="12" y1="9" x2="12" y2="13" />
@@ -597,7 +597,7 @@ export default function Jovenes({
                           </span>
                         )}
                         {risk.score === 3 && (
-                          <span className="inline-flex items-center gap-0.5 text-[11px] font-semibold bg-coral-50 text-coral-700 border border-coral-200 rounded-full px-1.5 py-0.5 dark:bg-orange-950/30 dark:text-coral-400 dark:border-coral-900/40">
+                          <span className="inline-flex items-center gap-0.5 text-xs font-semibold bg-danger-50 text-danger-700 border border-danger-200 rounded-full px-1.5 py-0.5 dark:bg-warning-950/30 dark:text-danger-400 dark:border-danger-900/40">
                             <svg className="w-3 h-3" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
                               <path d="M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z" />
                               <line x1="12" y1="9" x2="12" y2="13" />
@@ -607,7 +607,7 @@ export default function Jovenes({
                           </span>
                         )}
                         {risk.score >= 4 && (
-                          <span className="inline-flex items-center gap-0.5 text-[11px] font-semibold bg-red-50 text-red-700 border border-red-200 rounded-full px-1.5 py-0.5 dark:bg-red-950/30 dark:text-red-400 dark:border-red-900/40">
+                          <span className="inline-flex items-center gap-0.5 text-xs font-semibold bg-danger-50 text-danger-700 border border-danger-200 rounded-full px-1.5 py-0.5 dark:bg-danger-950/30 dark:text-danger-400 dark:border-danger-900/40">
                             <svg className="w-3 h-3" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
                               <path d="M7.86 2h8.28L22 7.86v8.28L16.14 22H7.86L2 16.14V7.86L7.86 2z" />
                               <line x1="12" y1="8" x2="12" y2="12" />
@@ -617,7 +617,7 @@ export default function Jovenes({
                           </span>
                         )}
                         {hasFollowUp && (
-                          <span className="inline-flex items-center gap-0.5 text-[11px] font-semibold bg-blue-50 text-blue-700 border border-blue-200 rounded-full px-1.5 py-0.5 dark:bg-blue-950/30 dark:text-blue-400 dark:border-blue-900/40">
+                          <span className="inline-flex items-center gap-0.5 text-xs font-semibold bg-info-50 text-info-700 border border-info-200 rounded-full px-1.5 py-0.5 dark:bg-info-950/30 dark:text-info-400 dark:border-info-900/40">
                             <svg className="w-3 h-3" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
                               <path d="M11 17a1 1 0 01-1-1c0-.4.2-.8.5-1.1L14 12" />
                               <path d="M19 9c.5 0 1 .2 1.4.6l3 3c.4.4.6.9.6 1.4" />
@@ -644,32 +644,32 @@ export default function Jovenes({
                       )}
                       <span className={`text-[10px] font-semibold px-1.5 py-0.5 rounded-full border ${
                         ppp >= 0.7
-                          ? "bg-red-50 text-red-700 border-red-100 dark:bg-red-950/20 dark:text-red-400 dark:border-red-900/30"
+                          ? "bg-danger-50 text-danger-700 border-danger-100 dark:bg-danger-950/20 dark:text-danger-400 dark:border-danger-900/30"
                           : ppp >= 0.5
-                          ? "bg-amber-50 text-amber-700 border-amber-100 dark:bg-amber-950/20 dark:text-amber-400 dark:border-amber-900/30"
+                          ? "bg-warning-50 text-warning-700 border-warning-100 dark:bg-warning-950/20 dark:text-warning-400 dark:border-warning-900/30"
                           : ppp >= 0.3
                           ? "bg-yellow-50 text-yellow-700 border-yellow-100 dark:bg-yellow-950/20 dark:text-yellow-400 dark:border-yellow-900/30"
-                          : "bg-green-50 text-green-700 border-green-100 dark:bg-green-950/20 dark:text-green-400 dark:border-green-900/30"
+                          : "bg-success-50 text-success-700 border-success-100 dark:bg-success-950/20 dark:text-success-400 dark:border-success-900/30"
                       }`}>
                         PPP {pppLabel(ppp)}
                       </span>
                     </p>
-                    <p className="mt-2 truncate text-[11px] text-ink/45">Líder: <span className="font-semibold text-ink/60">{leaderByTeenId.get(String(t._id))?.userName || "Sin responsable"}</span></p>
+                    <p className="mt-2 truncate text-xs text-ink/45">Líder: <span className="font-semibold text-ink/60">{leaderByTeenId.get(String(t._id))?.userName || "Sin responsable"}</span></p>
                     <div className="flex items-center gap-2 mt-2">
                       <div className="flex-1 h-1.5 bg-ink/5 rounded-full overflow-hidden">
                         <div
-                          className="h-full bg-teal-600"
+                          className="h-full bg-primary-600"
                           style={{ width: `${s.pct}%` }}
                         />
                       </div>
-                      <span className="text-[11px] font-semibold text-ink/50">
+                      <span className="text-xs font-semibold text-ink/50">
                         {s.pct}%
                       </span>
                     </div>
                     {warnings.length > 0 && (
                       <div className="mt-2 flex flex-wrap gap-1">
                         {warnings.slice(0, 1).map((warning) => (
-                          <span key={warning} className="text-[10px] font-semibold bg-amber-50 text-amber-700 border border-amber-100 rounded-full px-1.5 py-0.5">
+                          <span key={warning} className="text-[10px] font-semibold bg-warning-50 text-warning-700 border border-warning-100 rounded-full px-1.5 py-0.5">
                             {warning}
                           </span>
                         ))}
@@ -683,7 +683,7 @@ export default function Jovenes({
                   </div>
                 </div>
                 {t.gustos && (
-                  <p className="text-[11px] text-ink/40 mt-3 truncate">
+                  <p className="text-xs text-ink/40 mt-3 truncate">
                     🎯 {esc(t.gustos)}
                   </p>
                 )}
@@ -758,7 +758,7 @@ export default function Jovenes({
               </button>
               <button
                 onClick={handleDelete}
-                className="flex-1 bg-coral-600 text-white rounded-xl py-2.5 text-sm font-semibold"
+                className="flex-1 bg-danger-600 text-white rounded-xl py-2.5 text-sm font-semibold"
               >
                 Archivar
               </button>

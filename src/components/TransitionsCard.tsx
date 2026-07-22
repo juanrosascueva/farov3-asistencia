@@ -98,15 +98,15 @@ export default function TransitionsCard({ teenId }: { teenId: string }) {
         <h2 className="font-display font-semibold text-base">Transición ministerial</h2>
         <p className="text-xs text-ink/45 mt-1">Registra salida a jóvenes, traslado o cierre de etapa sin borrar historial.</p>
       </div>
-      {error && <div className="rounded-xl border border-coral-100 bg-coral-50 px-3 py-2 text-sm font-medium text-coral-700">{error}</div>}
-      {message && <div className="rounded-xl border border-teal-100 bg-teal-50 px-3 py-2 text-sm font-medium text-teal-700">{message}</div>}
+      {error && <div className="rounded-xl border border-danger-100 bg-danger-50 px-3 py-2 text-sm font-medium text-danger-700">{error}</div>}
+      {message && <div className="rounded-xl border border-primary-100 bg-primary-50 px-3 py-2 text-sm font-medium text-primary-700">{message}</div>}
       <form onSubmit={handleSubmit} className="grid gap-2 lg:grid-cols-[1fr_1fr_2fr_auto]">
         <label className="block">
           <span className="sr-only">Ministerio destino</span>
           <select
             value={toMinistryKey}
             onChange={(event) => setToMinistryKey(event.target.value)}
-            className="w-full rounded-xl border border-ink/10 bg-card px-3 py-2.5 text-sm outline-none focus:border-clay"
+            className="w-full rounded-xl border border-ink/10 bg-card px-3 py-2.5 text-sm outline-none focus:border-primary-600"
           >
             {MINISTRY_TARGETS.map((target) => (
               <option key={target.value} value={target.value}>
@@ -121,7 +121,7 @@ export default function TransitionsCard({ teenId }: { teenId: string }) {
             type="date"
             value={targetDate}
             onChange={(event) => setTargetDate(event.target.value)}
-            className="w-full rounded-xl border border-ink/10 bg-card px-3 py-2.5 text-sm outline-none focus:border-clay"
+            className="w-full rounded-xl border border-ink/10 bg-card px-3 py-2.5 text-sm outline-none focus:border-primary-600"
           />
         </label>
         <label className="block">
@@ -130,10 +130,10 @@ export default function TransitionsCard({ teenId }: { teenId: string }) {
             value={reason}
             onChange={(event) => setReason(event.target.value)}
             placeholder="Motivo o nota pastoral"
-            className="w-full rounded-xl border border-ink/10 bg-card px-3 py-2.5 text-sm outline-none focus:border-clay"
+            className="w-full rounded-xl border border-ink/10 bg-card px-3 py-2.5 text-sm outline-none focus:border-primary-600"
           />
         </label>
-        <button disabled={!token || saving} className="rounded-xl bg-ink px-4 py-2 text-sm font-semibold text-white disabled:opacity-40">
+        <button disabled={!token || saving} className="rounded-xl bg-primary-600 px-4 py-2 text-sm font-semibold text-white disabled:opacity-40">
           {saving ? "Planificando..." : "Planificar"}
         </button>
       </form>
@@ -151,7 +151,7 @@ export default function TransitionsCard({ teenId }: { teenId: string }) {
               </div>
               {transition.status === "planned" && (
                 <div className="flex gap-2">
-                  <button disabled={actionId === transition._id} onClick={() => handleComplete(transition)} className="rounded-lg bg-teal-600 px-3 py-1.5 text-xs font-semibold text-white disabled:opacity-50">
+                  <button disabled={actionId === transition._id} onClick={() => handleComplete(transition)} className="rounded-lg bg-primary-600 px-3 py-1.5 text-xs font-semibold text-white disabled:opacity-50">
                     {actionId === transition._id ? "Procesando..." : "Completar"}
                   </button>
                   <button disabled={actionId === transition._id} onClick={() => handleCancel(transition)} className="rounded-lg bg-ink/5 px-3 py-1.5 text-xs font-semibold text-ink/60 disabled:opacity-50">

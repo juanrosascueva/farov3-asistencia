@@ -9,6 +9,7 @@ import { useScope } from "../hooks/useScope";
 import { useMutation } from "convex/react";
 import { api } from "../../convex/_generated/api";
 import MyProfileModal from "./MyProfileModal";
+import UiIcon from "./UiIcon";
 
 const ROUTES = [
   { id: "dashboard", label: "Mi ministerio", icon: "home", section: "operacion" },
@@ -52,7 +53,7 @@ export default function Layout({
             <LogoIcon />
             <div className="min-w-0 flex-1 pr-2">
               <p className="font-display font-bold text-lg leading-none text-ink">Congregación Cristo Vive</p>
-              <p className="text-[11px] text-teal-600 font-semibold leading-none mt-1.5 truncate" title={displaySubtitle}>
+              <p className="text-xs text-primary-600 font-semibold leading-none mt-1.5 truncate" title={displaySubtitle}>
                 {displaySubtitle}
               </p>
             </div>
@@ -68,7 +69,7 @@ export default function Layout({
           {(["operacion", "analitica", "administracion"] as const).map((section) => {
             const routes = visibleRoutes.filter((route) => route.section === section);
             if (!routes.length) return null;
-            return <div key={section} className="mb-3 last:mb-0"><p className="px-3 pb-1 text-[10px] font-bold uppercase text-ink/35">{section === "operacion" ? "Operación" : section === "analitica" ? "Analítica" : "Administración"}</p><div className="flex flex-col gap-1">{routes.map((r) => <button key={r.id} onClick={() => onNavigate(r.id)} className={`flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-medium transition ${currentRoute === r.id || (["campana", "ia", "ajustes", "accesos", "auditoria"].includes(currentRoute) && r.id === "administracion") ? "bg-teal-50 text-teal-700" : "text-ink/60 hover:bg-ink/5"}`}><Icon name={r.icon} cls="w-[18px] h-[18px]" /><span>{r.label}</span></button>)}</div></div>;
+            return <div key={section} className="mb-3 last:mb-0"><p className="px-3 pb-1 text-[10px] font-bold uppercase text-ink/35">{section === "operacion" ? "Operación" : section === "analitica" ? "Analítica" : "Administración"}</p><div className="flex flex-col gap-1">{routes.map((r) => <button key={r.id} onClick={() => onNavigate(r.id)} className={`flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-medium transition ${currentRoute === r.id || (["campana", "ia", "ajustes", "accesos", "auditoria"].includes(currentRoute) && r.id === "administracion") ? "bg-primary-50 text-primary-700" : "text-ink/60 hover:bg-ink/5"}`}><Icon name={r.icon} cls="w-[18px] h-[18px]" /><span>{r.label}</span></button>)}</div></div>;
           })}
         </nav>
         {setDark && (
@@ -93,7 +94,7 @@ export default function Layout({
               <LogoIcon />
               <div className="min-w-0">
                 <p className="font-display font-bold text-base truncate">Cristo Vive</p>
-                <p className="text-[11px] text-teal-600 font-semibold truncate" title={displaySubtitle}>
+                <p className="text-xs text-primary-600 font-semibold truncate" title={displaySubtitle}>
                   {displaySubtitle}
                 </p>
               </div>
@@ -133,13 +134,13 @@ export default function Layout({
             onClick={() => onNavigate(r.id)}
             className={`flex-1 flex flex-col items-center justify-center gap-0.5 py-2.5 pressable ${
               currentRoute === r.id
-                ? "tab-active text-teal-700"
+                ? "tab-active text-primary-700"
                 : "text-ink/45"
             }`}
           >
             <Icon name={r.icon} cls="w-5 h-5" />
-            <span className="text-[10.5px] font-medium">{r.label}</span>
-            <span className={`tab-dot w-1 h-1 rounded-full bg-teal-600 transition ${currentRoute === r.id ? "opacity-100 scale-100" : "opacity-0 scale-0"}`} />
+            <span className="text-micro font-medium">{r.label}</span>
+            <span className={`tab-dot w-1 h-1 rounded-full bg-primary-600 transition ${currentRoute === r.id ? "opacity-100 scale-100" : "opacity-0 scale-0"}`} />
           </button>
         ))}
         {/* Botón de "Más" */}
@@ -147,13 +148,13 @@ export default function Layout({
           onClick={() => setMoreOpen(true)}
           className={`flex-1 flex flex-col items-center justify-center gap-0.5 py-2.5 pressable ${
             ["campana", "ia", "reportes", "administracion", "ajustes", "accesos", "auditoria"].includes(currentRoute)
-              ? "tab-active text-teal-700 font-semibold"
+              ? "tab-active text-primary-700 font-semibold"
               : "text-ink/45"
           }`}
         >
           <Icon name="menu" cls="w-5 h-5" />
-          <span className="text-[10.5px] font-medium">Más</span>
-          <span className={`tab-dot w-1 h-1 rounded-full bg-teal-600 transition ${["campana", "ia", "reportes", "administracion", "ajustes", "accesos", "auditoria"].includes(currentRoute) ? "opacity-100 scale-100" : "opacity-0 scale-0"}`} />
+          <span className="text-micro font-medium">Más</span>
+          <span className={`tab-dot w-1 h-1 rounded-full bg-primary-600 transition ${["campana", "ia", "reportes", "administracion", "ajustes", "accesos", "auditoria"].includes(currentRoute) ? "opacity-100 scale-100" : "opacity-0 scale-0"}`} />
         </button>
       </nav>
 
@@ -165,7 +166,7 @@ export default function Layout({
           desktopMaxWidthClass="sm:max-w-xs"
         >
           <div className="space-y-4">
-            <p className="text-[11px] font-semibold text-ink/40 uppercase tracking-wide px-1">
+            <p className="text-xs font-semibold text-ink/40 uppercase tracking-wide px-1">
               Herramientas y Ajustes
             </p>
             <nav className="flex flex-col gap-1">
@@ -178,7 +179,7 @@ export default function Layout({
                   }}
                   className={`flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium transition pressable ${
                     currentRoute === r.id
-                      ? "bg-teal-50 text-teal-700 dark:bg-teal-950/20 dark:text-teal-400"
+                      ? "bg-primary-50 text-primary-700 dark:bg-primary-950/20 dark:text-primary-400"
                       : "text-ink/60 hover:bg-ink/5"
                   }`}
                 >
@@ -202,7 +203,7 @@ export default function Layout({
                     )}
                     <span>Tema oscuro</span>
                   </div>
-                  <div className={`w-8 h-4 rounded-full relative transition-colors ${dark ? "bg-teal-600" : "bg-ink/20"}`}>
+                  <div className={`w-8 h-4 rounded-full relative transition-colors ${dark ? "bg-primary-600" : "bg-ink/20"}`}>
                     <div className={`w-3.5 h-3.5 bg-card rounded-full absolute top-0.25 shadow transition-transform ${dark ? "left-[14px]" : "left-0.5"}`} />
                   </div>
                 </button>
@@ -213,7 +214,7 @@ export default function Layout({
                   logout();
                   setMoreOpen(false);
                 }}
-                className="w-full flex items-center gap-3 px-3 py-2 text-xs font-medium text-coral-600 hover:bg-coral-50 dark:hover:bg-coral-950/20 transition pressable"
+                className="w-full flex items-center gap-3 px-3 py-2 text-xs font-medium text-danger-600 hover:bg-danger-50 dark:hover:bg-danger-950/20 transition pressable"
               >
                 <svg className="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
                   <path d="M9 21H5a2 2 0 01-2-2V5a2 2 0 012-2h4M16 17l5-5-5-5M21 12H9" />
@@ -230,7 +231,7 @@ export default function Layout({
       <button
         onClick={() => setChatOpen(!chatOpen)}
         className={`fixed bottom-[calc(5.5rem+env(safe-area-inset-bottom))] right-3 sm:right-4 lg:bottom-4 z-50 w-14 h-14 sm:w-16 sm:h-16 rounded-full shadow-xl flex items-center justify-center transition overflow-hidden ${
-          chatOpen ? "bg-ink/80 scale-0" : "bg-teal-600 hover:bg-teal-700 scale-100"
+          chatOpen ? "bg-ink/80 scale-0" : "bg-primary-600 hover:bg-primary-700 scale-100"
         }`}
         title="Asistente de IA Pastoral"
       >
@@ -244,33 +245,9 @@ export default function Layout({
   );
 }
 
-const icons: Record<string, string> = {
-  home: `<path d="M3 11l9-7 9 7" /><path d="M5 10v9a1 1 0 001 1h3v-6h6v6h3a1 1 0 001-1v-9"/>`,
-  check: `<rect x="3" y="4" width="18" height="17" rx="2"/><path d="M8 2v4M16 2v4M3 10h18"/><path d="M8.5 14.5l2 2 4-4"/>`,
-  users: `<circle cx="9" cy="8" r="3.2"/><path d="M3 20c0-3.3 2.7-6 6-6s6 2.7 6 6"/><circle cx="17.5" cy="9.5" r="2.4"/><path d="M15.5 14.2c2.6.3 4.6 2.6 4.6 5.3"/>`,
-  settings: `<circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.7 1.7 0 00.3 1.9l.1.1a2 2 0 11-2.8 2.8l-.1-.1a1.7 1.7 0 00-1.9-.3 1.7 1.7 0 00-1 1.5V21a2 2 0 11-4 0v-.1a1.7 1.7 0 00-1-1.6 1.7 1.7 0 00-1.9.3l-.1.1a2 2 0 11-2.8-2.8l.1-.1a1.7 1.7 0 00.3-1.9 1.7 1.7 0 00-1.5-1H3a2 2 0 110-4h.1a1.7 1.7 0 001.6-1 1.7 1.7 0 00-.3-1.9l-.1-.1a2 2 0 112.8-2.8l.1.1a1.7 1.7 0 001.9.3h.1a1.7 1.7 0 001-1.6V3a2 2 0 114 0v.1a1.7 1.7 0 001 1.6h.1a1.7 1.7 0 001.9-.3l.1-.1a2 2 0 112.8 2.8l-.1.1a1.7 1.7 0 00-.3 1.9v.1c.2.6.8 1 1.5 1H21a2 2 0 110 4h-.1a1.7 1.7 0 00-1.5 1z"/>`,
-  chart: `<path d="M3 17l5-5 4 4 6-6" /><path d="M3 21h18" /><path d="M19 3v6" /><path d="M16 6h6" />`,
-  clipboard: `<path d="M16 4h2a2 2 0 012 2v14a2 2 0 01-2 2H6a2 2 0 01-2-2V6a2 2 0 012-2h2" /><rect x="8" y="2" width="8" height="4" rx="1" /><path d="M9 14l2 2 4-4" />`,
-  sparkles: `<path d="M12 2l1.5 4.5L18 8l-4.5 1.5L12 14l-1.5-4.5L6 8l4.5-1.5L12 2z" /><path d="M18 14l.8 2.2L21 17l-2.2.8L18 20l-.8-2.2L15 17l2.2-.8L18 14z" /><path d="M6 14l.8 2.2L9 17l-2.2.8L6 20l-.8-2.2L3 17l2.2-.8L6 14z" />`,
-  menu: `<line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="18" x2="21" y2="18"/>`,
-  lock: `<rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect><path d="M7 11V7a5 5 0 0 1 10 0v4"></path>`,
-};
-
 function Icon({ name, cls = "w-5 h-5" }: { name: string; cls?: string }) {
-  const path = icons[name];
-  if (!path) return null;
-  return (
-    <svg
-      className={cls}
-      viewBox="0 0 24 24"
-      fill="none"
-      stroke="currentColor"
-      strokeWidth="1.8"
-      strokeLinecap="round"
-      strokeLinejoin="round"
-      dangerouslySetInnerHTML={{ __html: path }}
-    />
-  );
+  const icons: Record<string, any> = { home: "House", check: "CalendarCheck", users: "UsersRound", settings: "Settings", chart: "ChartNoAxesCombined", clipboard: "ClipboardCheck", sparkles: "Sparkles", menu: "Menu", lock: "Lock" };
+  return <UiIcon name={icons[name]} className={cls} />;
 }
 
 function LogoIcon() {
@@ -309,7 +286,7 @@ function LeaderBadge({ onlyAvatar = false }: { onlyAvatar?: boolean }) {
       <div className="relative shrink-0" ref={ref}>
         <button
           onClick={() => setOpen(!open)}
-          className="w-9 h-9 rounded-full bg-teal-600/10 text-teal-700 dark:bg-teal-950/30 dark:text-teal-400 font-bold text-xs flex items-center justify-center pressable border border-teal-600/20 overflow-hidden"
+          className="w-9 h-9 rounded-full bg-primary-600/10 text-primary-700 dark:bg-primary-950/30 dark:text-primary-400 font-bold text-xs flex items-center justify-center pressable border border-primary-600/20 overflow-hidden"
           title={user.name}
         >
           {user.avatar ? (
@@ -327,19 +304,19 @@ function LeaderBadge({ onlyAvatar = false }: { onlyAvatar?: boolean }) {
           <div className="absolute right-0 top-full mt-2 w-56 max-w-[calc(100vw-1.5rem)] bg-card border border-ink/10 rounded-2xl shadow-soft py-1 z-50">
             <div className="px-3 py-2 border-b border-ink/5 mb-1">
               <p className="text-sm font-semibold truncate">{user.name}</p>
-              <p className="text-[11px] text-ink/40 capitalize truncate">{user.role} · {user.email}</p>
+              <p className="text-xs text-ink/40 capitalize truncate">{user.role} · {user.email}</p>
             </div>
             <div className="border-t border-ink/5 mt-1 pt-1">
               <button
                 onClick={() => { setShowSettings(true); setOpen(false); }}
-                className="w-full text-left px-3 py-2 text-xs text-ink/70 hover:text-teal-700 hover:bg-teal-50 transition flex items-center gap-2"
+                className="w-full text-left px-3 py-2 text-xs text-ink/70 hover:text-primary-700 hover:bg-primary-50 transition flex items-center gap-2"
               >
                 <svg className="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><path d="M20 21v-2a4 4 0 00-4-4H8a4 4 0 00-4 4v2" /><circle cx="12" cy="7" r="4" /></svg>
                 Mi perfil
               </button>
               <button
                 onClick={() => { logout(); setOpen(false); }}
-                className="w-full text-left px-3 py-2 text-xs text-ink/40 hover:text-coral-600 hover:bg-coral-50 transition flex items-center gap-2"
+                className="w-full text-left px-3 py-2 text-xs text-ink/40 hover:text-danger-600 hover:bg-danger-50 transition flex items-center gap-2"
               >
                 <svg className="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><path d="M18 6L6 18M6 6l12 12" /></svg>
                 Cerrar sesión
@@ -356,9 +333,9 @@ function LeaderBadge({ onlyAvatar = false }: { onlyAvatar?: boolean }) {
     <div className="relative" ref={ref}>
       <button
         onClick={() => setOpen(!open)}
-        className="flex w-full items-center gap-2 text-xs font-medium rounded-2xl px-3 py-2.5 transition bg-teal-50 text-teal-700 hover:bg-teal-100 dark:bg-teal-50/10 dark:text-teal-100"
+        className="flex w-full items-center gap-2 text-xs font-medium rounded-2xl px-3 py-2.5 transition bg-primary-50 text-primary-700 hover:bg-primary-100 dark:bg-primary-50/10 dark:text-primary-100"
       >
-        <div className="w-4 h-4 rounded-full overflow-hidden shrink-0 bg-teal-600/10 flex items-center justify-center">
+        <div className="w-4 h-4 rounded-full overflow-hidden shrink-0 bg-primary-600/10 flex items-center justify-center">
           {user.avatar ? (
             <img src={user.avatar} alt={user.name} className="w-full h-full object-cover" />
           ) : (
@@ -372,19 +349,19 @@ function LeaderBadge({ onlyAvatar = false }: { onlyAvatar?: boolean }) {
         <div className="absolute right-0 top-full mt-2 w-56 max-w-[calc(100vw-1.5rem)] bg-card border border-ink/10 rounded-2xl shadow-soft py-1 z-50 xl:right-auto xl:left-full xl:top-0 xl:mt-0 xl:ml-3">
           <div className="px-3 py-2 border-b border-ink/5 mb-1">
             <p className="text-sm font-semibold truncate">{user.name}</p>
-            <p className="text-[11px] text-ink/40 capitalize truncate">{user.role} · {user.email}</p>
+            <p className="text-xs text-ink/40 capitalize truncate">{user.role} · {user.email}</p>
           </div>
           <div className="border-t border-ink/5 mt-1 pt-1">
             <button
               onClick={() => { setShowSettings(true); setOpen(false); }}
-              className="w-full text-left px-3 py-2 text-xs text-ink/70 hover:text-teal-700 hover:bg-teal-50 transition flex items-center gap-2"
+              className="w-full text-left px-3 py-2 text-xs text-ink/70 hover:text-primary-700 hover:bg-primary-50 transition flex items-center gap-2"
             >
               <svg className="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><path d="M20 21v-2a4 4 0 00-4-4H8a4 4 0 00-4 4v2" /><circle cx="12" cy="7" r="4" /></svg>
               Mi perfil
             </button>
             <button
               onClick={() => { logout(); setOpen(false); }}
-              className="w-full text-left px-3 py-2 text-xs text-ink/40 hover:text-coral-600 hover:bg-coral-50 transition flex items-center gap-2"
+              className="w-full text-left px-3 py-2 text-xs text-ink/40 hover:text-danger-600 hover:bg-danger-50 transition flex items-center gap-2"
             >
               <svg className="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><path d="M18 6L6 18M6 6l12 12" /></svg>
               Cerrar sesión

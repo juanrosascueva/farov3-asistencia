@@ -156,7 +156,7 @@ export default function ImageUploader({
       
       <div 
         onClick={() => !uploading && fileInputRef.current?.click()}
-        className={`relative cursor-pointer group flex flex-col items-center justify-center border-2 border-dashed border-ink/10 hover:border-teal-500/50 bg-card rounded-2xl overflow-hidden transition-all pressable ${
+        className={`relative cursor-pointer group flex flex-col items-center justify-center border-2 border-dashed border-ink/10 hover:border-primary-500/50 bg-card rounded-2xl overflow-hidden transition-all pressable ${
           aspectRatio === "1:1" ? "w-28 h-28" : "w-full aspect-[4/3] max-h-48"
         }`}
       >
@@ -168,13 +168,13 @@ export default function ImageUploader({
               className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
             />
             <div className="absolute inset-0 bg-ink/40 opacity-0 group-hover:opacity-100 flex items-center justify-center transition-opacity">
-              <span className="text-[11px] font-bold text-white uppercase tracking-wider">
+              <span className="text-xs font-bold text-white uppercase tracking-wider">
                 Cambiar
               </span>
             </div>
           </>
         ) : (
-          <div className="flex flex-col items-center text-ink/30 group-hover:text-teal-600 transition-colors p-4 text-center">
+          <div className="flex flex-col items-center text-ink/30 group-hover:text-primary-600 transition-colors p-4 text-center">
             <svg className="w-8 h-8 mb-1.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
               <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4M17 8l-5-5-5 5M12 3v12" />
             </svg>
@@ -186,11 +186,11 @@ export default function ImageUploader({
 
         {uploading && (
           <div className="absolute inset-0 bg-card/85 backdrop-blur-[1px] flex flex-col items-center justify-center gap-1.5 z-10">
-            <svg className="animate-spin h-5 w-5 text-teal-600" viewBox="0 0 24 24" fill="none">
+            <svg className="animate-spin h-5 w-5 text-primary-600" viewBox="0 0 24 24" fill="none">
               <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
               <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
             </svg>
-            <span className="text-[9px] font-bold text-teal-600 uppercase tracking-widest animate-pulse">
+            <span className="text-micro font-bold text-primary-600 uppercase tracking-widest animate-pulse">
               Subiendo...
             </span>
           </div>
@@ -198,7 +198,7 @@ export default function ImageUploader({
       </div>
 
       {error && (
-        <p className="text-[11px] text-coral-600 font-medium mt-1">
+        <p className="text-xs text-danger-600 font-medium mt-1">
           ⚠️ {error}
         </p>
       )}

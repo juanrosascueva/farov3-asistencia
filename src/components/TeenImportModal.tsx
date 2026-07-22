@@ -112,7 +112,7 @@ export default function TeenImportModal({ onClose, onSuccess }: TeenImportModalP
       <button
         onClick={handleImport}
         disabled={submitting || validRows.length === 0}
-        className="rounded-xl bg-ink dark:bg-teal-600 dark:hover:bg-teal-500 px-4 py-2.5 text-sm font-semibold text-white disabled:opacity-40 w-full sm:w-auto order-1 sm:order-none"
+        className="rounded-xl bg-primary-600 dark:bg-primary-600 dark:hover:bg-primary-500 px-4 py-2.5 text-sm font-semibold text-white disabled:opacity-40 w-full sm:w-auto order-1 sm:order-none"
       >
         {submitting ? "Importando..." : `Importar ${validRows.length} registros`}
       </button>
@@ -149,7 +149,7 @@ export default function TeenImportModal({ onClose, onSuccess }: TeenImportModalP
           <p className="text-xs text-ink/40 mt-1">Columnas mínimas: `nombre`, `apellido`.</p>
         </label>
 
-        {error && <div className="rounded-2xl border border-red-200 bg-red-50 p-3 text-sm text-red-700">{error}</div>}
+        {error && <div className="rounded-2xl border border-danger-200 bg-danger-50 p-3 text-sm text-danger-700">{error}</div>}
 
         {rows.length > 0 && (
           <>
@@ -178,11 +178,11 @@ export default function TeenImportModal({ onClose, onSuccess }: TeenImportModalP
                       <td className="px-3 py-2 text-ink/60">{row.data.estado || "activo"}</td>
                       <td className="px-3 py-2">
                         {row.errors.length === 0 ? (
-                          <span className="rounded-full bg-green-50 px-2 py-1 text-xs font-semibold text-green-700">Lista</span>
+                          <span className="rounded-full bg-success-50 px-2 py-1 text-xs font-semibold text-success-700">Lista</span>
                         ) : (
                           <div className="space-y-1">
                             {row.errors.map((item) => (
-                              <p key={item} className="text-xs text-red-600">{item}</p>
+                              <p key={item} className="text-xs text-danger-600">{item}</p>
                             ))}
                           </div>
                         )}
@@ -203,15 +203,15 @@ export default function TeenImportModal({ onClose, onSuccess }: TeenImportModalP
                       <p className="text-xs text-ink/45">Estado: {row.data.estado || "activo"}</p>
                     </div>
                     {row.errors.length === 0 ? (
-                      <span className="rounded-full bg-green-50 px-2 py-1 text-[11px] font-semibold text-green-700 shrink-0">Lista</span>
+                      <span className="rounded-full bg-success-50 px-2 py-1 text-xs font-semibold text-success-700 shrink-0">Lista</span>
                     ) : (
-                      <span className="rounded-full bg-red-50 px-2 py-1 text-[11px] font-semibold text-red-700 shrink-0">Error</span>
+                      <span className="rounded-full bg-danger-50 px-2 py-1 text-xs font-semibold text-danger-700 shrink-0">Error</span>
                     )}
                   </div>
                   {row.errors.length > 0 && (
                     <div className="mt-2 space-y-1">
                       {row.errors.map((item) => (
-                        <p key={item} className="text-xs text-red-600">{item}</p>
+                        <p key={item} className="text-xs text-danger-600">{item}</p>
                       ))}
                     </div>
                   )}

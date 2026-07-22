@@ -61,11 +61,11 @@ export default function RegistryStats({ teens }: { teens: Doc<"teens">[] }) {
                 </div>
                 <div className="mt-2 flex flex-wrap gap-1.5">
                   {item.warnings.length > 0 ? item.warnings.map((warning) => (
-                    <span key={warning} className="rounded-full bg-amber-50 px-2 py-1 text-[11px] font-semibold text-amber-700 border border-amber-100">
+                    <span key={warning} className="rounded-full bg-warning-50 px-2 py-1 text-xs font-semibold text-warning-700 border border-warning-100">
                       {warning}
                     </span>
                   )) : (
-                    <span className="rounded-full bg-green-50 px-2 py-1 text-[11px] font-semibold text-green-700 border border-green-100">
+                    <span className="rounded-full bg-success-50 px-2 py-1 text-xs font-semibold text-success-700 border border-success-100">
                       Ficha al día
                     </span>
                   )}
@@ -83,7 +83,7 @@ function KpiCard({ label, value, sub }: { label: string; value: string | number;
     <div className="bg-card rounded-card shadow-soft p-4">
       <p className="text-2xl font-bold font-display text-ink">{value}</p>
       <p className="text-xs font-semibold text-ink/60 mt-0.5">{label}</p>
-      <p className="text-[11px] text-ink/40">{sub}</p>
+      <p className="text-xs text-ink/40">{sub}</p>
     </div>
   );
 }

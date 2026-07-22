@@ -6,10 +6,12 @@
   "scripts": {
     "dev": "vite",
     "build": "tsc -b && vite build",
+    "check:design": "node scripts/check-design.mjs",
     "preview": "vite preview"
   },
   "dependencies": {
     "convex": "^1.17.0",
+    "lucide-react": "^1.25.0",
     "qrcode": "^1.5.4",
     "react": "^18.3.1",
     "react-dom": "^18.3.1",

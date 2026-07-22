@@ -117,7 +117,7 @@ export default function ScopeSwitcher({ fullWidth = false }: { fullWidth?: boole
               {step === "campus" ? "Seleccionar sede" : step === "ministry" ? "Seleccionar ministerio" : "Seleccionar grupo"}
             </p>
             {step !== "campus" && (
-              <button onClick={goBack} className="text-[11px] text-teal-600 hover:text-teal-700 font-semibold">
+              <button onClick={goBack} className="text-xs text-primary-600 hover:text-primary-700 font-semibold">
                 Atrás
               </button>
             )}
@@ -129,7 +129,7 @@ export default function ScopeSwitcher({ fullWidth = false }: { fullWidth?: boole
                 <button
                   onClick={reset}
                   className={`w-full text-left px-3 py-2 text-sm hover:bg-ink/5 transition flex items-center gap-2 ${
-                    !scope.campusId ? "text-teal-700 font-semibold" : "text-ink/70"
+                    !scope.campusId ? "text-primary-700 font-semibold" : "text-ink/70"
                   }`}
                 >
                   <svg className="w-4 h-4 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
@@ -146,16 +146,16 @@ export default function ScopeSwitcher({ fullWidth = false }: { fullWidth?: boole
                   key={c._id}
                   onClick={() => handleSelectCampus(c)}
                   className={`w-full text-left px-3 py-2 text-sm hover:bg-ink/5 transition flex items-center gap-2 ${
-                    scope.campusId === c._id ? "text-teal-700 font-semibold" : "text-ink/70"
+                    scope.campusId === c._id ? "text-primary-700 font-semibold" : "text-ink/70"
                   }`}
                 >
                   <span className={`w-4 h-4 rounded-full border flex items-center justify-center shrink-0 transition-colors ${
                     scope.campusId === c._id
-                      ? "border-teal-600 bg-teal-50"
+                      ? "border-primary-600 bg-primary-50"
                       : "border-ink/20 bg-transparent"
                   }`}>
                     {scope.campusId === c._id && (
-                      <span className="w-2 h-2 rounded-full bg-teal-600" />
+                      <span className="w-2 h-2 rounded-full bg-primary-600" />
                     )}
                   </span>
                   {c.name}
@@ -172,7 +172,7 @@ export default function ScopeSwitcher({ fullWidth = false }: { fullWidth?: boole
               <button
                 onClick={() => setOpen(false)}
                 className={`w-full text-left px-3 py-2 text-sm hover:bg-ink/5 transition flex items-center gap-2 ${
-                  !scope.ministryId ? "text-teal-700 font-semibold" : "text-ink/70"
+                  !scope.ministryId ? "text-primary-700 font-semibold" : "text-ink/70"
                 }`}
               >
                 <svg className="w-4 h-4 shrink-0 text-ink/40" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
@@ -188,16 +188,16 @@ export default function ScopeSwitcher({ fullWidth = false }: { fullWidth?: boole
                   key={m._id}
                   onClick={() => handleSelectMinistry(m)}
                   className={`w-full text-left px-3 py-2 text-sm hover:bg-ink/5 transition flex items-center gap-2 ${
-                    scope.ministryId === m._id ? "text-teal-700 font-semibold" : "text-ink/70"
+                    scope.ministryId === m._id ? "text-primary-700 font-semibold" : "text-ink/70"
                   }`}
                 >
                   <span className={`w-4 h-4 rounded-full border flex items-center justify-center shrink-0 transition-colors ${
                     scope.ministryId === m._id
-                      ? "border-sage-600 bg-sage-50"
+                      ? "border-success-600 bg-success-50"
                       : "border-ink/20 bg-transparent"
                   }`}>
                     {scope.ministryId === m._id && (
-                      <span className="w-2 h-2 rounded-full bg-sage-600" />
+                      <span className="w-2 h-2 rounded-full bg-success-600" />
                     )}
                   </span>
                   {m.name}
@@ -217,7 +217,7 @@ export default function ScopeSwitcher({ fullWidth = false }: { fullWidth?: boole
               <button
                 onClick={() => setOpen(false)}
                 className={`w-full text-left px-3 py-2 text-sm hover:bg-ink/5 transition flex items-center gap-2 ${
-                  !scope.groupId ? "text-teal-700 font-semibold" : "text-ink/70"
+                  !scope.groupId ? "text-primary-700 font-semibold" : "text-ink/70"
                 }`}
               >
                 <svg className="w-4 h-4 shrink-0 text-ink/40" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
@@ -233,16 +233,16 @@ export default function ScopeSwitcher({ fullWidth = false }: { fullWidth?: boole
                   key={g._id}
                   onClick={() => handleSelectGroup(g)}
                   className={`w-full text-left px-3 py-2 text-sm hover:bg-ink/5 transition flex items-center gap-2 ${
-                    scope.groupId === g._id ? "text-teal-700 font-semibold" : "text-ink/70"
+                    scope.groupId === g._id ? "text-primary-700 font-semibold" : "text-ink/70"
                   }`}
                 >
                   <span className={`w-4 h-4 rounded-full border flex items-center justify-center shrink-0 transition-colors ${
                     scope.groupId === g._id
-                      ? "border-teal-600 bg-teal-50"
+                      ? "border-primary-600 bg-primary-50"
                       : "border-ink/20 bg-transparent"
                   }`}>
                     {scope.groupId === g._id && (
-                      <span className="w-2 h-2 rounded-full bg-teal-600" />
+                      <span className="w-2 h-2 rounded-full bg-primary-600" />
                     )}
                   </span>
                   {g.name}

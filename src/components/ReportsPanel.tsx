@@ -65,7 +65,7 @@ export default function ReportsPanel({ teens, attendanceMap, onOpenProfile, init
   return (
     <div className="space-y-5">
       <div>
-        <p className="text-xs font-semibold text-teal-700 tracking-wide uppercase">
+        <p className="text-xs font-semibold text-primary-700 tracking-wide uppercase">
           Analíticas
         </p>
         <h1 className="font-display text-2xl font-bold mt-0.5">Analítica</h1>

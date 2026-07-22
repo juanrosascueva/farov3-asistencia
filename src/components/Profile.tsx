@@ -115,17 +115,17 @@ export default function Profile({
   const leaderAssignment = leaderAssignments.find((item: any) => String(item.teenId) === String(teen._id));
 
   const statusMap: Record<string, { label: string; cls: string }> = {
-    present: { label: "Presente", cls: "bg-sage-50 text-sage-600" },
-    absent: { label: "Ausente", cls: "bg-coral-50 text-coral-600" },
-    excused: { label: "Justificado", cls: "bg-amber-50 text-amber-600" },
+    present: { label: "Presente", cls: "bg-success-50 text-success-600" },
+    absent: { label: "Ausente", cls: "bg-danger-50 text-danger-600" },
+    excused: { label: "Justificado", cls: "bg-warning-50 text-warning-600" },
   };
 
   const riskColorMap: Record<string, string> = {
-    gray: "bg-slate-50 border-slate-200 text-slate-600 dark:bg-slate-950/30 dark:border-slate-800/60 dark:text-slate-400",
-    teal: "bg-teal-50 border-teal-100 text-teal-700 dark:bg-teal-950/30 dark:border-teal-900/40 dark:text-teal-400",
-    amber: "bg-amber-50 border-amber-100 text-amber-700 dark:bg-amber-950/30 dark:border-amber-900/40 dark:text-amber-400",
-    coral: "bg-coral-50 border-coral-100 text-coral-700 dark:bg-orange-950/30 dark:border-orange-900/40 dark:text-orange-400",
-    red: "bg-red-50 border-red-200 text-red-700 dark:bg-red-950/30 dark:border-red-900/40 dark:text-red-400",
+    gray: "bg-neutral-50 border-neutral-200 text-neutral-600 dark:bg-neutral-950/30 dark:border-neutral-800/60 dark:text-neutral-400",
+    teal: "bg-primary-50 border-primary-100 text-primary-700 dark:bg-primary-950/30 dark:border-primary-900/40 dark:text-primary-400",
+    amber: "bg-warning-50 border-warning-100 text-warning-700 dark:bg-warning-950/30 dark:border-warning-900/40 dark:text-warning-400",
+    coral: "bg-danger-50 border-danger-100 text-danger-700 dark:bg-warning-950/30 dark:border-warning-900/40 dark:text-warning-400",
+    red: "bg-danger-50 border-danger-200 text-danger-700 dark:bg-danger-950/30 dark:border-danger-900/40 dark:text-danger-400",
   };
   const consentLabel: Record<string, string> = {
     data: "Datos personales",
@@ -178,12 +178,12 @@ export default function Profile({
                 Ficha {completeness.percent}%
               </span>
               {((teen as any).fichaCompleta === false || (teen as any).registroRapido) && (
-                <span className="inline-flex items-center gap-1 text-xs font-semibold px-2.5 py-1 rounded-full border bg-red-50 text-red-700 border-red-100">
+                <span className="inline-flex items-center gap-1 text-xs font-semibold px-2.5 py-1 rounded-full border bg-danger-50 text-danger-700 border-danger-100">
                   Ficha incompleta
                 </span>
               )}
               {teen.requiereSeguimientoEspecial && (
-                <span className="inline-flex items-center gap-1 text-xs font-semibold px-2.5 py-1 rounded-full border bg-red-50 text-red-700 border-red-100">
+                <span className="inline-flex items-center gap-1 text-xs font-semibold px-2.5 py-1 rounded-full border bg-danger-50 text-danger-700 border-danger-100">
                   Seguimiento especial
                 </span>
               )}
@@ -209,7 +209,7 @@ export default function Profile({
               </button>
               <button
                 onClick={() => setShowDelete(true)}
-                className="text-xs font-semibold bg-coral-50 text-coral-600 hover:bg-coral-100 rounded-full px-3 py-1.5 flex items-center gap-1.5"
+                className="text-xs font-semibold bg-danger-50 text-danger-600 hover:bg-danger-100 rounded-full px-3 py-1.5 flex items-center gap-1.5"
               >
                 <svg
                   className="w-3.5 h-3.5"
@@ -266,7 +266,7 @@ export default function Profile({
                 Score de riesgo: {risk.score} — {risk.label}
               </p>
               <p className="text-xs opacity-80 mt-0.5">{risk.action}</p>
-              <div className="flex flex-wrap gap-3 mt-2 text-[11px]">
+              <div className="flex flex-wrap gap-3 mt-2 text-xs">
                 <span>Faltas consecutivas: <strong>{risk.factors.consecutiveAbsences}</strong></span>
                 <span>Asistencia: <strong>{s.pct}%</strong></span>
               </div>
@@ -284,11 +284,11 @@ export default function Profile({
       </div>
 
       {hasCrisis && (
-        <div className="bg-red-50 border border-red-200 rounded-card p-4 flex items-start gap-3">
-          <div className="w-9 h-9 rounded-full bg-red-100 flex items-center justify-center text-red-600 shrink-0 text-lg">🚨</div>
+        <div className="bg-danger-50 border border-danger-200 rounded-card p-4 flex items-start gap-3">
+          <div className="w-9 h-9 rounded-full bg-danger-100 flex items-center justify-center text-danger-600 shrink-0 text-lg">🚨</div>
           <div className="flex-1 min-w-0">
-            <p className="text-sm font-bold text-red-700">Alerta de crisis detectada</p>
-            <p className="text-xs text-red-600/80 mt-0.5">
+            <p className="text-sm font-bold text-danger-700">Alerta de crisis detectada</p>
+            <p className="text-xs text-danger-600/80 mt-0.5">
               {crisisAnalyses.length} bitácora{crisisAnalyses.length > 1 ? "s" : ""} con indicios de crisis. Revisa las sugerencias de IA y toma acción inmediata.
             </p>
           </div>
@@ -320,10 +320,10 @@ export default function Profile({
 
       {dropoutPred && (
         <div className={`rounded-card p-4 border flex items-start gap-3 ${
-          dropoutPred.riskLevel === "high" ? "bg-red-50 border-red-200" : dropoutPred.riskLevel === "medium" ? "bg-amber-50 border-amber-200" : "bg-green-50 border-green-200"
+          dropoutPred.riskLevel === "high" ? "bg-danger-50 border-danger-200" : dropoutPred.riskLevel === "medium" ? "bg-warning-50 border-warning-200" : "bg-success-50 border-success-200"
         }`}>
           <div className={`w-10 h-10 rounded-full flex items-center justify-center text-lg font-bold text-white shrink-0 ${
-            dropoutPred.riskLevel === "high" ? "bg-red-500" : dropoutPred.riskLevel === "medium" ? "bg-amber-500" : "bg-green-500"
+            dropoutPred.riskLevel === "high" ? "bg-danger-500" : dropoutPred.riskLevel === "medium" ? "bg-warning-500" : "bg-success-500"
           }`}>
             {dropoutPred.probability}%
           </div>
@@ -334,7 +334,7 @@ export default function Profile({
             <button
               onClick={async () => { setGeneratingDropout(true); await predictDropout({ teenId: teen._id as any, token: token ?? undefined }); setGeneratingDropout(false); }}
               disabled={generatingDropout}
-              className="text-[11px] font-semibold mt-2 underline underline-offset-2 opacity-60 hover:opacity-100 disabled:opacity-30"
+              className="text-xs font-semibold mt-2 underline underline-offset-2 opacity-60 hover:opacity-100 disabled:opacity-30"
             >
               {generatingDropout ? "Actualizando..." : "Actualizar predicción"}
             </button>
@@ -354,11 +354,11 @@ export default function Profile({
       </div>
 
       {warnings.length > 0 && (
-        <div className="bg-amber-50 border border-amber-100 rounded-card p-4">
-          <p className="text-sm font-semibold text-amber-800">Alertas de ficha</p>
+        <div className="bg-warning-50 border border-warning-100 rounded-card p-4">
+          <p className="text-sm font-semibold text-warning-800">Alertas de ficha</p>
           <div className="mt-2 flex flex-wrap gap-1.5">
             {warnings.map((warning) => (
-              <span key={warning} className="rounded-full bg-white/80 px-2.5 py-1 text-xs font-semibold text-amber-700 border border-amber-100">
+              <span key={warning} className="rounded-full bg-white/80 px-2.5 py-1 text-xs font-semibold text-warning-700 border border-warning-100">
                 {warning}
               </span>
             ))}
@@ -408,7 +408,7 @@ export default function Profile({
                 <div className="flex flex-wrap items-center justify-between gap-2">
                   <p className="font-semibold text-ink">{esc(guardian.name)}</p>
                   {guardian.isPrimary && (
-                    <span className="rounded-full bg-teal-50 px-2 py-0.5 text-[10px] font-semibold text-teal-700">
+                    <span className="rounded-full bg-primary-50 px-2 py-0.5 text-[10px] font-semibold text-primary-700">
                       Principal
                     </span>
                   )}
@@ -457,7 +457,7 @@ export default function Profile({
           <div className="pt-2 space-y-2">
             <button
               onClick={() => setShowQuickWA(true)}
-              className="w-full flex items-center justify-center gap-2 bg-green-600 text-white rounded-xl py-2.5 text-sm font-semibold hover:bg-green-700 transition"
+              className="w-full flex items-center justify-center gap-2 bg-success-600 text-white rounded-xl py-2.5 text-sm font-semibold hover:bg-success-700 transition"
             >
               <WhatsAppIcon />
               Mensajes Rápidos
@@ -478,7 +478,7 @@ export default function Profile({
                 setGeneratingMsg(false);
               }}
               disabled={generatingMsg}
-              className="w-full flex items-center justify-center gap-2 bg-teal-600 text-white rounded-xl py-2.5 text-sm font-semibold hover:bg-teal-700 transition disabled:opacity-50"
+              className="w-full flex items-center justify-center gap-2 bg-primary-600 text-white rounded-xl py-2.5 text-sm font-semibold hover:bg-primary-700 transition disabled:opacity-50"
             >
               <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
                 <path d="M12 20h9" /><path d="M16.5 3.5a2.1 2.1 0 013 3L7 19l-4 1 1-4z" /><path d="M15 5l3 3" />
@@ -597,7 +597,7 @@ export default function Profile({
               </button>
               <button
                 onClick={handleDelete}
-                className="flex-1 bg-coral-600 text-white rounded-xl py-2.5 text-sm font-semibold"
+                className="flex-1 bg-danger-600 text-white rounded-xl py-2.5 text-sm font-semibold"
               >
                 Archivar
               </button>
@@ -673,7 +673,7 @@ export default function Profile({
                   window.open(url, "_blank");
                 }}
                 disabled={!aiMsg || generatingMsg || (aiMsgTarget === "parent" ? !teen.telefonoPadre : !teen.telefono)}
-                className="flex-1 bg-green-600 text-white rounded-xl py-2.5 text-sm font-semibold hover:bg-green-700 disabled:opacity-40 flex items-center justify-center gap-2"
+                className="flex-1 bg-success-600 text-white rounded-xl py-2.5 text-sm font-semibold hover:bg-success-700 disabled:opacity-40 flex items-center justify-center gap-2"
               >
                 <WhatsAppIcon />
                 Enviar por WhatsApp
@@ -713,10 +713,10 @@ function StatCardInline({
 }) {
   const colorMap: Record<string, string> = {
     ink: "text-ink bg-ink/5 dark:text-ink/80 dark:bg-ink/10",
-    teal: "text-teal-700 bg-teal-50 dark:text-teal-400 dark:bg-teal-950/35 dark:border dark:border-teal-900/30",
-    sage: "text-sage-600 bg-sage-50 dark:text-sage-400 dark:bg-sage-950/35 dark:border dark:border-sage-900/30",
-    coral: "text-coral-600 bg-coral-50 dark:text-coral-400 dark:bg-coral-950/35 dark:border dark:border-coral-900/30",
-    amber: "text-amber-600 bg-amber-50 dark:text-amber-400 dark:bg-amber-950/35 dark:border dark:border-amber-900/30",
+    teal: "text-primary-700 bg-primary-50 dark:text-primary-400 dark:bg-primary-950/35 dark:border dark:border-primary-900/30",
+    sage: "text-success-600 bg-success-50 dark:text-success-400 dark:bg-success-950/35 dark:border dark:border-success-900/30",
+    coral: "text-danger-600 bg-danger-50 dark:text-danger-400 dark:bg-danger-950/35 dark:border dark:border-danger-900/30",
+    amber: "text-warning-600 bg-warning-50 dark:text-warning-400 dark:bg-warning-950/35 dark:border dark:border-warning-900/30",
   };
   const icons: Record<string, string> = {
     check: `<rect x="3" y="4" width="18" height="17" rx="2"/><path d="M8 2v4M16 2v4M3 10h18"/><path d="M8.5 14.5l2 2 4-4"/>`,
@@ -778,7 +778,7 @@ function TeenSummaryCard({
     <div className="bg-card rounded-card shadow-soft p-5">
       <div className="flex items-center justify-between mb-3">
         <h2 className="font-display font-semibold text-base flex items-center gap-2">
-          <svg className="w-4 h-4 text-teal-600" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+          <svg className="w-4 h-4 text-primary-600" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
             <path d="M12 20h9" />
             <path d="M16.5 3.5a2.1 2.1 0 013 3L7 19l-4 1 1-4z" />
             <path d="M15 5l3 3" />
@@ -789,7 +789,7 @@ function TeenSummaryCard({
           <button
             onClick={onGenerate}
             disabled={generating}
-            className="text-xs font-semibold bg-teal-600 text-white rounded-full px-3 py-1.5 hover:bg-teal-700 disabled:opacity-50 transition"
+            className="text-xs font-semibold bg-primary-600 text-white rounded-full px-3 py-1.5 hover:bg-primary-700 disabled:opacity-50 transition"
           >
             {generating ? "Generando..." : "Generar resumen"}
           </button>
@@ -810,12 +810,12 @@ function TeenSummaryCard({
       ) : (
         <div className="space-y-3">
           <div className="flex flex-wrap gap-2">
-            <span className={`text-[11px] font-semibold px-2 py-1 rounded-full ${
+            <span className={`text-xs font-semibold px-2 py-1 rounded-full ${
               summary.pastoralMomentum === "Mejorando" || summary.pastoralMomentum === "Estable"
-                ? "bg-green-50 text-green-700"
+                ? "bg-success-50 text-success-700"
                 : summary.pastoralMomentum === "Requiere atención"
-                ? "bg-amber-50 text-amber-700"
-                : "bg-red-50 text-red-700"
+                ? "bg-warning-50 text-warning-700"
+                : "bg-danger-50 text-danger-700"
             }`}>
               {summary.pastoralMomentum}
             </span>
@@ -825,12 +825,12 @@ function TeenSummaryCard({
           </p>
           <div className="grid sm:grid-cols-2 gap-3 pt-1">
             <div className="p-3 rounded-xl bg-ink/[0.03] border border-ink/5">
-              <p className="text-[11px] font-semibold text-ink/40 uppercase tracking-wide mb-1">Desafío principal</p>
+              <p className="text-xs font-semibold text-ink/40 uppercase tracking-wide mb-1">Desafío principal</p>
               <p className="text-sm text-ink/80">{summary.mainChallenge}</p>
             </div>
-            <div className="p-3 rounded-xl bg-teal-50 border border-teal-100">
-              <p className="text-[11px] font-semibold text-teal-700 uppercase tracking-wide mb-1">Enfoque recomendado</p>
-              <p className="text-sm text-teal-800">{summary.recommendedFocus}</p>
+            <div className="p-3 rounded-xl bg-primary-50 border border-primary-100">
+              <p className="text-xs font-semibold text-primary-700 uppercase tracking-wide mb-1">Enfoque recomendado</p>
+              <p className="text-sm text-primary-800">{summary.recommendedFocus}</p>
             </div>
           </div>
         </div>
@@ -860,7 +860,7 @@ function AiSuggestions({ teenId }: { teenId: string }) {
           Sugerencias pastorales de IA
         </h2>
         {highRisk.length > 0 && (
-          <span className="text-[10px] font-bold text-red-600 bg-red-50 px-2 py-1 rounded-full">
+          <span className="text-[10px] font-bold text-danger-600 bg-danger-50 px-2 py-1 rounded-full">
             {highRisk.length} alerta{highRisk.length > 1 ? "s" : ""}
           </span>
         )}
@@ -873,7 +873,7 @@ function AiSuggestions({ teenId }: { teenId: string }) {
               className="w-full flex items-center gap-2 text-left"
             >
               <span className={`text-xs font-semibold px-2 py-0.5 rounded-full ${
-                a.riskLevel === "high" ? "bg-red-50 text-red-700" : a.riskLevel === "medium" ? "bg-amber-50 text-amber-700" : "bg-green-50 text-green-700"
+                a.riskLevel === "high" ? "bg-danger-50 text-danger-700" : a.riskLevel === "medium" ? "bg-warning-50 text-warning-700" : "bg-success-50 text-success-700"
               }`}>
                 {a.riskLevel === "high" ? "🔴" : a.riskLevel === "medium" ? "🟡" : "🟢"} Nivel sugerido: {a.riskLevel === "high" ? "Alto" : a.riskLevel === "medium" ? "Medio" : "Bajo"}
               </span>
@@ -884,7 +884,7 @@ function AiSuggestions({ teenId }: { teenId: string }) {
             </button>
             {expanded === a._id && (
               <div className="mt-2 ml-6 p-3 rounded-lg bg-ink/[0.03] border border-ink/5 space-y-2">
-                <div className="rounded-xl border border-purple-100 bg-purple-50 p-3 text-xs text-purple-900 space-y-1">
+                <div className="rounded-xl border border-primary-100 bg-primary-50 p-3 text-xs text-primary-900 space-y-1">
                   <p className="font-semibold">Requiere revisión humana: Sí</p>
                   <p><span className="font-semibold">Confianza:</span> {confidenceLabel[a.confidence || "low"]}</p>
                   {a.reasoningSummary && <p><span className="font-semibold">Motivo:</span> {a.reasoningSummary}</p>}
@@ -903,11 +903,11 @@ function AiSuggestions({ teenId }: { teenId: string }) {
                 )}
                 {a.suggestedActions?.length > 0 && (
                   <div>
-                    <p className="text-[11px] font-semibold text-ink/40 uppercase tracking-wide mb-1">Acciones sugeridas</p>
+                    <p className="text-xs font-semibold text-ink/40 uppercase tracking-wide mb-1">Acciones sugeridas</p>
                     <ul className="space-y-1">
                       {(a.suggestedActions as string[]).map((action: string, i: number) => (
                         <li key={i} className="text-xs text-ink/70 flex items-start gap-1.5">
-                          <span className="text-teal-600 mt-0.5">▶</span>
+                          <span className="text-primary-600 mt-0.5">▶</span>
                           {action}
                         </li>
                       ))}
@@ -916,10 +916,10 @@ function AiSuggestions({ teenId }: { teenId: string }) {
                 )}
                 {a.suggestedVerses?.length > 0 && (
                   <div>
-                    <p className="text-[11px] font-semibold text-ink/40 uppercase tracking-wide mb-1">Versículos sugeridos</p>
+                    <p className="text-xs font-semibold text-ink/40 uppercase tracking-wide mb-1">Versículos sugeridos</p>
                     <div className="flex flex-wrap gap-1">
                       {(a.suggestedVerses as string[]).map((verse: string, i: number) => (
-                        <span key={i} className="text-xs font-medium bg-teal-50 text-teal-700 px-2 py-1 rounded-full">📖 {verse}</span>
+                        <span key={i} className="text-xs font-medium bg-primary-50 text-primary-700 px-2 py-1 rounded-full">📖 {verse}</span>
                       ))}
                     </div>
                   </div>

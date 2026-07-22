@@ -124,7 +124,7 @@ export default function PastoralPlanCard({ teenId }: { teenId: string }) {
             </label>
           </div>
           {field("followUpResult", "Resultado del seguimiento", true)}
-          <button type="submit" className="w-full bg-ink text-white rounded-xl py-2.5 text-sm font-semibold">Guardar plan</button>
+          <button type="submit" className="w-full bg-primary-600 text-white rounded-xl py-2.5 text-sm font-semibold">Guardar plan</button>
         </form>
       ) : (
         <div className="space-y-3 text-sm">
@@ -139,7 +139,7 @@ export default function PastoralPlanCard({ teenId }: { teenId: string }) {
           </div>
           {plan.followUpResult && <Info label="Resultado" value={plan.followUpResult} />}
           <div className="flex flex-col sm:flex-row gap-2 pt-1">
-            <button onClick={makeTask} className="flex-1 bg-teal-600 text-white rounded-xl py-2.5 text-sm font-semibold">Crear tarea desde plan</button>
+            <button onClick={makeTask} className="flex-1 bg-primary-600 text-white rounded-xl py-2.5 text-sm font-semibold">Crear tarea desde plan</button>
             <button onClick={() => token && completePlan({ token, planId: plan._id, followUpResult: plan.followUpResult })} className="flex-1 bg-ink/5 text-ink/60 rounded-xl py-2.5 text-sm font-semibold">Completar plan</button>
           </div>
         </div>

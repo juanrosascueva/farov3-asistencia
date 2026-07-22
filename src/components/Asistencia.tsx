@@ -233,7 +233,7 @@ export default function Asistencia({
       <div className="space-y-2">
         {/* Fila 1: label + botón Nueva Fecha */}
         <div className="flex items-center justify-between">
-          <p className="text-xs font-semibold text-teal-700 tracking-wide uppercase">Tomar asistencia</p>
+          <p className="text-xs font-semibold text-primary-700 tracking-wide uppercase">Tomar asistencia</p>
           <button
             onClick={() => setShowNewDate(true)}
             className="game-pill game-pill--primary flex items-center gap-1.5 shrink-0 pressable"
@@ -252,14 +252,14 @@ export default function Asistencia({
               <div className="flex items-center gap-1">
                 <button
                   onClick={() => setShowEditDate(true)}
-                  className="feature-icon feature-icon--primary hover:bg-teal-100 transition pressable"
+                  className="feature-icon feature-icon--primary hover:bg-primary-100 transition pressable"
                   title="Editar fecha"
                 >
                   <svg className="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round"><path d="M12 20h9" /><path d="M16.5 3.5a2.1 2.1 0 013 3L7 19l-4 1 1-4z" /></svg>
                 </button>
                 <button
                   onClick={() => setShowDeleteConfirm(true)}
-                  className="feature-icon feature-icon--danger hover:bg-coral-100 transition pressable"
+                  className="feature-icon feature-icon--danger hover:bg-danger-100 transition pressable"
                   title="Eliminar fecha completa"
                 >
                   <svg className="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round"><polyline points="3 6 5 6 21 6" /><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2" /></svg>
@@ -269,7 +269,7 @@ export default function Asistencia({
             {/* Indicador de sincronización */}
             <div className="text-[10px] font-semibold">
               {pendingCount > 0 ? (
-                <span className="flex items-center gap-1 text-amber-600 bg-amber-50 dark:bg-amber-950/20 dark:text-amber-400 px-2 py-0.5 rounded-full border border-amber-100 animate-pulse">
+                <span className="flex items-center gap-1 text-warning-600 bg-warning-50 dark:bg-warning-950/20 dark:text-warning-400 px-2 py-0.5 rounded-full border border-warning-100 animate-pulse">
                   <svg className="animate-spin h-2.5 w-2.5" viewBox="0 0 24 24" fill="none">
                     <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
                     <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
@@ -277,7 +277,7 @@ export default function Asistencia({
                   Sync...
                 </span>
               ) : (
-                <span className="flex items-center gap-1 text-sage-700 bg-sage-50 px-2.5 py-1 rounded-full border border-sage-100">
+                <span className="flex items-center gap-1 text-success-700 bg-success-50 px-2.5 py-1 rounded-full border border-success-100">
                   <svg className="w-2.5 h-2.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><path d="M20 6 9 17l-5-5" /></svg>
                   Guardado
                 </span>
@@ -294,7 +294,7 @@ export default function Asistencia({
             onClick={() => setSelectedDate(d)}
             className={`shrink-0 px-3.5 py-2 rounded-full text-xs font-semibold border whitespace-nowrap ${
               d === selectedDate
-                ? "bg-teal-600 text-white border-teal-600"
+                ? "bg-primary-600 text-white border-primary-600"
                 : "bg-card text-ink/60 border-ink/10"
             }`}
           >
@@ -305,7 +305,7 @@ export default function Asistencia({
 
       {sessions.filter((s: any) => s.date === selectedDate).length > 0 && (
         <div className="game-card p-4">
-          <label className="text-[11px] font-bold text-ink/45 uppercase tracking-wide">Sesión</label>
+          <label className="text-xs font-bold text-ink/45 uppercase tracking-wide">Sesión</label>
           <select
             value={selectedSessionId}
             onChange={(e) => setSelectedSessionId(e.target.value)}
@@ -317,27 +317,27 @@ export default function Asistencia({
             ))}
           </select>
           {selectedSessionId && <>
-            <div className="mt-2 flex flex-wrap gap-3 text-xs font-semibold"><button type="button" onClick={() => navigator.clipboard?.writeText(`${location.origin}${location.pathname}?session=${selectedSessionId}&checkIn=${selectedSession?.checkInToken || ""}`)} className="text-teal-700 underline underline-offset-2">Copiar URL segura de check-in</button>{selectedSession?.status !== "completed" && <button type="button" onClick={() => setShowCompleteSession(true)} className="text-ink/65 underline underline-offset-2">Cerrar actividad</button>}</div>
+            <div className="mt-2 flex flex-wrap gap-3 text-xs font-semibold"><button type="button" onClick={() => navigator.clipboard?.writeText(`${location.origin}${location.pathname}?session=${selectedSessionId}&checkIn=${selectedSession?.checkInToken || ""}`)} className="text-primary-700 underline underline-offset-2">Copiar URL segura de check-in</button>{selectedSession?.status !== "completed" && <button type="button" onClick={() => setShowCompleteSession(true)} className="text-ink/65 underline underline-offset-2">Cerrar actividad</button>}</div>
             {selectedSession?.status === "completed" && <p className="mt-2 text-xs text-ink/55">Actividad cerrada{selectedSession.resultNotes ? ` · ${selectedSession.resultNotes}` : ""}</p>}
           </>}
         </div>
       )}
 
-      {upcomingSessions.length > 0 && <section className="game-card p-4"><div className="flex items-center justify-between gap-3"><div className="flex items-center gap-3"><span className="feature-icon feature-icon--primary"><svg className="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8"><rect x="3" y="4" width="18" height="17" rx="2"/><path d="M8 2v4M16 2v4M3 10h18"/></svg></span><div><p className="text-xs font-bold uppercase text-teal-700">Agenda del ámbito</p><p className="mt-1 text-sm text-ink/50">Próximas actividades planificadas.</p></div></div><span className="text-xs text-ink/40">{scopeLabel}</span></div><div className="mt-3 grid gap-2 sm:grid-cols-2 lg:grid-cols-3">{upcomingSessions.map((session: any) => <button key={session._id} onClick={() => { setSelectedDate(session.date); setSelectedSessionId(String(session._id)); }} className="rounded-xl border border-ink/10 px-3 py-2.5 text-left hover:border-teal-300"><p className="text-sm font-bold">{MEETING_LABELS[session.type as MeetingType]}</p><p className="mt-1 text-xs text-ink/55">{session.date}{session.objective ? ` · ${session.objective}` : ""}</p><p className="mt-1 text-[11px] text-teal-700">{session.status === "completed" ? "Cerrada" : "Planificada"}{session.expectedAttendance ? ` · Esperados ${session.expectedAttendance}` : ""}</p></button>)}</div></section>}
+      {upcomingSessions.length > 0 && <section className="game-card p-4"><div className="flex items-center justify-between gap-3"><div className="flex items-center gap-3"><span className="feature-icon feature-icon--primary"><svg className="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8"><rect x="3" y="4" width="18" height="17" rx="2"/><path d="M8 2v4M16 2v4M3 10h18"/></svg></span><div><p className="text-xs font-bold uppercase text-primary-700">Agenda del ámbito</p><p className="mt-1 text-sm text-ink/50">Próximas actividades planificadas.</p></div></div><span className="text-xs text-ink/40">{scopeLabel}</span></div><div className="mt-3 grid gap-2 sm:grid-cols-2 lg:grid-cols-3">{upcomingSessions.map((session: any) => <button key={session._id} onClick={() => { setSelectedDate(session.date); setSelectedSessionId(String(session._id)); }} className="rounded-xl border border-ink/10 px-3 py-2.5 text-left hover:border-primary-300"><p className="text-sm font-bold">{MEETING_LABELS[session.type as MeetingType]}</p><p className="mt-1 text-xs text-ink/55">{session.date}{session.objective ? ` · ${session.objective}` : ""}</p><p className="mt-1 text-xs text-primary-700">{session.status === "completed" ? "Cerrada" : "Planificada"}{session.expectedAttendance ? ` · Esperados ${session.expectedAttendance}` : ""}</p></button>)}</div></section>}
 
       {needsContact.length > 0 && (
-        <div className="rounded-2xl border border-teal-100 bg-teal-50 p-3.5">
-          <p className="text-sm font-bold text-teal-700">Adolescentes que necesitan contacto esta semana</p>
+        <div className="rounded-2xl border border-primary-100 bg-primary-50 p-3.5">
+          <p className="text-sm font-bold text-primary-700">Adolescentes que necesitan contacto esta semana</p>
           <div className="mt-2 flex flex-wrap gap-2">
             {needsContact.slice(0, 5).map((item: any) => (
               <button
                 key={String(item.teenId)}
                 type="button"
                 onClick={() => onOpenProfile(String(item.teenId))}
-                className="rounded-xl border border-teal-100 bg-white/70 px-3 py-2 text-left text-xs"
+                className="rounded-xl border border-primary-100 bg-white/70 px-3 py-2 text-left text-xs"
               >
                 <span className="font-semibold text-ink">{item.teenName}</span>
-                <span className="block text-teal-700">{item.reasons.join(" · ")}</span>
+                <span className="block text-primary-700">{item.reasons.join(" · ")}</span>
               </button>
             ))}
           </div>
@@ -378,15 +378,15 @@ export default function Asistencia({
               placeholder="Buscar adolescente..."
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              className="w-full bg-card border border-ink/10 rounded-xl pl-10 pr-10 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-teal-600/20 focus:border-teal-600/30 transition-all"
+              className="w-full bg-card border border-ink/10 rounded-xl pl-10 pr-10 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-primary-600/20 focus:border-primary-600/30 transition-all"
             />
-            <svg className="w-4 h-4 text-ink/30 absolute left-3.5 top-1/2 -translate-y-1/2" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+            <svg className="w-4 h-4 text-ink/30 absolute left-3.5 top-1/2 -tranneutral-y-1/2" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
               <circle cx="11" cy="11" r="8" /><path d="m21 21-4.3-4.3" />
             </svg>
             {searchQuery && (
               <button
                 onClick={() => setSearchQuery("")}
-                className="text-xs text-ink/40 hover:text-ink/60 underline absolute right-3.5 top-1/2 -translate-y-1/2"
+                className="text-xs text-ink/40 hover:text-ink/60 underline absolute right-3.5 top-1/2 -tranneutral-y-1/2"
               >
                 Limpiar
               </button>
@@ -425,21 +425,21 @@ export default function Asistencia({
                         label="✓"
                         current={st}
                         onClick={() => handleMark(t._id, "present")}
-                        activeClass="bg-sage-600 text-white border-sage-600"
+                        activeClass="bg-success-600 text-white border-success-600"
                       />
                       <AttBtn
                         status="excused"
                         label="J"
                         current={st}
                         onClick={() => handleMark(t._id, "excused")}
-                        activeClass="bg-amber-600 text-white border-amber-600"
+                        activeClass="bg-warning-600 text-white border-warning-600"
                       />
                       <AttBtn
                         status="absent"
                         label="✕"
                         current={st}
                         onClick={() => handleMark(t._id, "absent")}
-                        activeClass="bg-coral-600 text-white border-coral-600"
+                        activeClass="bg-danger-600 text-white border-danger-600"
                       />
                     </div>
                   </div>
@@ -447,7 +447,7 @@ export default function Asistencia({
               })}
             </div>
           )}
-          <p className="text-[11px] text-ink/40 px-1">
+          <p className="text-xs text-ink/40 px-1">
             ✓ Presente &nbsp;·&nbsp; J Justificado &nbsp;·&nbsp; ✕ Ausente
           </p>
         </>
@@ -457,8 +457,8 @@ export default function Asistencia({
         <Modal title="Crear sesión de asistencia" onClose={() => setShowNewDate(false)}>
           <div className="space-y-5 p-4 sm:p-5">
             <div className="flex items-center gap-3 rounded-lg border border-ink/5 bg-ink/[0.03] px-3 py-2.5">
-              <div className="size-8 shrink-0 rounded-lg bg-teal-50 dark:bg-teal-900/40 flex items-center justify-center">
-                <svg className="w-4.5 h-4.5 text-teal-700 dark:text-teal-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+              <div className="size-8 shrink-0 rounded-lg bg-primary-50 dark:bg-primary-900/40 flex items-center justify-center">
+                <svg className="w-4.5 h-4.5 text-primary-700 dark:text-primary-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
                   <rect x="3" y="4" width="18" height="17" rx="2"/><path d="M8 2v4M16 2v4M3 10h18"/>
                   <path d="M8.5 14.5l2 2 4-4"/>
                 </svg>
@@ -477,7 +477,7 @@ export default function Asistencia({
                 type="date"
                 value={newDate}
                 onChange={(e) => setNewDate(e.target.value)}
-                className="w-full bg-card border border-ink/10 focus:border-teal-500 rounded-lg px-4 py-3 text-sm font-semibold outline-none transition-colors"
+                className="w-full bg-card border border-ink/10 focus:border-primary-500 rounded-lg px-4 py-3 text-sm font-semibold outline-none transition-colors"
               />
             </div>
 
@@ -488,7 +488,7 @@ export default function Asistencia({
               <select
                 value={newMeetingType}
                 onChange={(e) => setNewMeetingType(e.target.value as MeetingType)}
-                className="w-full bg-card border border-ink/10 focus:border-teal-500 rounded-lg px-4 py-3 text-sm font-semibold outline-none transition-colors"
+                className="w-full bg-card border border-ink/10 focus:border-primary-500 rounded-lg px-4 py-3 text-sm font-semibold outline-none transition-colors"
               >
                 {Object.entries(MEETING_LABELS).map(([value, label]) => (
                   <option key={value} value={value}>{label}</option>
@@ -514,7 +514,7 @@ export default function Asistencia({
               <button
                 type="button"
                 onClick={handleNewDate}
-                className="rounded-lg bg-teal-600 px-4 py-3 text-sm font-bold text-white hover:bg-teal-700 transition pressable"
+                className="rounded-lg bg-primary-600 px-4 py-3 text-sm font-bold text-white hover:bg-primary-700 transition pressable"
               >
                 Crear sesión y tomar asistencia
               </button>
@@ -527,14 +527,14 @@ export default function Asistencia({
         <Modal title="Editar fecha de asistencia" onClose={() => setShowEditDate(false)}>
           <div className="space-y-5">
             {/* Advertencia */}
-            <div className="flex items-start gap-3 p-3.5 bg-amber-50 dark:bg-amber-950/20 rounded-xl border border-amber-100 dark:border-amber-900/30">
-              <div className="w-9 h-9 shrink-0 rounded-xl bg-amber-100 dark:bg-amber-900/40 flex items-center justify-center">
-                <svg className="w-4 h-4 text-amber-700 dark:text-amber-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+            <div className="flex items-start gap-3 p-3.5 bg-warning-50 dark:bg-warning-950/20 rounded-xl border border-warning-100 dark:border-warning-900/30">
+              <div className="w-9 h-9 shrink-0 rounded-xl bg-warning-100 dark:bg-warning-900/40 flex items-center justify-center">
+                <svg className="w-4 h-4 text-warning-700 dark:text-warning-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                   <path d="M12 9v4"/><path d="M12 17h.01"/>
                   <path d="M10.3 3.9L2.7 17a2 2 0 001.7 3h15.2a2 2 0 001.7-3L13.7 3.9a2 2 0 00-3.4 0z"/>
                 </svg>
               </div>
-              <p className="text-xs text-amber-800 dark:text-amber-300 leading-relaxed">
+              <p className="text-xs text-warning-800 dark:text-warning-300 leading-relaxed">
                 Se actualizará la fecha de <strong>todos</strong> los registros de asistencia de este día. Esta acción no se puede deshacer.
               </p>
             </div>
@@ -548,7 +548,7 @@ export default function Asistencia({
                 type="date"
                 value={editDateValue}
                 onChange={(e) => setEditDateValue(e.target.value)}
-                className="w-full bg-card border-2 border-ink/10 focus:border-teal-500 rounded-xl px-4 py-3 text-sm font-semibold outline-none transition-colors"
+                className="w-full bg-card border-2 border-ink/10 focus:border-primary-500 rounded-xl px-4 py-3 text-sm font-semibold outline-none transition-colors"
               />
             </div>
 
@@ -556,7 +556,7 @@ export default function Asistencia({
             <div className="flex flex-col gap-2 pt-1">
               <button
                 onClick={handleSaveEditDate}
-                className="w-full py-3 bg-teal-600 hover:bg-teal-700 text-white rounded-xl text-sm font-bold transition pressable"
+                className="w-full py-3 bg-primary-600 hover:bg-primary-700 text-white rounded-xl text-sm font-bold transition pressable"
               >
                 Guardar cambios
               </button>
@@ -571,23 +571,23 @@ export default function Asistencia({
         </Modal>
       )}
 
-      {showCompleteSession && selectedSession && <Modal title="Cerrar actividad" onClose={() => setShowCompleteSession(false)}><div className="space-y-4"><p className="text-sm text-ink/60">Registra un breve resultado. La asistencia se conserva y el cierre queda auditado.</p><textarea value={resultNotes} onChange={(e) => setResultNotes(e.target.value)} rows={4} placeholder="Resultado, participación, acuerdos o novedades" className="w-full rounded-xl border border-ink/10 p-3 text-sm"/><div className="flex justify-end gap-2"><button onClick={() => setShowCompleteSession(false)} className="rounded-lg border border-ink/10 px-3 py-2 text-sm font-semibold">Cancelar</button><button onClick={async () => { if (token) { const stats = await completeSession({ token, sessionId: selectedSession._id, resultNotes }); setCompletedStats(stats); } setShowCompleteSession(false); setResultNotes(""); }} className="rounded-lg bg-teal-700 px-3 py-2 text-sm font-semibold text-white">Cerrar actividad</button></div></div></Modal>}
-      {completedStats && <div className="fixed bottom-24 left-1/2 z-50 -translate-x-1/2 rounded-xl bg-ink px-4 py-3 text-sm text-white shadow-lg">Actividad cerrada: {completedStats.present} presentes, {completedStats.absent} ausentes y {completedStats.excused} justificados.<button onClick={() => setCompletedStats(null)} className="ml-3 text-xs underline">Cerrar</button></div>}
+      {showCompleteSession && selectedSession && <Modal title="Cerrar actividad" onClose={() => setShowCompleteSession(false)}><div className="space-y-4"><p className="text-sm text-ink/60">Registra un breve resultado. La asistencia se conserva y el cierre queda auditado.</p><textarea value={resultNotes} onChange={(e) => setResultNotes(e.target.value)} rows={4} placeholder="Resultado, participación, acuerdos o novedades" className="w-full rounded-xl border border-ink/10 p-3 text-sm"/><div className="flex justify-end gap-2"><button onClick={() => setShowCompleteSession(false)} className="rounded-lg border border-ink/10 px-3 py-2 text-sm font-semibold">Cancelar</button><button onClick={async () => { if (token) { const stats = await completeSession({ token, sessionId: selectedSession._id, resultNotes }); setCompletedStats(stats); } setShowCompleteSession(false); setResultNotes(""); }} className="rounded-lg bg-primary-700 px-3 py-2 text-sm font-semibold text-white">Cerrar actividad</button></div></div></Modal>}
+      {completedStats && <div className="fixed bottom-24 left-1/2 z-50 -tranneutral-x-1/2 rounded-xl bg-primary-600 px-4 py-3 text-sm text-white shadow-lg">Actividad cerrada: {completedStats.present} presentes, {completedStats.absent} ausentes y {completedStats.excused} justificados.<button onClick={() => setCompletedStats(null)} className="ml-3 text-xs underline">Cerrar</button></div>}
 
       {/* Modal custom de confirmación de eliminación */}
       {showDeleteConfirm && (
         <Modal title="Eliminar fecha" onClose={() => setShowDeleteConfirm(false)}>
           <div className="space-y-4">
-            <div className="flex items-start gap-3 p-3.5 bg-red-50 dark:bg-red-950/20 rounded-xl border border-red-100 dark:border-red-900/30">
-              <div className="w-8 h-8 shrink-0 rounded-full bg-red-100 dark:bg-red-900/30 flex items-center justify-center">
-                <svg className="w-4 h-4 text-red-600 dark:text-red-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+            <div className="flex items-start gap-3 p-3.5 bg-danger-50 dark:bg-danger-950/20 rounded-xl border border-danger-100 dark:border-danger-900/30">
+              <div className="w-8 h-8 shrink-0 rounded-full bg-danger-100 dark:bg-danger-900/30 flex items-center justify-center">
+                <svg className="w-4 h-4 text-danger-600 dark:text-danger-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                   <path d="M12 9v4" /><path d="M12 17h.01" />
                   <path d="M10.3 3.9L2.7 17a2 2 0 001.7 3h15.2a2 2 0 001.7-3L13.7 3.9a2 2 0 00-3.4 0z" />
                 </svg>
               </div>
               <div className="min-w-0">
-                <p className="text-sm font-bold text-red-800 dark:text-red-300">¿Eliminar la fecha {fmtDate(selectedDate)}?</p>
-                <p className="text-xs text-red-600/80 dark:text-red-400/80 mt-0.5 leading-relaxed">
+                <p className="text-sm font-bold text-danger-800 dark:text-danger-300">¿Eliminar la fecha {fmtDate(selectedDate)}?</p>
+                <p className="text-xs text-danger-600/80 dark:text-danger-400/80 mt-0.5 leading-relaxed">
                   Esta acción es <strong>permanente e irreversible</strong>. Se borrarán todas las asistencias registradas para este día.
                 </p>
               </div>
@@ -601,7 +601,7 @@ export default function Asistencia({
               </button>
               <button
                 onClick={handleDeleteDate}
-                className="flex-1 sm:flex-none px-4 py-2.5 bg-red-600 hover:bg-red-700 text-white rounded-xl text-xs font-bold transition pressable text-center"
+                className="flex-1 sm:flex-none px-4 py-2.5 bg-danger-600 hover:bg-danger-700 text-white rounded-xl text-xs font-bold transition pressable text-center"
               >
                 Sí, eliminar fecha
               </button>
@@ -630,9 +630,9 @@ export default function Asistencia({
               rows={4}
               autoFocus
               placeholder={attendanceDetail.status === "excused" ? "Ej. Enfermedad, viaje familiar..." : "Ej. No respondió, avisó el apoderado..."}
-              className="w-full resize-none rounded-xl border border-ink/10 bg-card px-3.5 py-3 text-sm outline-none transition focus:border-teal-500 focus:ring-2 focus:ring-teal-500/20"
+              className="w-full resize-none rounded-xl border border-ink/10 bg-card px-3.5 py-3 text-sm outline-none transition focus:border-primary-500 focus:ring-2 focus:ring-primary-500/20"
             />
-            {attendanceDetail.status === "excused" && <div className="flex flex-wrap gap-2">{["Estudios", "Salud", "Trabajo", "Familia", "Transporte", "Otro"].map((reason) => <button key={reason} type="button" onClick={() => setAttendanceDetail({ ...attendanceDetail, value: attendanceDetail.value ? attendanceDetail.value : reason })} className="rounded-full border border-ink/10 px-2.5 py-1 text-xs font-semibold text-ink/60 hover:border-teal-300">{reason}</button>)}</div>}
+            {attendanceDetail.status === "excused" && <div className="flex flex-wrap gap-2">{["Estudios", "Salud", "Trabajo", "Familia", "Transporte", "Otro"].map((reason) => <button key={reason} type="button" onClick={() => setAttendanceDetail({ ...attendanceDetail, value: attendanceDetail.value ? attendanceDetail.value : reason })} className="rounded-full border border-ink/10 px-2.5 py-1 text-xs font-semibold text-ink/60 hover:border-primary-300">{reason}</button>)}</div>}
             <div className="flex flex-col-reverse gap-2 sm:flex-row sm:justify-end">
               <button
                 type="button"
@@ -644,7 +644,7 @@ export default function Asistencia({
               <button
                 type="button"
                 onClick={submitAttendanceDetail}
-                className="rounded-xl bg-teal-600 px-4 py-2.5 text-sm font-bold text-white hover:bg-teal-700 transition pressable"
+                className="rounded-xl bg-primary-600 px-4 py-2.5 text-sm font-bold text-white hover:bg-primary-700 transition pressable"
               >
                 Guardar
               </button>
@@ -655,10 +655,10 @@ export default function Asistencia({
 
       {/* Toast de éxito / error */}
       {successMsg && (
-        <div className={`fixed bottom-24 left-1/2 -translate-x-1/2 z-50 px-4 py-3 rounded-2xl shadow-lg text-sm font-semibold flex items-center gap-2 ${
+        <div className={`fixed bottom-24 left-1/2 -tranneutral-x-1/2 z-50 px-4 py-3 rounded-2xl shadow-lg text-sm font-semibold flex items-center gap-2 ${
           successMsg.startsWith("Error")
-            ? "bg-red-600 text-white"
-            : "bg-teal-600 text-white"
+            ? "bg-danger-600 text-white"
+            : "bg-primary-600 text-white"
         }`}>
           {successMsg.startsWith("Error") ? (
             <svg className="w-4 h-4 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><circle cx="12" cy="12" r="10"/><path d="M15 9l-6 6M9 9l6 6"/></svg>

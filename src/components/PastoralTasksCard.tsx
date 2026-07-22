@@ -52,7 +52,7 @@ export default function PastoralTasksCard({ teenId }: { teenId: string }) {
     <div className="bg-card rounded-card shadow-soft p-5">
       <div className="flex items-center justify-between gap-3 mb-4">
         <h2 className="font-display font-semibold text-base">Tareas Pastorales</h2>
-        <button onClick={() => setShowForm(!showForm)} className="text-xs font-semibold bg-ink text-white rounded-full px-3 py-1.5">
+        <button onClick={() => setShowForm(!showForm)} className="text-xs font-semibold bg-primary-600 text-white rounded-full px-3 py-1.5">
           {showForm ? "Cerrar" : "Nueva tarea"}
         </button>
       </div>
@@ -71,7 +71,7 @@ export default function PastoralTasksCard({ teenId }: { teenId: string }) {
               {priorities.map(([value, label]) => <option key={value} value={value}>{label}</option>)}
             </select>
           </div>
-          <button type="submit" className="w-full bg-teal-600 text-white rounded-xl py-2.5 text-sm font-semibold">Crear tarea</button>
+          <button type="submit" className="w-full bg-primary-600 text-white rounded-xl py-2.5 text-sm font-semibold">Crear tarea</button>
         </form>
       )}
 
@@ -85,7 +85,7 @@ export default function PastoralTasksCard({ teenId }: { teenId: string }) {
                 <div className="min-w-0">
                   <p className="text-sm font-semibold text-ink/80">{esc(task.title)}</p>
                   {task.description && <p className="text-xs text-ink/50 whitespace-pre-line mt-0.5">{esc(task.description)}</p>}
-                  <p className="text-[11px] text-ink/40 mt-1">
+                  <p className="text-xs text-ink/40 mt-1">
                     {task.assignedName || "Sin responsable"} · {task.dueDate ? fmtDate(task.dueDate) : "Sin fecha"} · {priorities.find(([p]) => p === task.priority)?.[1] || task.priority}
                   </p>
                 </div>
@@ -93,7 +93,7 @@ export default function PastoralTasksCard({ teenId }: { teenId: string }) {
                   <select value={task.status} onChange={(e) => token && updateStatus({ token, taskId: task._id, status: e.target.value as any })} className="bg-card border border-ink/10 rounded-lg px-2 py-1 text-xs">
                     {statuses.map(([value, label]) => <option key={value} value={value}>{label}</option>)}
                   </select>
-                  <button onClick={() => token && removeTask({ token, taskId: task._id })} className="w-8 h-8 rounded-lg bg-coral-50 text-coral-600 hover:bg-coral-100">×</button>
+                  <button onClick={() => token && removeTask({ token, taskId: task._id })} className="w-8 h-8 rounded-lg bg-danger-50 text-danger-600 hover:bg-danger-100">×</button>
                 </div>
               </div>
             </div>

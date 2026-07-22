@@ -13,7 +13,7 @@ export default function AccessControl() {
   return (
     <div className="space-y-5 max-w-2xl mx-auto pb-10">
       <div>
-        <p className="text-xs font-semibold text-teal-700 tracking-wide uppercase">
+        <p className="text-xs font-semibold text-primary-700 tracking-wide uppercase">
           Administración
         </p>
         <h1 className="font-display text-2xl font-bold mt-0.5">Accesos y Roles</h1>
@@ -27,7 +27,7 @@ export default function AccessControl() {
           onClick={() => setActiveTab("users")}
           className={`px-3 py-2 text-xs font-semibold rounded-t-xl border-t border-x -mb-px transition-all ${
             activeTab === "users"
-              ? "text-teal-700 border-ink/10 bg-card"
+              ? "text-primary-700 border-ink/10 bg-card"
               : "text-ink/50 border-transparent hover:text-ink hover:bg-ink/5"
           }`}
         >
@@ -37,7 +37,7 @@ export default function AccessControl() {
           onClick={() => setActiveTab("campus")}
           className={`px-3 py-2 text-xs font-semibold rounded-t-xl border-t border-x -mb-px transition-all ${
             activeTab === "campus"
-              ? "text-teal-700 border-ink/10 bg-card"
+              ? "text-primary-700 border-ink/10 bg-card"
               : "text-ink/50 border-transparent hover:text-ink hover:bg-ink/5"
           }`}
         >
@@ -47,7 +47,7 @@ export default function AccessControl() {
           onClick={() => setActiveTab("roles")}
           className={`px-3 py-2 text-xs font-semibold rounded-t-xl border-t border-x -mb-px transition-all ${
             activeTab === "roles"
-              ? "text-teal-700 border-ink/10 bg-card"
+              ? "text-primary-700 border-ink/10 bg-card"
               : "text-ink/50 border-transparent hover:text-ink hover:bg-ink/5"
           }`}
         >
@@ -141,14 +141,14 @@ function UserManager() {
           <button
             onClick={handleMigrate}
             disabled={migrating}
-            className="text-[11px] font-semibold text-teal-700 hover:text-teal-600 transition flex items-center gap-1 bg-teal-50 dark:bg-teal-950/20 px-2.5 py-1 rounded-lg border border-teal-200/50 dark:border-teal-900/40 disabled:opacity-50 pressable"
+            className="text-xs font-semibold text-primary-700 hover:text-primary-600 transition flex items-center gap-1 bg-primary-50 dark:bg-primary-950/20 px-2.5 py-1 rounded-lg border border-primary-200/50 dark:border-primary-900/40 disabled:opacity-50 pressable"
             title="Convierte todos los correos registrados a minúsculas para evitar problemas de inicio de sesión"
           >
             {migrating ? "Normalizando..." : "Normalizar correos"}
           </button>
           <button
             onClick={() => setShowForm(!showForm)}
-            className="text-xs font-semibold text-teal-700 hover:text-teal-600 transition flex items-center gap-1 pressable"
+            className="text-xs font-semibold text-primary-700 hover:text-primary-600 transition flex items-center gap-1 pressable"
           >
             <svg className="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><path d="M12 5v14M5 12h14" /></svg>
             {showForm ? "Cancelar" : "Nuevo usuario"}
@@ -188,7 +188,7 @@ function UserManager() {
            <button
             onClick={handleCreate}
             disabled={submitting}
-            className="w-full bg-ink text-white rounded-xl py-2 text-sm font-semibold disabled:opacity-50 pressable flex items-center justify-center gap-1.5"
+            className="w-full bg-primary-600 text-white rounded-xl py-2 text-sm font-semibold disabled:opacity-50 pressable flex items-center justify-center gap-1.5"
           >
             {submitting && (
               <svg className="animate-spin h-3.5 w-3.5 text-white" viewBox="0 0 24 24" fill="none">
@@ -204,7 +204,7 @@ function UserManager() {
       <div className="space-y-1">
         {(users || []).map((u: any) => (
           <div key={u._id} className="flex items-center gap-3 py-2 px-3 rounded-xl bg-ink/[0.02] border border-ink/5">
-            <span className={`w-2 h-2 rounded-full shrink-0 ${u.isActive ? "bg-green-500" : "bg-red-400"}`} />
+            <span className={`w-2 h-2 rounded-full shrink-0 ${u.isActive ? "bg-success-500" : "bg-danger-400"}`} />
             <span className="flex-1 text-sm font-medium min-w-0 truncate">{u.name}</span>
             <span className="text-[10px] capitalize text-ink/40 mr-1">{u.role}</span>
             
@@ -212,7 +212,7 @@ function UserManager() {
             {!u.isActive && (
               <button
                 onClick={() => handleToggleActive(u._id, u.isActive)}
-                className="px-2 py-0.5 text-[10px] font-semibold bg-green-50 dark:bg-green-950/20 text-green-700 dark:text-green-400 border border-green-200 dark:border-green-900/40 rounded-lg hover:bg-green-100 transition shrink-0 pressable"
+                className="px-2 py-0.5 text-[10px] font-semibold bg-success-50 dark:bg-success-950/20 text-success-700 dark:text-success-400 border border-success-200 dark:border-success-900/40 rounded-lg hover:bg-success-100 transition shrink-0 pressable"
                 title="Aprobar acceso del usuario"
               >
                 Aprobar
@@ -221,7 +221,7 @@ function UserManager() {
             {u.isActive && u._id !== user?._id && u.role !== "pastor" && (
               <button
                 onClick={() => handleToggleActive(u._id, u.isActive)}
-                className="px-2 py-0.5 text-[10px] font-semibold bg-red-50 dark:bg-red-950/20 text-red-700 dark:text-red-400 border border-red-200 dark:border-red-900/40 rounded-lg hover:bg-red-100 transition shrink-0 pressable"
+                className="px-2 py-0.5 text-[10px] font-semibold bg-danger-50 dark:bg-danger-950/20 text-danger-700 dark:text-danger-400 border border-danger-200 dark:border-danger-900/40 rounded-lg hover:bg-danger-100 transition shrink-0 pressable"
                 title="Desactivar acceso del usuario"
               >
                 Desactivar
@@ -231,7 +231,7 @@ function UserManager() {
             {u.role !== "pastor" && (
               <button
                 onClick={() => setEditingUser(u)}
-                className="w-7 h-7 rounded-full bg-ink/5 flex items-center justify-center text-ink/40 hover:text-teal-600 hover:bg-teal-50 transition shrink-0"
+                className="w-7 h-7 rounded-full bg-ink/5 flex items-center justify-center text-ink/40 hover:text-primary-600 hover:bg-primary-50 transition shrink-0"
                 title="Gestionar permisos y accesos"
               >
                 <svg className="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
@@ -304,7 +304,7 @@ function CampusManager() {
           Sedes / Campuses ({campuses?.length || 0})
         </p>
         <button onClick={() => { setShowForm(!showForm); setEditingId(null); setName(""); setAddress(""); }}
-          className="text-xs font-semibold text-teal-700 hover:text-teal-600 transition flex items-center gap-1">
+          className="text-xs font-semibold text-primary-700 hover:text-primary-600 transition flex items-center gap-1">
           <svg className="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><path d="M12 5v14M5 12h14" /></svg>
           {showForm ? "Cancelar" : "Nueva sede"}
         </button>
@@ -327,7 +327,7 @@ function CampusManager() {
           <button
             onClick={editingId ? () => handleUpdate(editingId) : handleCreate}
             disabled={submitting}
-            className="w-full bg-ink text-white rounded-xl py-2 text-sm font-semibold disabled:opacity-50 pressable flex items-center justify-center gap-1.5"
+            className="w-full bg-primary-600 text-white rounded-xl py-2 text-sm font-semibold disabled:opacity-50 pressable flex items-center justify-center gap-1.5"
           >
             {submitting && (
               <svg className="animate-spin h-3.5 w-3.5 text-white" viewBox="0 0 24 24" fill="none">
@@ -344,21 +344,21 @@ function CampusManager() {
         {(campuses || []).map((c: any) => (
           <div key={c._id}>
             <div className="flex items-center gap-3 py-2 px-3 rounded-xl bg-ink/[0.02] border border-ink/5">
-              <span className="w-2 h-2 rounded-full shrink-0 bg-teal-500" />
+              <span className="w-2 h-2 rounded-full shrink-0 bg-primary-500" />
               <button
                 onClick={() => setSelectedCampus(selectedCampus === c._id ? null : c._id)}
                 className="flex-1 text-sm font-medium text-left min-w-0"
               >
                 <span className="block truncate">{c.name}</span>
-                {c.address && <span className="block text-[11px] text-ink/45 truncate mt-0.5">{c.address}</span>}
+                {c.address && <span className="block text-xs text-ink/45 truncate mt-0.5">{c.address}</span>}
               </button>
               <button onClick={() => { setEditingId(c._id); setName(c.name); setAddress(c.address || ""); setShowForm(true); }}
-                className="w-6 h-6 rounded-full bg-ink/5 flex items-center justify-center text-ink/30 hover:text-teal-600 hover:bg-teal-50 transition"
+                className="w-6 h-6 rounded-full bg-ink/5 flex items-center justify-center text-ink/30 hover:text-primary-600 hover:bg-primary-50 transition"
                 title="Editar">
                 <svg className="w-3 h-3" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><path d="M12 20h9" /><path d="M16.5 3.5a2.1 2.1 0 013 3L7 19l-4 1 1-4z" /></svg>
               </button>
               <button onClick={() => { if (confirm(`¿Eliminar sede "${c.name}"?`)) deleteCampus({ token: token!, id: c._id }); }}
-                className="w-6 h-6 rounded-full bg-ink/5 flex items-center justify-center text-ink/30 hover:text-coral-600 hover:bg-coral-50 transition"
+                className="w-6 h-6 rounded-full bg-ink/5 flex items-center justify-center text-ink/30 hover:text-danger-600 hover:bg-danger-50 transition"
                 title="Eliminar">
                 <svg className="w-3 h-3" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M18 6L6 18M6 6l12 12" /></svg>
               </button>
@@ -401,11 +401,11 @@ function MinistryManager({ campusId, campusName }: { campusId: string; campusNam
   return (
     <div className="ml-5 pl-3 border-l-2 border-ink/5 mt-2 space-y-2">
       <div className="flex items-center justify-between">
-        <p className="text-[11px] font-semibold text-ink/40 uppercase tracking-wide">
+        <p className="text-xs font-semibold text-ink/40 uppercase tracking-wide">
           Ministerios {campusName ? `en ${campusName}` : ""}
         </p>
         <button onClick={() => setShowForm(!showForm)}
-          className="text-[10px] font-semibold text-teal-600 hover:text-teal-700 transition">
+          className="text-[10px] font-semibold text-primary-600 hover:text-primary-700 transition">
           {showForm ? "Cancelar" : "+ Nuevo"}
         </button>
       </div>
@@ -418,7 +418,7 @@ function MinistryManager({ campusId, campusName }: { campusId: string; campusNam
           <button
             onClick={handleCreate}
             disabled={submitting}
-            className="w-full bg-ink text-white rounded-xl py-1.5 text-xs font-semibold disabled:opacity-50 pressable flex items-center justify-center gap-1.5"
+            className="w-full bg-primary-600 text-white rounded-xl py-1.5 text-xs font-semibold disabled:opacity-50 pressable flex items-center justify-center gap-1.5"
           >
             {submitting && (
               <svg className="animate-spin h-3 w-3 text-white" viewBox="0 0 24 24" fill="none">
@@ -441,7 +441,7 @@ function MinistryManager({ campusId, campusName }: { campusId: string; campusNam
               {m.name}
             </button>
             <button onClick={() => { if (confirm(`¿Eliminar ministerio "${m.name}"?`)) deleteMinistry({ token: token!, id: m._id }); }}
-              className="w-5 h-5 rounded-full bg-ink/5 flex items-center justify-center text-ink/20 hover:text-coral-600 hover:bg-coral-50 transition"
+              className="w-5 h-5 rounded-full bg-ink/5 flex items-center justify-center text-ink/20 hover:text-danger-600 hover:bg-danger-50 transition"
               title="Eliminar">
               <svg className="w-2.5 h-2.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M18 6L6 18M6 6l12 12" /></svg>
             </button>
@@ -452,7 +452,7 @@ function MinistryManager({ campusId, campusName }: { campusId: string; campusNam
         </div>
       ))}
       {(!ministries || ministries.length === 0) && !showForm && (
-        <p className="text-[11px] text-ink/30 py-1 text-center">Sin ministerios</p>
+        <p className="text-xs text-ink/30 py-1 text-center">Sin ministerios</p>
       )}
     </div>
   );
@@ -485,7 +485,7 @@ function GroupManager({ ministryId, ministryName }: { ministryId: string; minist
           Grupos
         </p>
         <button onClick={() => setShowForm(!showForm)}
-          className="text-[10px] font-semibold text-teal-500 hover:text-teal-600 transition">
+          className="text-[10px] font-semibold text-primary-500 hover:text-primary-600 transition">
           {showForm ? "Cancelar" : "+ Nuevo"}
         </button>
       </div>
@@ -498,7 +498,7 @@ function GroupManager({ ministryId, ministryName }: { ministryId: string; minist
           <button
             onClick={handleCreate}
             disabled={submitting}
-            className="w-full bg-ink text-white rounded-lg py-1 text-[11px] font-semibold disabled:opacity-50 pressable flex items-center justify-center gap-1.5"
+            className="w-full bg-primary-600 text-white rounded-lg py-1 text-xs font-semibold disabled:opacity-50 pressable flex items-center justify-center gap-1.5"
           >
             {submitting && (
               <svg className="animate-spin h-2.5 w-2.5 text-white" viewBox="0 0 24 24" fill="none">
@@ -518,9 +518,9 @@ function GroupManager({ ministryId, ministryName }: { ministryId: string; minist
               <path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2" /><circle cx="9" cy="7" r="4" />
               <path d="M23 21v-2a4 4 0 00-3-3.87" /><path d="M16 3.13a4 4 0 010 7.75" />
             </svg>
-            <span className="flex-1 text-[11px] truncate">{g.name}</span>
+            <span className="flex-1 text-xs truncate">{g.name}</span>
             <button onClick={() => { if (confirm(`¿Eliminar grupo "${g.name}"?`)) deleteGroup({ token: token!, id: g._id }); }}
-              className="w-4 h-4 rounded-full bg-ink/5 flex items-center justify-center text-ink/20 hover:text-coral-600 hover:bg-coral-50 transition"
+              className="w-4 h-4 rounded-full bg-ink/5 flex items-center justify-center text-ink/20 hover:text-danger-600 hover:bg-danger-50 transition"
               title="Eliminar">
               <svg className="w-2 h-2" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M18 6L6 18M6 6l12 12" /></svg>
             </button>
@@ -639,7 +639,7 @@ function UserPermissionsManager({ user }: { user: any }) {
                 placeholder="Correo electrónico"
               />
               <div className="flex gap-2">
-                <button onClick={handleSaveEdit} disabled={savingEdit} className="text-[10px] bg-teal-600 text-white px-2 py-1 rounded">
+                <button onClick={handleSaveEdit} disabled={savingEdit} className="text-[10px] bg-primary-600 text-white px-2 py-1 rounded">
                   {savingEdit ? "Guardando..." : "Guardar"}
                 </button>
                 <button onClick={() => { setIsEditing(false); setEditName(user.name); setEditEmail(user.email); }} className="text-[10px] bg-ink/10 text-ink px-2 py-1 rounded">
@@ -653,7 +653,7 @@ function UserPermissionsManager({ user }: { user: any }) {
               <p className="text-xs text-ink/50 truncate" title={user.email}>{user.email}</p>
               <button 
                 onClick={() => setIsEditing(true)} 
-                className="absolute top-1/2 right-0 -translate-y-1/2 p-1 text-teal-600 hover:text-teal-700 bg-teal-50 dark:bg-teal-950/20 rounded-full w-6 h-6 flex items-center justify-center transition-colors shadow-sm"
+                className="absolute top-1/2 right-0 -tranneutral-y-1/2 p-1 text-primary-600 hover:text-primary-700 bg-primary-50 dark:bg-primary-950/20 rounded-full w-6 h-6 flex items-center justify-center transition-colors shadow-sm"
                 title="Editar nombre y correo"
               >
                 <svg className="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M12 20h9" /><path d="M16.5 3.5a2.1 2.1 0 013 3L7 19l-4 1 1-4z" /></svg>
@@ -684,12 +684,12 @@ function UserPermissionsManager({ user }: { user: any }) {
                 type="checkbox"
                 checked={userPerms.includes(perm.id)}
                 onChange={() => togglePermission(perm.id)}
-                className="w-4 h-4 rounded border-ink/20 text-teal-600 focus:ring-teal-600/30"
+                className="w-4 h-4 rounded border-ink/20 text-primary-600 focus:ring-primary-600/30"
               />
             </div>
             <div className="flex-1">
-              <p className="text-sm font-medium group-hover:text-teal-700 transition">{perm.label}</p>
-              <p className="text-[11px] text-ink/50">{perm.desc}</p>
+              <p className="text-sm font-medium group-hover:text-primary-700 transition">{perm.label}</p>
+              <p className="text-xs text-ink/50">{perm.desc}</p>
             </div>
           </label>
         ))}
@@ -784,7 +784,7 @@ function UserScopesManager({ userId }: UserScopesManagerProps) {
         </p>
         <div className="space-y-2 bg-ink/[0.01] border border-ink/5 rounded-xl p-3">
           <div>
-            <label className="text-[11px] font-semibold text-ink/50 mb-1 block">Rol en este ámbito</label>
+            <label className="text-xs font-semibold text-ink/50 mb-1 block">Rol en este ámbito</label>
             <select
               value={selectedRole}
               onChange={(e) => setSelectedRole(e.target.value)}
@@ -797,7 +797,7 @@ function UserScopesManager({ userId }: UserScopesManagerProps) {
           </div>
 
           <div>
-            <label className="text-[11px] font-semibold text-ink/50 mb-1 block">Sede / Campus (opcional)</label>
+            <label className="text-xs font-semibold text-ink/50 mb-1 block">Sede / Campus (opcional)</label>
             <select
               value={selectedCampusId}
               onChange={(e) => {
@@ -817,7 +817,7 @@ function UserScopesManager({ userId }: UserScopesManagerProps) {
           </div>
 
           <div>
-            <label className="text-[11px] font-semibold text-ink/50 mb-1 block">Ministerio (opcional)</label>
+            <label className="text-xs font-semibold text-ink/50 mb-1 block">Ministerio (opcional)</label>
             <select
               value={selectedMinistryId}
               onChange={(e) => {
@@ -838,7 +838,7 @@ function UserScopesManager({ userId }: UserScopesManagerProps) {
           </div>
 
           <div>
-            <label className="text-[11px] font-semibold text-ink/50 mb-1 block">Grupo (opcional)</label>
+            <label className="text-xs font-semibold text-ink/50 mb-1 block">Grupo (opcional)</label>
             <select
               value={selectedGroupId}
               onChange={(e) => setSelectedGroupId(e.target.value)}
@@ -858,7 +858,7 @@ function UserScopesManager({ userId }: UserScopesManagerProps) {
           <button
             onClick={handleAddScope}
             disabled={submitting}
-            className="w-full bg-teal-600 hover:bg-teal-700 text-white rounded-xl py-2 text-xs font-semibold mt-2 transition disabled:opacity-50 pressable flex items-center justify-center gap-1.5"
+            className="w-full bg-primary-600 hover:bg-primary-700 text-white rounded-xl py-2 text-xs font-semibold mt-2 transition disabled:opacity-50 pressable flex items-center justify-center gap-1.5"
           >
             {submitting && (
               <svg className="animate-spin h-3.5 w-3.5 text-white" viewBox="0 0 24 24" fill="none">
@@ -907,7 +907,7 @@ function ScopeRow({ scope, onDelete }: { scope: any; onDelete: () => void }) {
       <span className="font-medium text-ink/70 truncate flex-1 mr-2">{getLabel()}</span>
       <button
         onClick={onDelete}
-        className="w-5 h-5 rounded-full bg-ink/5 flex items-center justify-center text-ink/30 hover:text-coral-600 hover:bg-coral-50 transition shrink-0"
+        className="w-5 h-5 rounded-full bg-ink/5 flex items-center justify-center text-ink/30 hover:text-danger-600 hover:bg-danger-50 transition shrink-0"
         title="Eliminar ámbito"
       >
         <svg className="w-2.5 h-2.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
@@ -992,7 +992,7 @@ function CustomRolesManager() {
             setName("");
             setSelectedPerms([]);
           }}
-          className="text-xs font-semibold text-teal-700 hover:text-teal-600 transition flex items-center gap-1 pressable"
+          className="text-xs font-semibold text-primary-700 hover:text-primary-600 transition flex items-center gap-1 pressable"
         >
           <svg className="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><path d="M12 5v14M5 12h14" /></svg>
           {showForm ? "Cancelar" : "Nuevo rol"}
@@ -1021,7 +1021,7 @@ function CustomRolesManager() {
                     type="checkbox"
                     checked={selectedPerms.includes(perm.id)}
                     onChange={() => togglePermission(perm.id)}
-                    className="mt-0.5 rounded text-teal-600 focus:ring-teal-500"
+                    className="mt-0.5 rounded text-primary-600 focus:ring-primary-500"
                   />
                   <div className="min-w-0">
                     <p className="text-xs font-semibold text-ink leading-tight">{perm.label}</p>
@@ -1035,7 +1035,7 @@ function CustomRolesManager() {
           <button
             onClick={editingId ? () => handleUpdate(editingId) : handleCreate}
             disabled={submitting || !name.trim()}
-            className="w-full bg-ink text-white rounded-xl py-2 text-sm font-semibold disabled:opacity-50 pressable flex items-center justify-center gap-1.5"
+            className="w-full bg-primary-600 text-white rounded-xl py-2 text-sm font-semibold disabled:opacity-50 pressable flex items-center justify-center gap-1.5"
           >
             {submitting && (
               <svg className="animate-spin h-3.5 w-3.5 text-white" viewBox="0 0 24 24" fill="none">
@@ -1057,13 +1057,13 @@ function CustomRolesManager() {
                 {r.permissions.map((pId: string) => {
                   const def = PERMISSION_DEFS.find(d => d.id === pId);
                   return (
-                    <span key={pId} className="text-[9px] font-semibold bg-teal-50 text-teal-700 dark:bg-teal-950/20 dark:text-teal-400 px-1.5 py-0.5 rounded border border-teal-100 dark:border-teal-900/30">
+                    <span key={pId} className="text-micro font-semibold bg-primary-50 text-primary-700 dark:bg-primary-950/20 dark:text-primary-400 px-1.5 py-0.5 rounded border border-primary-100 dark:border-primary-900/30">
                       {def ? def.label : pId}
                     </span>
                   );
                 })}
                 {r.permissions.length === 0 && (
-                  <span className="text-[9px] font-semibold bg-ink/5 text-ink/40 px-1.5 py-0.5 rounded">
+                  <span className="text-micro font-semibold bg-ink/5 text-ink/40 px-1.5 py-0.5 rounded">
                     Sin permisos asignados
                   </span>
                 )}
@@ -1077,7 +1077,7 @@ function CustomRolesManager() {
                   setSelectedPerms(r.permissions);
                   setShowForm(true);
                 }}
-                className="w-7 h-7 rounded-full bg-ink/5 flex items-center justify-center text-ink/30 hover:text-teal-600 hover:bg-teal-50 transition pressable"
+                className="w-7 h-7 rounded-full bg-ink/5 flex items-center justify-center text-ink/30 hover:text-primary-600 hover:bg-primary-50 transition pressable"
                 title="Editar"
               >
                 <svg className="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><path d="M12 20h9" /><path d="M16.5 3.5a2.1 2.1 0 013 3L7 19l-4 1 1-4z" /></svg>
@@ -1088,7 +1088,7 @@ function CustomRolesManager() {
                     removeRole({ token: token!, id: r._id });
                   }
                 }}
-                className="w-7 h-7 rounded-full bg-ink/5 flex items-center justify-center text-ink/30 hover:text-coral-600 hover:bg-coral-50 transition pressable"
+                className="w-7 h-7 rounded-full bg-ink/5 flex items-center justify-center text-ink/30 hover:text-danger-600 hover:bg-danger-50 transition pressable"
                 title="Eliminar"
               >
                 <svg className="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M18 6L6 18M6 6l12 12" /></svg>

@@ -79,17 +79,17 @@ export default function PublicRegistrationLinkModal({ token, scope, onClose }: P
               <button type="button" role="tab" aria-selected={scopeMode === "fixed"} onClick={() => setScopeMode("fixed")} className={`flex-1 rounded-lg px-3 py-2 text-sm font-bold ${scopeMode === "fixed" ? "bg-card shadow-soft text-ink" : "text-ink/50"}`}>QR dirigido</button>
               {canCreateGeneral && <button type="button" role="tab" aria-selected={scopeMode === "general"} onClick={() => setScopeMode("general")} className={`flex-1 rounded-lg px-3 py-2 text-sm font-bold ${scopeMode === "general" ? "bg-card shadow-soft text-ink" : "text-ink/50"}`}>QR general</button>}
             </div>
-            <div className="rounded-xl border border-amber-100 bg-amber-50 px-3 py-2 text-sm text-amber-800">
+            <div className="rounded-xl border border-warning-100 bg-warning-50 px-3 py-2 text-sm text-warning-800">
               {scopeMode === "fixed" ? <>Este QR registra visitantes en <strong>{scope.label}</strong>.</> : <>Este QR permite elegir sede y ministerio. Úsalo solo en actividades abiertas de la iglesia.</>}
             </div>
-            {scopeMode === "fixed" && !canCreateFixed && <p className="text-xs text-coral-700">Selecciona una sede y un ministerio en el selector principal para crear un QR dirigido.</p>}
+            {scopeMode === "fixed" && !canCreateFixed && <p className="text-xs text-danger-700">Selecciona una sede y un ministerio en el selector principal para crear un QR dirigido.</p>}
           </>
         )}
 
-        {error && <div className="rounded-xl border border-coral-100 bg-coral-50 px-3 py-2 text-sm font-medium text-coral-700">{error}</div>}
+        {error && <div className="rounded-xl border border-danger-100 bg-danger-50 px-3 py-2 text-sm font-medium text-danger-700">{error}</div>}
 
         {!shortCode ? (
-          <button onClick={handleCreate} disabled={!token || creating || (scopeMode === "fixed" && !canCreateFixed)} className="w-full rounded-xl bg-ink px-4 py-3 text-sm font-bold text-white disabled:opacity-50">
+          <button onClick={handleCreate} disabled={!token || creating || (scopeMode === "fixed" && !canCreateFixed)} className="w-full rounded-xl bg-primary-600 px-4 py-3 text-sm font-bold text-white disabled:opacity-50">
             {creating ? "Creando enlace..." : "Crear enlace público"}
           </button>
         ) : (
@@ -102,7 +102,7 @@ export default function PublicRegistrationLinkModal({ token, scope, onClose }: P
               <label className="text-xs font-bold uppercase tracking-wide text-ink/45">Enlace público</label>
               <div className="mt-1 flex gap-2">
                 <input readOnly value={publicUrl} className="min-w-0 flex-1 rounded-xl border border-ink/10 bg-card px-3 py-2 text-xs text-ink/70" />
-                <button onClick={copyLink} className="rounded-xl bg-teal-600 px-4 py-2 text-xs font-bold text-white">
+                <button onClick={copyLink} className="rounded-xl bg-primary-600 px-4 py-2 text-xs font-bold text-white">
                   {copied ? "Copiado" : "Copiar"}
                 </button>
               </div>

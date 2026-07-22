@@ -109,7 +109,7 @@ export default function MyProfileModal({ onClose }: { onClose: () => void }) {
 
   // Components for settings list
   const SectionHeader = ({ children }: { children: React.ReactNode }) => (
-    <h3 className="text-[11px] font-bold text-teal-800/60 uppercase tracking-widest px-4 mb-2 mt-6">
+    <h3 className="text-xs font-bold text-primary-800/60 uppercase tracking-widest px-4 mb-2 mt-6">
       {children}
     </h3>
   );
@@ -119,11 +119,11 @@ export default function MyProfileModal({ onClose }: { onClose: () => void }) {
       onClick={onClick}
       className={`w-full flex items-center bg-white px-4 py-3.5 transition-colors pressable ${!isLast ? 'border-b border-ink/5' : ''}`}
     >
-      <div className={`w-8 h-8 rounded-full flex items-center justify-center shrink-0 mr-3 ${isDestructive ? 'bg-red-50 text-red-500' : 'bg-ink/5 text-ink/70'}`}>
+      <div className={`w-8 h-8 rounded-full flex items-center justify-center shrink-0 mr-3 ${isDestructive ? 'bg-danger-50 text-danger-500' : 'bg-ink/5 text-ink/70'}`}>
         {icon}
       </div>
       <div className="flex-1 text-left">
-        <p className={`text-sm font-semibold ${isDestructive ? 'text-red-500' : 'text-ink/90'}`}>{title}</p>
+        <p className={`text-sm font-semibold ${isDestructive ? 'text-danger-500' : 'text-ink/90'}`}>{title}</p>
       </div>
       {value && <span className="text-xs text-ink/40 mr-2">{value}</span>}
       {!isDestructive && (
@@ -163,7 +163,7 @@ export default function MyProfileModal({ onClose }: { onClose: () => void }) {
               </div>
               
               <h2 className="text-xl font-bold text-ink/90">{user.name}</h2>
-              <p className="text-sm font-semibold text-teal-600 capitalize mt-0.5 tracking-wide">{user.role}</p>
+              <p className="text-sm font-semibold text-primary-600 capitalize mt-0.5 tracking-wide">{user.role}</p>
               
               <button 
                 onClick={() => setView("personal")}
@@ -205,7 +205,7 @@ export default function MyProfileModal({ onClose }: { onClose: () => void }) {
               <div className="mt-8 px-4">
                 <button
                   onClick={onClose}
-                  className="w-full bg-white border border-ink/10 hover:bg-red-50 text-red-500 font-bold py-3.5 rounded-2xl shadow-sm transition-colors"
+                  className="w-full bg-white border border-ink/10 hover:bg-danger-50 text-danger-500 font-bold py-3.5 rounded-2xl shadow-sm transition-colors"
                 >
                   Cerrar Ventana
                 </button>
@@ -223,7 +223,7 @@ export default function MyProfileModal({ onClose }: { onClose: () => void }) {
                   type="text"
                   value={name}
                   onChange={(e) => setName(e.target.value)}
-                  className="w-full bg-white border border-ink/10 focus:ring-2 focus:ring-teal-600/30 rounded-xl px-4 py-3 text-sm font-medium text-ink transition-shadow shadow-sm"
+                  className="w-full bg-white border border-ink/10 focus:ring-2 focus:ring-primary-600/30 rounded-xl px-4 py-3 text-sm font-medium text-ink transition-shadow shadow-sm"
                 />
               </div>
               <div>
@@ -233,7 +233,7 @@ export default function MyProfileModal({ onClose }: { onClose: () => void }) {
                   value={phone}
                   onChange={(e) => setPhone(e.target.value)}
                   placeholder="+51 999 999 999"
-                  className="w-full bg-white border border-ink/10 focus:ring-2 focus:ring-teal-600/30 rounded-xl px-4 py-3 text-sm font-medium text-ink transition-shadow shadow-sm"
+                  className="w-full bg-white border border-ink/10 focus:ring-2 focus:ring-primary-600/30 rounded-xl px-4 py-3 text-sm font-medium text-ink transition-shadow shadow-sm"
                 />
               </div>
               <div>
@@ -242,14 +242,14 @@ export default function MyProfileModal({ onClose }: { onClose: () => void }) {
                   type="date"
                   value={birthDate}
                   onChange={(e) => setBirthDate(e.target.value)}
-                  className="w-full bg-white border border-ink/10 focus:ring-2 focus:ring-teal-600/30 rounded-xl px-4 py-3 text-sm font-medium text-ink transition-shadow shadow-sm"
+                  className="w-full bg-white border border-ink/10 focus:ring-2 focus:ring-primary-600/30 rounded-xl px-4 py-3 text-sm font-medium text-ink transition-shadow shadow-sm"
                 />
               </div>
               
               <button
                 onClick={handleSavePersonal}
                 disabled={saving}
-                className="w-full bg-gradient-to-r from-teal-500 to-teal-600 hover:from-teal-600 hover:to-teal-700 text-white font-bold rounded-xl py-3.5 text-sm shadow-md transition-all mt-4"
+                className="w-full bg-gradient-to-r from-primary-500 to-primary-600 hover:from-primary-600 hover:to-primary-700 text-white font-bold rounded-xl py-3.5 text-sm shadow-md transition-all mt-4"
               >
                 {saving ? "Guardando..." : "Guardar Cambios"}
               </button>
@@ -260,12 +260,12 @@ export default function MyProfileModal({ onClose }: { onClose: () => void }) {
         {view === "security" && (
           <div className="p-5 animate-slide-in-right">
             <div className="space-y-4">
-              <div className="bg-orange-50 p-4 rounded-xl border border-orange-100 mb-4">
+              <div className="bg-warning-50 p-4 rounded-xl border border-warning-100 mb-4">
                 <div className="flex items-start gap-3">
-                  <svg className="w-5 h-5 text-orange-500 shrink-0 mt-0.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z" /><line x1="12" y1="9" x2="12" y2="13" /><line x1="12" y1="17" x2="12.01" y2="17" /></svg>
+                  <svg className="w-5 h-5 text-warning-500 shrink-0 mt-0.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z" /><line x1="12" y1="9" x2="12" y2="13" /><line x1="12" y1="17" x2="12.01" y2="17" /></svg>
                   <div>
-                    <h4 className="text-sm font-bold text-orange-800">Actualizar Credenciales</h4>
-                    <p className="text-xs text-orange-700/80 mt-1">Si cambias tu contraseña, asegúrate de guardarla en un lugar seguro. Tu sesión actual se mantendrá activa.</p>
+                    <h4 className="text-sm font-bold text-warning-800">Actualizar Credenciales</h4>
+                    <p className="text-xs text-warning-700/80 mt-1">Si cambias tu contraseña, asegúrate de guardarla en un lugar seguro. Tu sesión actual se mantendrá activa.</p>
                   </div>
                 </div>
               </div>
@@ -276,14 +276,14 @@ export default function MyProfileModal({ onClose }: { onClose: () => void }) {
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
                   placeholder="*********"
-                  className="w-full bg-white border border-ink/10 focus:ring-2 focus:ring-teal-600/30 rounded-xl px-4 py-3 text-sm font-medium text-ink transition-shadow shadow-sm"
+                  className="w-full bg-white border border-ink/10 focus:ring-2 focus:ring-primary-600/30 rounded-xl px-4 py-3 text-sm font-medium text-ink transition-shadow shadow-sm"
                 />
               </div>
               
               <button
                 onClick={handleSaveSecurity}
                 disabled={saving || !password}
-                className="w-full bg-ink hover:bg-ink/80 disabled:bg-ink/30 dark:bg-teal-600 dark:hover:bg-teal-500 text-white font-bold rounded-xl py-3.5 text-sm shadow-md transition-all mt-4"
+                className="w-full bg-primary-600 hover:bg-ink/80 disabled:bg-ink/30 dark:bg-primary-600 dark:hover:bg-primary-500 text-white font-bold rounded-xl py-3.5 text-sm shadow-md transition-all mt-4"
               >
                 {saving ? "Actualizando..." : "Cambiar Contraseña"}
               </button>
@@ -298,7 +298,7 @@ export default function MyProfileModal({ onClose }: { onClose: () => void }) {
               {(user.role === "pastor" || user.role === "admin") && (
                 <button
                   onClick={() => setShowAssignScope((value) => !value)}
-                  className="text-xs font-bold text-teal-600 bg-teal-50 px-3 py-1.5 rounded-full hover:bg-teal-100 transition-colors"
+                  className="text-xs font-bold text-primary-600 bg-primary-50 px-3 py-1.5 rounded-full hover:bg-primary-100 transition-colors"
                 >
                   + Asignar Nuevo
                 </button>
@@ -306,9 +306,9 @@ export default function MyProfileModal({ onClose }: { onClose: () => void }) {
             </div>
 
             {showAssignScope && (
-              <div className="bg-white border border-teal-100 rounded-2xl p-4 shadow-sm mb-4 space-y-3">
+              <div className="bg-white border border-primary-100 rounded-2xl p-4 shadow-sm mb-4 space-y-3">
                 <div>
-                  <label className="block text-[11px] font-bold text-ink/50 uppercase tracking-wide mb-1">Rol</label>
+                  <label className="block text-xs font-bold text-ink/50 uppercase tracking-wide mb-1">Rol</label>
                   <select
                     value={scopeRole}
                     onChange={(e) => setScopeRole(e.target.value as any)}
@@ -322,7 +322,7 @@ export default function MyProfileModal({ onClose }: { onClose: () => void }) {
                   </select>
                 </div>
                 <div>
-                  <label className="block text-[11px] font-bold text-ink/50 uppercase tracking-wide mb-1">Sede</label>
+                  <label className="block text-xs font-bold text-ink/50 uppercase tracking-wide mb-1">Sede</label>
                   <select
                     value={scopeCampusId}
                     onChange={(e) => {
@@ -339,7 +339,7 @@ export default function MyProfileModal({ onClose }: { onClose: () => void }) {
                   </select>
                 </div>
                 <div>
-                  <label className="block text-[11px] font-bold text-ink/50 uppercase tracking-wide mb-1">Ministerio</label>
+                  <label className="block text-xs font-bold text-ink/50 uppercase tracking-wide mb-1">Ministerio</label>
                   <select
                     value={scopeMinistryId}
                     onChange={(e) => {
@@ -356,7 +356,7 @@ export default function MyProfileModal({ onClose }: { onClose: () => void }) {
                   </select>
                 </div>
                 <div>
-                  <label className="block text-[11px] font-bold text-ink/50 uppercase tracking-wide mb-1">Grupo</label>
+                  <label className="block text-xs font-bold text-ink/50 uppercase tracking-wide mb-1">Grupo</label>
                   <select
                     value={scopeGroupId}
                     onChange={(e) => setScopeGroupId(e.target.value)}
@@ -372,7 +372,7 @@ export default function MyProfileModal({ onClose }: { onClose: () => void }) {
                 <button
                   onClick={handleAssignScope}
                   disabled={saving || !scopeCampusId}
-                  className="w-full bg-teal-600 hover:bg-teal-700 disabled:opacity-50 text-white font-bold rounded-xl py-2.5 text-sm"
+                  className="w-full bg-primary-600 hover:bg-primary-700 disabled:opacity-50 text-white font-bold rounded-xl py-2.5 text-sm"
                 >
                   {saving ? "Asignando..." : "Guardar asignación"}
                 </button>
@@ -381,7 +381,7 @@ export default function MyProfileModal({ onClose }: { onClose: () => void }) {
             
             {!myScopes ? (
               <div className="text-center py-8">
-                <div className="animate-spin w-6 h-6 text-teal-600 mx-auto" />
+                <div className="animate-spin w-6 h-6 text-primary-600 mx-auto" />
               </div>
             ) : myScopes.length === 0 ? (
               <div className="bg-white rounded-2xl p-8 text-center border border-ink/5 shadow-sm">
@@ -394,8 +394,8 @@ export default function MyProfileModal({ onClose }: { onClose: () => void }) {
               <div className="space-y-3">
                 {myScopes.map((scope) => (
                   <div key={scope._id} className="bg-white border border-ink/5 rounded-2xl p-4 shadow-sm flex items-start gap-3">
-                    <div className="w-10 h-10 rounded-full bg-teal-50 flex items-center justify-center shrink-0 mt-0.5">
-                      <svg className="w-5 h-5 text-teal-600" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z" /></svg>
+                    <div className="w-10 h-10 rounded-full bg-primary-50 flex items-center justify-center shrink-0 mt-0.5">
+                      <svg className="w-5 h-5 text-primary-600" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z" /></svg>
                     </div>
                     <div>
                       <p className="text-sm font-bold text-ink/90 capitalize">{scope.role}</p>

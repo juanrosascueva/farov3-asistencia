@@ -19,7 +19,7 @@ export default function BadgeGrid({ badges }: BadgeGridProps) {
             key={b.meta.id}
             className={`relative flex flex-col items-center gap-1.5 p-3 rounded-xl border text-center transition ${
               b.unlocked
-                ? "bg-teal-50/50 border-teal-200"
+                ? "bg-primary-50/50 border-primary-200"
                 : "bg-ink/[0.02] border-ink/5 opacity-45"
             }`}
             title={b.unlocked ? b.meta.description : `${b.progress}/${b.goal} - ${b.meta.condition}`}
@@ -31,7 +31,7 @@ export default function BadgeGrid({ badges }: BadgeGridProps) {
             {!b.unlocked && b.goal > 1 && (
               <div className="w-full h-1 bg-ink/5 rounded-full overflow-hidden">
                 <div
-                  className="h-full bg-teal-400/60 rounded-full"
+                  className="h-full bg-primary-400/60 rounded-full"
                   style={{ width: `${Math.round((b.progress / b.goal) * 100)}%` }}
                 />
               </div>
