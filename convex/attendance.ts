@@ -45,6 +45,12 @@ function matchesActiveScope(record: { campusId?: any; ministryId?: any; groupId?
   return true;
 }
 
+async function getSessionRoster(ctx: any, access: any, scope: { campusId?: any; ministryId?: any; groupId?: any }) {
+  const teens = await ctx.db.query("teens").collect();
+  return ((access.isGlobal ? teens : filterTeensByScope(access, teens)) as any[])
+    .filter((teen: any) => matchesActiveScope(teen, scope));
+}
+
 function monthOf(date: string) {
   return date.slice(0, 7);
 }
@@ -140,14 +146,51 @@ export const createSession = mutation({
 });
 
 export const completeSession = mutation({
-  args: { token: v.string(), sessionId: v.id("meetingSessions"), resultNotes: v.optional(v.string()) },
+  args: { token: v.string(), sessionId: v.id("meetingSessions"), resultNotes: v.optional(v.string()), allowIncomplete: v.optional(v.boolean()) },
   handler: async (ctx, args) => {
     const access = await requireAccess(ctx, args.token, "helper"); const session = await ctx.db.get(args.sessionId);
     if (!session || !canAccessScope(access, session)) throw new Error("No tienes acceso a esta sesión.");
-    const now = new Date().toISOString(); await ctx.db.patch(session._id, { status: "completed", resultNotes: cleanText(args.resultNotes), completedAt: now });
     const records = await ctx.db.query("attendance").withIndex("by_sessionId", q => q.eq("sessionId", session._id)).collect();
-    await logAudit(ctx, { token: args.token, action: "attendance.session_completed", entityType: "meetingSession", entityId: String(session._id), newValue: { status: "completed", attendance: records.length }, details: args.resultNotes });
-    return { present: records.filter(r => r.status === "present").length, absent: records.filter(r => r.status === "absent").length, excused: records.filter(r => r.status === "excused").length };
+    const roster = await getSessionRoster(ctx, access, session);
+    const markedIds = new Set(records.map((record) => String(record.teenId)));
+    const pendingTeens = roster.filter((teen: any) => !markedIds.has(String(teen._id)));
+    if (pendingTeens.length && !args.allowIncomplete) throw new Error("Hay adolescentes sin marcar. Revisa la lista o confirma el cierre incompleto.");
+    const now = new Date().toISOString();
+    const completionState = pendingTeens.length ? "incomplete" as const : "complete" as const;
+    await ctx.db.patch(session._id, { status: "completed", completionState, unmarkedCount: pendingTeens.length, resultNotes: cleanText(args.resultNotes), completedAt: now });
+    await logAudit(ctx, { token: args.token, action: "attendance.session_completed", entityType: "meetingSession", entityId: String(session._id), newValue: { status: "completed", completionState, unmarkedCount: pendingTeens.length, attendance: records.length }, details: args.resultNotes });
+    return { present: records.filter(r => r.status === "present").length, absent: records.filter(r => r.status === "absent").length, excused: records.filter(r => r.status === "excused").length, unmarked: pendingTeens.length, completionState };
+  },
+});
+
+export const getSessionSummary = query({
+  args: { token: v.string(), date: v.string(), sessionId: v.optional(v.id("meetingSessions")), campusId: optionalCampusId, ministryId: optionalMinistryId, groupId: optionalGroupId },
+  handler: async (ctx, args) => {
+    const access = await requireAccess(ctx, args.token, "helper");
+    const session = args.sessionId ? await ctx.db.get(args.sessionId) : null;
+    if (args.sessionId && (!session || !canAccessScope(access, session))) throw new Error("No tienes acceso a esta sesión.");
+    const scope = session || { campusId: cleanOptionalId(args.campusId), ministryId: cleanOptionalId(args.ministryId), groupId: cleanOptionalId(args.groupId) };
+    const roster = await getSessionRoster(ctx, access, scope);
+    const records = session
+      ? await ctx.db.query("attendance").withIndex("by_sessionId", (q) => q.eq("sessionId", session._id)).collect()
+      : (await ctx.db.query("attendance").withIndex("by_date", (q) => q.eq("date", args.date)).collect()).filter((record) => !record.sessionId);
+    const allowedIds = new Set(roster.map((teen: any) => String(teen._id)));
+    const scopedRecords = records.filter((record) => allowedIds.has(String(record.teenId)));
+    const markedIds = new Set(scopedRecords.map((record) => String(record.teenId)));
+    const pendingTeens = roster.filter((teen: any) => !markedIds.has(String(teen._id))).map((teen: any) => ({ _id: teen._id, name: `${teen.nombre} ${teen.apellido}`.trim() }));
+    return {
+      records: scopedRecords,
+      total: roster.length,
+      pendingTeens,
+      counts: {
+        present: scopedRecords.filter((record) => record.status === "present").length,
+        absent: scopedRecords.filter((record) => record.status === "absent").length,
+        excused: scopedRecords.filter((record) => record.status === "excused").length,
+        marked: scopedRecords.length,
+      },
+      completionState: session?.completionState,
+      unmarkedCount: session?.unmarkedCount,
+    };
   },
 });
 

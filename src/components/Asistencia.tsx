@@ -42,6 +42,7 @@ export default function Asistencia({
   const markAtt = useMutation(api.attendance.mark);
   const createSession = useMutation(api.attendance.createSession);
   const completeSession = useMutation(api.attendance.completeSession);
+  const createPastoralTask = useMutation(api.pastoralTasks.create);
   const deleteDateMut = useMutation(api.attendance.deleteDate);
   const updateDateMut = useMutation(api.attendance.updateDate);
   const { user, token } = useAuth();
@@ -53,6 +54,7 @@ export default function Asistencia({
   };
   const sessions = useQuery(api.attendance.listSessions, token ? { token, ...activeScopeArgs } : {}) ?? [];
   const needsContact = useQuery(api.attendance.getNeedsContact, token ? { token, ...activeScopeArgs } : {}) ?? [];
+  const openTasks = useQuery(api.pastoralTasks.listOpenForDashboard, token ? { token, ...activeScopeArgs } : "skip") ?? [];
 
   const [selectedDate, setSelectedDate] = useState(
     allDates[allDates.length - 1] || todayISO()
@@ -63,14 +65,18 @@ export default function Asistencia({
   const [newObjective, setNewObjective] = useState("");
   const [newExpectedAttendance, setNewExpectedAttendance] = useState("");
   const [selectedSessionId, setSelectedSessionId] = useState<string>("");
+  const [attendanceFilter, setAttendanceFilter] = useState<"all" | "unmarked" | AttendanceStatus>("all");
+  const [showAllUpcoming, setShowAllUpcoming] = useState(false);
+  const [showOptionalSessionDetails, setShowOptionalSessionDetails] = useState(false);
   const [showCompleteSession, setShowCompleteSession] = useState(false);
   const [resultNotes, setResultNotes] = useState("");
-  const [completedStats, setCompletedStats] = useState<{ present: number; absent: number; excused: number } | null>(null);
+  const [completedStats, setCompletedStats] = useState<{ present: number; absent: number; excused: number; unmarked: number; completionState: "complete" | "incomplete" } | null>(null);
   const [showEditDate, setShowEditDate] = useState(false);
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const [editDateValue, setEditDateValue] = useState(selectedDate);
   const [searchQuery, setSearchQuery] = useState("");
   const [pendingCount, setPendingCount] = useState(0);
+  const [taskCreatingId, setTaskCreatingId] = useState<string | null>(null);
   const [successMsg, setSuccessMsg] = useState<string | null>(null);
   const [deletedDates, setDeletedDates] = useState<string[]>([]);
   const [attendanceDetail, setAttendanceDetail] = useState<{
@@ -93,12 +99,16 @@ export default function Asistencia({
   const sessionDates = sessions.map((s: any) => s.date);
   const recent = [...new Set([...allDates, ...sessionDates])].sort().slice(-10);
   const selectedSession = sessions.find((s: any) => String(s._id) === selectedSessionId);
-  const upcomingSessions = sessions.filter((s: any) => s.date >= todayISO() && s.status !== "canceled").sort((a: any, b: any) => a.date.localeCompare(b.date)).slice(0, 6);
+  const sessionSummary = useQuery(api.attendance.getSessionSummary, token ? { token, date: selectedDate, sessionId: selectedSessionId ? selectedSessionId as any : undefined, ...activeScopeArgs } : "skip") as any;
+  const upcomingSessions = sessions.filter((s: any) => s.date >= todayISO() && s.status !== "canceled").sort((a: any, b: any) => a.date.localeCompare(b.date));
+  const visibleUpcomingSessions = showAllUpcoming ? upcomingSessions : upcomingSessions.slice(0, 3);
+  const dayMap = Object.fromEntries((sessionSummary?.records ?? []).map((record: any) => [String(record.teenId), record.status]));
 
-  if (!attendanceMap[selectedDate]) {
-    attendanceMap[selectedDate] = {};
-  }
-  const dayMap = attendanceMap[selectedDate] || {};
+  useEffect(() => {
+    const sessionsForDate = sessions.filter((session: any) => session.date === selectedDate);
+    if (selectedSessionId && sessionsForDate.some((session: any) => String(session._id) === selectedSessionId)) return;
+    setSelectedSessionId(sessionsForDate[0] ? String(sessionsForDate[0]._id) : "");
+  }, [selectedDate, selectedSessionId, sessions]);
 
   const markAttendance = async (teenId: string, status: AttendanceStatus, detailText?: string) => {
     const teen = teens.find((t) => t._id === teenId);
@@ -222,10 +232,49 @@ export default function Asistencia({
     }
   };
 
-  const filteredTeens = teens.filter((t) =>
-    (!selectedSession?.groupId || String(t.groupId || "") === String(selectedSession.groupId)) &&
-    `${t.nombre} ${t.apellido}`.toLowerCase().includes(searchQuery.toLowerCase())
+  const rosterTeens = teens.filter((t) =>
+    (!selectedSession?.groupId || String(t.groupId || "") === String(selectedSession.groupId))
   );
+  const filteredTeens = rosterTeens.filter((teen) => {
+    const status = dayMap[teen._id] || "unmarked";
+    const matchesSearch = `${teen.nombre} ${teen.apellido}`.toLowerCase().includes(searchQuery.toLowerCase());
+    return matchesSearch && (attendanceFilter === "all" || status === attendanceFilter);
+  });
+  const counts = sessionSummary?.counts ?? { present: 0, absent: 0, excused: 0, marked: 0 };
+  const rosterTotal = sessionSummary?.total ?? rosterTeens.length;
+  const unmarkedCount = Math.max(0, rosterTotal - counts.marked);
+  const completionPct = rosterTotal ? Math.round((counts.marked / rosterTotal) * 100) : 0;
+  const filterCounts = { all: rosterTotal, unmarked: unmarkedCount, present: counts.present, excused: counts.excused, absent: counts.absent };
+  const hasOpenTask = (teenId: string) => openTasks.some((task: any) => String(task.teenId) === teenId);
+
+  const createTaskFromSignal = async (item: any) => {
+    if (!token || hasOpenTask(String(item.teenId))) return;
+    setTaskCreatingId(String(item.teenId));
+    try {
+      await createPastoralTask({
+        token,
+        teenId: item.teenId,
+        source: "manual",
+        title: `Dar seguimiento: ${item.reasons[0]}`,
+        description: item.reasons.join(" · "),
+        priority: item.priority,
+      });
+    } finally {
+      setTaskCreatingId(null);
+    }
+  };
+
+  const finishSession = async (allowIncomplete: boolean) => {
+    if (!token || !selectedSession) return;
+    try {
+      const stats = await completeSession({ token, sessionId: selectedSession._id, resultNotes, allowIncomplete });
+      setCompletedStats(stats);
+      setShowCompleteSession(false);
+      setResultNotes("");
+    } catch (error) {
+      setSuccessMsg(`Error: ${error instanceof Error ? error.message : "No se pudo cerrar la actividad."}`);
+    }
+  };
 
   return (
     <div className="space-y-5">
@@ -305,46 +354,33 @@ export default function Asistencia({
 
       {sessions.filter((s: any) => s.date === selectedDate).length > 0 && (
         <div className="game-card p-4">
-          <label className="text-xs font-bold text-ink/45 uppercase tracking-wide">Sesión</label>
-          <select
-            value={selectedSessionId}
-            onChange={(e) => setSelectedSessionId(e.target.value)}
-            className="mt-1 w-full bg-ink/[0.03] border border-ink/10 rounded-xl px-3 py-2 text-sm font-semibold"
-          >
-            <option value="">Legacy / culto adolescentes</option>
-            {sessions.filter((s: any) => s.date === selectedDate).map((s: any) => (
-              <option key={s._id} value={s._id}>{MEETING_LABELS[s.type as MeetingType]}{s.title ? ` - ${s.title}` : ""}</option>
-            ))}
+          <div className="flex items-start justify-between gap-3"><div><label className="text-xs font-bold text-ink/45 uppercase tracking-wide">Sesión</label><p className="mt-1 text-xs text-ink/50">{scopeLabel}</p></div>{selectedSession?.status === "completed" && <span className={`rounded-full px-2 py-1 text-micro font-semibold ${selectedSession.completionState === "incomplete" ? "bg-warning-50 text-warning-700" : "bg-success-50 text-success-700"}`}>{selectedSession.completionState === "incomplete" ? "Cierre incompleto" : "Cerrada"}</span>}</div>
+          <select value={selectedSessionId} onChange={(e) => setSelectedSessionId(e.target.value)} className="mt-2 w-full bg-ink/[0.03] border border-ink/10 rounded-xl px-3 py-2 text-sm font-semibold">
+            <option value="">Registro histórico sin sesión</option>
+            {sessions.filter((s: any) => s.date === selectedDate).map((s: any) => <option key={s._id} value={s._id}>{MEETING_LABELS[s.type as MeetingType]}{s.title ? ` - ${s.title}` : ""}</option>)}
           </select>
           {selectedSessionId && <>
-            <div className="mt-2 flex flex-wrap gap-3 text-xs font-semibold"><button type="button" onClick={() => navigator.clipboard?.writeText(`${location.origin}${location.pathname}?session=${selectedSessionId}&checkIn=${selectedSession?.checkInToken || ""}`)} className="text-primary-700 underline underline-offset-2">Copiar URL segura de check-in</button>{selectedSession?.status !== "completed" && <button type="button" onClick={() => setShowCompleteSession(true)} className="text-ink/65 underline underline-offset-2">Cerrar actividad</button>}</div>
+            <div className="mt-3 flex flex-wrap gap-3 text-xs font-semibold"><button type="button" onClick={() => navigator.clipboard?.writeText(`${location.origin}${location.pathname}?session=${selectedSessionId}&checkIn=${selectedSession?.checkInToken || ""}`)} className="text-primary-700 underline underline-offset-2">Copiar URL segura de check-in</button>{selectedSession?.status !== "completed" && <button type="button" onClick={() => setShowCompleteSession(true)} className="text-ink/65 underline underline-offset-2">Cerrar actividad</button>}</div>
+            {(selectedSession?.objective || selectedSession?.expectedAttendance) && <p className="mt-2 text-xs text-ink/55">{selectedSession.objective ? `Objetivo: ${selectedSession.objective}` : ""}{selectedSession.objective && selectedSession.expectedAttendance ? " · " : ""}{selectedSession.expectedAttendance ? `Esperados: ${selectedSession.expectedAttendance}` : ""}</p>}
             {selectedSession?.status === "completed" && <p className="mt-2 text-xs text-ink/55">Actividad cerrada{selectedSession.resultNotes ? ` · ${selectedSession.resultNotes}` : ""}</p>}
           </>}
         </div>
       )}
 
-      {upcomingSessions.length > 0 && <section className="game-card p-4"><div className="flex items-center justify-between gap-3"><div className="flex items-center gap-3"><span className="feature-icon feature-icon--primary"><svg className="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8"><rect x="3" y="4" width="18" height="17" rx="2"/><path d="M8 2v4M16 2v4M3 10h18"/></svg></span><div><p className="text-xs font-bold uppercase text-primary-700">Agenda del ámbito</p><p className="mt-1 text-sm text-ink/50">Próximas actividades planificadas.</p></div></div><span className="text-xs text-ink/40">{scopeLabel}</span></div><div className="mt-3 grid gap-2 sm:grid-cols-2 lg:grid-cols-3">{upcomingSessions.map((session: any) => <button key={session._id} onClick={() => { setSelectedDate(session.date); setSelectedSessionId(String(session._id)); }} className="rounded-xl border border-ink/10 px-3 py-2.5 text-left hover:border-primary-300"><p className="text-sm font-bold">{MEETING_LABELS[session.type as MeetingType]}</p><p className="mt-1 text-xs text-ink/55">{session.date}{session.objective ? ` · ${session.objective}` : ""}</p><p className="mt-1 text-xs text-primary-700">{session.status === "completed" ? "Cerrada" : "Planificada"}{session.expectedAttendance ? ` · Esperados ${session.expectedAttendance}` : ""}</p></button>)}</div></section>}
+      {upcomingSessions.length > 0 && <section className="game-card p-4"><div className="flex items-center justify-between gap-3"><div className="flex items-center gap-3"><span className="feature-icon feature-icon--primary"><svg className="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8"><rect x="3" y="4" width="18" height="17" rx="2"/><path d="M8 2v4M16 2v4M3 10h18"/></svg></span><div><p className="text-xs font-bold uppercase text-primary-700">Agenda del ámbito</p><p className="mt-1 text-sm text-ink/50">Próximas actividades planificadas.</p></div></div><span className="text-xs text-ink/40">{scopeLabel}</span></div><div className="mt-3 grid gap-2 sm:grid-cols-2 lg:grid-cols-3">{visibleUpcomingSessions.map((session: any) => <button key={session._id} onClick={() => { setSelectedDate(session.date); setSelectedSessionId(String(session._id)); }} className="rounded-xl border border-ink/10 px-3 py-2.5 text-left hover:border-primary-300"><p className="text-sm font-bold">{MEETING_LABELS[session.type as MeetingType]}</p><p className="mt-1 text-xs text-ink/55">{session.date}{session.objective ? ` · ${session.objective}` : ""}</p><p className="mt-1 text-xs text-primary-700">{session.status === "completed" ? "Cerrada" : "Planificada"}{session.expectedAttendance ? ` · Esperados ${session.expectedAttendance}` : ""}</p></button>)}</div>{upcomingSessions.length > 3 && <button type="button" onClick={() => setShowAllUpcoming((value) => !value)} className="mt-3 text-xs font-semibold text-primary-700 underline underline-offset-2">{showAllUpcoming ? "Ver menos" : `Ver las ${upcomingSessions.length} actividades`}</button>}</section>}
 
       {needsContact.length > 0 && (
         <div className="rounded-2xl border border-primary-100 bg-primary-50 p-3.5">
           <p className="text-sm font-bold text-primary-700">Adolescentes que necesitan contacto esta semana</p>
-          <div className="mt-2 flex flex-wrap gap-2">
+          <div className="mt-2 grid gap-2 sm:grid-cols-2">
             {needsContact.slice(0, 5).map((item: any) => (
-              <button
-                key={String(item.teenId)}
-                type="button"
-                onClick={() => onOpenProfile(String(item.teenId))}
-                className="rounded-xl border border-primary-100 bg-white/70 px-3 py-2 text-left text-xs"
-              >
-                <span className="font-semibold text-ink">{item.teenName}</span>
-                <span className="block text-primary-700">{item.reasons.join(" · ")}</span>
-              </button>
+              <div key={String(item.teenId)} className="rounded-xl border border-primary-100 bg-white/70 px-3 py-2 text-xs"><button type="button" onClick={() => onOpenProfile(String(item.teenId))} className="w-full text-left"><span className="font-semibold text-ink">{item.teenName}</span><span className="block text-primary-700">{item.reasons.join(" · ")}</span></button><div className="mt-2 flex gap-2"><button type="button" onClick={() => onOpenProfile(String(item.teenId))} className="text-xs font-semibold text-primary-700 underline underline-offset-2">Abrir ficha</button>{hasOpenTask(String(item.teenId)) ? <span className="text-xs text-success-700">Tarea abierta</span> : <button type="button" disabled={taskCreatingId === String(item.teenId)} onClick={() => createTaskFromSignal(item)} className="text-xs font-semibold text-primary-700 underline underline-offset-2 disabled:opacity-50">{taskCreatingId === String(item.teenId) ? "Creando..." : "Crear tarea"}</button>}</div></div>
             ))}
           </div>
         </div>
       )}
 
-      {teens.length === 0 ? (
+      {rosterTeens.length === 0 ? (
         <div className="text-center py-8 px-4">
           <div className="w-12 h-12 mx-auto rounded-full bg-ink/5 flex items-center justify-center mb-3 text-ink/30">
             <svg
@@ -371,6 +407,11 @@ export default function Asistencia({
         </div>
       ) : (
         <>
+          <section className="ui-card p-4">
+            <div className="flex items-start justify-between gap-3"><div><p className="text-xs font-bold uppercase text-primary-700">Estado del registro</p><p className="mt-1 text-sm font-semibold text-ink">{counts.marked} de {rosterTotal} marcados</p></div><span className="rounded-full bg-primary-50 px-2.5 py-1 text-xs font-bold text-primary-700">{completionPct}%</span></div>
+            <div className="progress-track mt-3"><div className="progress-fill" style={{ width: `${completionPct}%` }} /></div>
+            <div className="mt-3 grid grid-cols-4 gap-2 text-center text-xs"><span className="rounded-lg bg-success-50 px-1.5 py-2 text-success-700"><strong className="block text-sm">{counts.present}</strong>Presentes</span><span className="rounded-lg bg-warning-50 px-1.5 py-2 text-warning-700"><strong className="block text-sm">{counts.excused}</strong>Justificados</span><span className="rounded-lg bg-danger-50 px-1.5 py-2 text-danger-700"><strong className="block text-sm">{counts.absent}</strong>Ausentes</span><span className="rounded-lg bg-neutral-100 px-1.5 py-2 text-neutral-700"><strong className="block text-sm">{unmarkedCount}</strong>Pendientes</span></div>
+          </section>
           {/* Buscador de asistencia */}
           <div className="relative">
             <input
@@ -393,6 +434,10 @@ export default function Asistencia({
             )}
           </div>
 
+          <div className="flex gap-2 overflow-x-auto pb-1" role="tablist" aria-label="Filtrar asistencia">
+            {([ ["all", "Todos"], ["unmarked", "Sin marcar"], ["present", "Presentes"], ["excused", "Justificados"], ["absent", "Ausentes"] ] as const).map(([id, label]) => <button key={id} type="button" role="tab" aria-selected={attendanceFilter === id} onClick={() => setAttendanceFilter(id)} className={`ui-segment shrink-0 border ${attendanceFilter === id ? "border-primary-600 bg-primary-600 text-white" : "border-ink/10 bg-card text-ink/60"}`}>{label} ({filterCounts[id]})</button>)}
+          </div>
+
           {filteredTeens.length === 0 ? (
             <div className="text-center py-8 bg-card rounded-card shadow-soft border border-ink/5">
               <p className="text-sm font-semibold text-ink/60">No se encontraron resultados</p>
@@ -401,7 +446,7 @@ export default function Asistencia({
           ) : (
             <div className="bg-card rounded-card shadow-soft divide-y divide-ink/5 overflow-hidden">
               {filteredTeens.map((t) => {
-                const st = dayMap[t._id] || "sin marcar";
+                const st = dayMap[t._id] || "unmarked";
                 return (
                   <div
                     key={t._id}
@@ -426,6 +471,7 @@ export default function Asistencia({
                         current={st}
                         onClick={() => handleMark(t._id, "present")}
                         activeClass="bg-success-600 text-white border-success-600"
+                        disabled={selectedSession?.status === "completed"}
                       />
                       <AttBtn
                         status="excused"
@@ -433,6 +479,7 @@ export default function Asistencia({
                         current={st}
                         onClick={() => handleMark(t._id, "excused")}
                         activeClass="bg-warning-600 text-white border-warning-600"
+                        disabled={selectedSession?.status === "completed"}
                       />
                       <AttBtn
                         status="absent"
@@ -440,6 +487,7 @@ export default function Asistencia({
                         current={st}
                         onClick={() => handleMark(t._id, "absent")}
                         activeClass="bg-danger-600 text-white border-danger-600"
+                        disabled={selectedSession?.status === "completed"}
                       />
                     </div>
                   </div>
@@ -494,14 +542,15 @@ export default function Asistencia({
                   <option key={value} value={value}>{label}</option>
                 ))}
               </select>
-              <label className="block text-xs font-semibold text-ink/60">Objetivo de la actividad (opcional)</label>
-              <input value={newObjective} onChange={(e) => setNewObjective(e.target.value)} className="w-full rounded-xl border border-ink/10 px-3 py-2 text-sm" placeholder="Ej. Integrar a visitantes" />
-              <label className="block text-xs font-semibold text-ink/60">Asistencia esperada (opcional)</label>
-              <input value={newExpectedAttendance} onChange={(e) => setNewExpectedAttendance(e.target.value)} type="number" min="0" className="w-full rounded-xl border border-ink/10 px-3 py-2 text-sm" placeholder="Ej. 20" />
               <p className="mt-2 text-xs text-ink/45">
                 Se registrará en: <span className="font-semibold text-ink/65">{scopeLabel}</span>
               </p>
             </div>
+
+            <details open={showOptionalSessionDetails} onToggle={(event) => setShowOptionalSessionDetails((event.target as HTMLDetailsElement).open)} className="rounded-xl border border-ink/10 bg-ink/[0.02] p-3">
+              <summary className="cursor-pointer text-xs font-semibold text-primary-700">Detalles opcionales</summary>
+              <div className="mt-3 space-y-3"><label className="block text-xs font-semibold text-ink/60">Objetivo de la actividad</label><input value={newObjective} onChange={(e) => setNewObjective(e.target.value)} className="w-full rounded-xl border border-ink/10 bg-card px-3 py-2 text-sm" placeholder="Ej. Integrar a visitantes" /><label className="block text-xs font-semibold text-ink/60">Asistencia esperada</label><input value={newExpectedAttendance} onChange={(e) => setNewExpectedAttendance(e.target.value)} type="number" min="0" className="w-full rounded-xl border border-ink/10 bg-card px-3 py-2 text-sm" placeholder="Ej. 20" /></div>
+            </details>
 
             <div className="flex flex-col-reverse gap-2 pt-2 sm:flex-row sm:justify-end">
               <button
@@ -571,8 +620,8 @@ export default function Asistencia({
         </Modal>
       )}
 
-      {showCompleteSession && selectedSession && <Modal title="Cerrar actividad" onClose={() => setShowCompleteSession(false)}><div className="space-y-4"><p className="text-sm text-ink/60">Registra un breve resultado. La asistencia se conserva y el cierre queda auditado.</p><textarea value={resultNotes} onChange={(e) => setResultNotes(e.target.value)} rows={4} placeholder="Resultado, participación, acuerdos o novedades" className="w-full rounded-xl border border-ink/10 p-3 text-sm"/><div className="flex justify-end gap-2"><button onClick={() => setShowCompleteSession(false)} className="rounded-lg border border-ink/10 px-3 py-2 text-sm font-semibold">Cancelar</button><button onClick={async () => { if (token) { const stats = await completeSession({ token, sessionId: selectedSession._id, resultNotes }); setCompletedStats(stats); } setShowCompleteSession(false); setResultNotes(""); }} className="rounded-lg bg-primary-700 px-3 py-2 text-sm font-semibold text-white">Cerrar actividad</button></div></div></Modal>}
-      {completedStats && <div className="fixed bottom-24 left-1/2 z-50 -translate-x-1/2 rounded-xl bg-primary-600 px-4 py-3 text-sm text-white shadow-lg">Actividad cerrada: {completedStats.present} presentes, {completedStats.absent} ausentes y {completedStats.excused} justificados.<button onClick={() => setCompletedStats(null)} className="ml-3 text-xs underline">Cerrar</button></div>}
+      {showCompleteSession && selectedSession && <Modal title="Cerrar actividad" onClose={() => setShowCompleteSession(false)}><div className="space-y-4 p-4 sm:p-5"><p className="text-sm text-ink/60">Registra un breve resultado. La asistencia se conserva y el cierre queda auditado.</p>{unmarkedCount > 0 && <div className="rounded-xl border border-warning-100 bg-warning-50 p-3"><p className="text-sm font-bold text-warning-800">Quedan {unmarkedCount} adolescente(s) sin marcar</p><p className="mt-1 text-xs text-warning-700">Revísalos antes de cerrar. También puedes confirmar un cierre incompleto sin convertirlos en ausentes.</p><div className="mt-2 flex flex-wrap gap-1.5">{(sessionSummary?.pendingTeens ?? []).slice(0, 8).map((teen: any) => <span key={String(teen._id)} className="rounded-full border border-warning-200 bg-card px-2 py-1 text-micro text-warning-800">{teen.name}</span>)}</div>{(sessionSummary?.pendingTeens?.length ?? 0) > 8 && <p className="mt-2 text-xs text-warning-700">Y {sessionSummary.pendingTeens.length - 8} más.</p>}</div>}<textarea value={resultNotes} onChange={(e) => setResultNotes(e.target.value)} rows={4} placeholder="Resultado, participación, acuerdos o novedades" className="w-full rounded-xl border border-ink/10 p-3 text-sm"/><div className="flex flex-col-reverse gap-2 sm:flex-row sm:justify-end"><button onClick={() => setShowCompleteSession(false)} className="rounded-lg border border-ink/10 px-3 py-2 text-sm font-semibold">Cancelar</button>{unmarkedCount > 0 ? <><button onClick={() => { setAttendanceFilter("unmarked"); setShowCompleteSession(false); }} className="rounded-lg border border-primary-200 bg-primary-50 px-3 py-2 text-sm font-semibold text-primary-700">Revisar pendientes</button><button onClick={() => finishSession(true)} className="rounded-lg bg-warning-600 px-3 py-2 text-sm font-semibold text-white">Confirmar cierre incompleto</button></> : <button onClick={() => finishSession(false)} className="rounded-lg bg-primary-700 px-3 py-2 text-sm font-semibold text-white">Cerrar actividad</button>}</div></div></Modal>}
+      {completedStats && <div className={`fixed bottom-24 left-1/2 z-50 -translate-x-1/2 rounded-xl px-4 py-3 text-sm text-white shadow-lg ${completedStats.completionState === "incomplete" ? "bg-warning-600" : "bg-primary-600"}`}>Actividad cerrada: {completedStats.present} presentes, {completedStats.absent} ausentes y {completedStats.excused} justificados{completedStats.unmarked ? ` · ${completedStats.unmarked} sin marcar` : ""}.<button onClick={() => setCompletedStats(null)} className="ml-3 text-xs underline">Cerrar</button></div>}
 
       {/* Modal custom de confirmación de eliminación */}
       {showDeleteConfirm && (
@@ -687,20 +736,26 @@ function AttBtn({
   current,
   onClick,
   activeClass,
+  disabled = false,
 }: {
   status: string;
   label: string;
   current: string;
   onClick: () => void;
   activeClass: string;
+  disabled?: boolean;
 }) {
   const isActive = current === status;
+  const labelByStatus: Record<string, string> = { present: "Marcar presente", excused: "Justificar ausencia", absent: "Marcar ausente" };
   return (
     <button
       onClick={onClick}
-      className={`w-10 h-10 min-w-[44px] rounded-lg border text-sm font-bold flex items-center justify-center transition ${
+      disabled={disabled}
+      aria-label={labelByStatus[status]}
+      title={disabled ? "La sesión está cerrada" : labelByStatus[status]}
+      className={`w-10 h-10 min-w-[44px] rounded-lg border text-sm font-bold flex items-center justify-center transition focus-visible:ring-2 focus-visible:ring-primary-600/30 disabled:cursor-not-allowed disabled:opacity-50 ${
         isActive
-          ? activeClass
+          ? `${activeClass} ring-2 ring-offset-1 ring-white/60`
           : "bg-card border-ink/10 text-ink/30"
       }`}
     >

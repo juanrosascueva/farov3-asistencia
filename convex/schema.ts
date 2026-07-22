@@ -297,6 +297,8 @@ export default defineSchema({
     objective: v.optional(v.string()),
     expectedAttendance: v.optional(v.number()),
     status: v.optional(v.union(v.literal("planned"), v.literal("completed"), v.literal("canceled"))),
+    completionState: v.optional(v.union(v.literal("complete"), v.literal("incomplete"))),
+    unmarkedCount: v.optional(v.number()),
     resultNotes: v.optional(v.string()),
     completedAt: v.optional(v.string()),
     checkInToken: v.optional(v.string()),
