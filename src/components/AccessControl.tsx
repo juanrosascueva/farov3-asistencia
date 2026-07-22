@@ -556,11 +556,13 @@ function UserPermissionsManager({ user }: { user: any }) {
   const [isEditing, setIsEditing] = useState(false);
   const [editName, setEditName] = useState(user.name);
   const [editEmail, setEditEmail] = useState(user.email);
+  const [pastoralCapacity, setPastoralCapacity] = useState(String(user.pastoralCapacity ?? 12));
   const [savingEdit, setSavingEdit] = useState(false);
 
   useEffect(() => {
     setEditName(user.name);
     setEditEmail(user.email);
+    setPastoralCapacity(String(user.pastoralCapacity ?? 12));
   }, [user]);
 
   const togglePermission = async (permId: string) => {
@@ -604,6 +606,7 @@ function UserPermissionsManager({ user }: { user: any }) {
         userId: user._id,
         name: editName.trim(),
         email: editEmail.trim(),
+        pastoralCapacity: Number(pastoralCapacity) || 0,
       });
       setIsEditing(false);
     } catch (err: any) {
@@ -626,6 +629,8 @@ function UserPermissionsManager({ user }: { user: any }) {
                 className="w-full text-sm font-semibold bg-white border border-ink/20 rounded px-2 py-1"
                 placeholder="Nombre completo"
               />
+              <label className="block text-xs font-semibold text-ink/55">Capacidad pastoral</label>
+              <input type="number" min="0" value={pastoralCapacity} onChange={(e) => setPastoralCapacity(e.target.value)} className="w-full text-sm bg-white border border-ink/20 rounded px-2 py-1" />
               <input 
                 type="email" 
                 value={editEmail} 

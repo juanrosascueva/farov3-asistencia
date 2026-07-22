@@ -65,6 +65,7 @@ export default function Asistencia({
   const [selectedSessionId, setSelectedSessionId] = useState<string>("");
   const [showCompleteSession, setShowCompleteSession] = useState(false);
   const [resultNotes, setResultNotes] = useState("");
+  const [completedStats, setCompletedStats] = useState<{ present: number; absent: number; excused: number } | null>(null);
   const [showEditDate, setShowEditDate] = useState(false);
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const [editDateValue, setEditDateValue] = useState(selectedDate);
@@ -315,9 +316,10 @@ export default function Asistencia({
               <option key={s._id} value={s._id}>{MEETING_LABELS[s.type as MeetingType]}{s.title ? ` - ${s.title}` : ""}</option>
             ))}
           </select>
-          {selectedSessionId && (
+          {selectedSessionId && <>
             <div className="mt-2 flex flex-wrap gap-3 text-xs font-semibold"><button type="button" onClick={() => navigator.clipboard?.writeText(`${location.origin}${location.pathname}?session=${selectedSessionId}&checkIn=${selectedSession?.checkInToken || ""}`)} className="text-teal-700 underline underline-offset-2">Copiar URL segura de check-in</button>{selectedSession?.status !== "completed" && <button type="button" onClick={() => setShowCompleteSession(true)} className="text-ink/65 underline underline-offset-2">Cerrar actividad</button>}</div>
-          )}
+            {selectedSession?.status === "completed" && <p className="mt-2 text-xs text-ink/55">Actividad cerrada{selectedSession.resultNotes ? ` · ${selectedSession.resultNotes}` : ""}</p>}
+          </>}
         </div>
       )}
 
@@ -569,7 +571,8 @@ export default function Asistencia({
         </Modal>
       )}
 
-      {showCompleteSession && selectedSession && <Modal title="Cerrar actividad" onClose={() => setShowCompleteSession(false)}><div className="space-y-4"><p className="text-sm text-ink/60">Registra un breve resultado. La asistencia se conserva y el cierre queda auditado.</p><textarea value={resultNotes} onChange={(e) => setResultNotes(e.target.value)} rows={4} placeholder="Resultado, participación, acuerdos o novedades" className="w-full rounded-xl border border-ink/10 p-3 text-sm"/><div className="flex justify-end gap-2"><button onClick={() => setShowCompleteSession(false)} className="rounded-lg border border-ink/10 px-3 py-2 text-sm font-semibold">Cancelar</button><button onClick={async () => { if (token) await completeSession({ token, sessionId: selectedSession._id, resultNotes }); setShowCompleteSession(false); setResultNotes(""); }} className="rounded-lg bg-teal-700 px-3 py-2 text-sm font-semibold text-white">Cerrar actividad</button></div></div></Modal>}
+      {showCompleteSession && selectedSession && <Modal title="Cerrar actividad" onClose={() => setShowCompleteSession(false)}><div className="space-y-4"><p className="text-sm text-ink/60">Registra un breve resultado. La asistencia se conserva y el cierre queda auditado.</p><textarea value={resultNotes} onChange={(e) => setResultNotes(e.target.value)} rows={4} placeholder="Resultado, participación, acuerdos o novedades" className="w-full rounded-xl border border-ink/10 p-3 text-sm"/><div className="flex justify-end gap-2"><button onClick={() => setShowCompleteSession(false)} className="rounded-lg border border-ink/10 px-3 py-2 text-sm font-semibold">Cancelar</button><button onClick={async () => { if (token) { const stats = await completeSession({ token, sessionId: selectedSession._id, resultNotes }); setCompletedStats(stats); } setShowCompleteSession(false); setResultNotes(""); }} className="rounded-lg bg-teal-700 px-3 py-2 text-sm font-semibold text-white">Cerrar actividad</button></div></div></Modal>}
+      {completedStats && <div className="fixed bottom-24 left-1/2 z-50 -translate-x-1/2 rounded-xl bg-ink px-4 py-3 text-sm text-white shadow-lg">Actividad cerrada: {completedStats.present} presentes, {completedStats.absent} ausentes y {completedStats.excused} justificados.<button onClick={() => setCompletedStats(null)} className="ml-3 text-xs underline">Cerrar</button></div>}
 
       {/* Modal custom de confirmación de eliminación */}
       {showDeleteConfirm && (

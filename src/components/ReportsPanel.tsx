@@ -35,6 +35,7 @@ export default function ReportsPanel({ teens, attendanceMap, onOpenProfile, init
   const { pastoralTargetCoverage } = usePastoralTarget();
   const canViewManagement = ["admin", "pastor", "director", "coordinador"].includes(user?.role || "");
   const operations = useQuery(api.analytics.getLevel2Summary, token && canViewManagement ? { token, ...scopeArgs } : "skip");
+  const retention = useQuery(api.attendance.retentionSummary, token && canViewManagement ? { token, ...scopeArgs } : "skip");
 
   const dates = allDatesSorted(attendanceMap);
   const now = new Date();
@@ -119,7 +120,7 @@ export default function ReportsPanel({ teens, attendanceMap, onOpenProfile, init
         <GamificationStats teens={teens} attendanceMap={attendanceMap} />
       )}
       {tab === "fichas" && <RegistryStats teens={teens} />}
-      {tab === "gestion" && canViewManagement && <OperationsAnalytics data={operations} />}
+      {tab === "gestion" && canViewManagement && <OperationsAnalytics data={operations} retention={retention} />}
       {tab === "ia" && canUseAi && <AiPanel teens={teens} attendanceMap={attendanceMap} onOpenProfile={onOpenProfile} embedded />}
     </div>
   );

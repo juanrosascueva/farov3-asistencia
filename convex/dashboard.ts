@@ -164,7 +164,7 @@ export const getRoleSummary = query({
       const assigned = teens.filter(teen => String(effectiveLeaderByTeenId.get(String(teen._id))?.userId || "") === String(user._id)).length;
       const userTasks = openTasks.filter(task => String(task.assignedToUserId || "") === String(user._id));
       if (!assigned && !userTasks.length) return null;
-      return { userId: user._id, name: user.name, assigned, capacity: user.pastoralCapacity || 12, openTasks: userTasks.length, overdue: userTasks.filter(task => task.dueDate && task.dueDate < today).length };
+      return { userId: user._id, name: user.name, phone: user.phone || "", assigned, capacity: user.pastoralCapacity || 12, openTasks: userTasks.length, overdue: userTasks.filter(task => task.dueDate && task.dueDate < today).length };
     }).filter(Boolean) : [];
 
     return {

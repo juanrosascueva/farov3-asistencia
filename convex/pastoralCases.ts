@@ -47,3 +47,10 @@ export const updateStatus = mutation({ args: { token: v.string(), caseId: v.id("
   await ctx.db.patch(item._id, { status: args.status, updatedAt: now, closedAt: args.status === "closed" ? now : undefined }); await ctx.db.insert("pastoralCaseActions", { caseId: item._id, actorUserId: access.user._id, type: actionType, notes: args.notes.trim(), createdAt: now });
   await logAudit(ctx, { token: args.token, action: "pastoral_case.status_changed", entityType: "pastoralCase", entityId: String(item._id), previousValue: { status: item.status }, newValue: { status: args.status }, sensitivityLevel: "sensitive" });
 }});
+
+export const reassign = mutation({ args: { token: v.string(), caseId: v.id("pastoralCases"), assignedToUserId: v.optional(v.id("users")), supervisorUserId: v.optional(v.id("users")), notes: v.string() }, handler: async (ctx, args) => {
+  const item = await ctx.db.get(args.caseId); if (!item) throw new Error("Caso no encontrado."); const { access, isSupervisor } = await accessTeen(ctx, args.token, item.teenId);
+  if (!isSupervisor) throw new Error("Solo supervisión puede reasignar expedientes."); const now = new Date().toISOString();
+  await ctx.db.patch(item._id, { assignedToUserId: args.assignedToUserId, supervisorUserId: args.supervisorUserId, updatedAt: now }); await ctx.db.insert("pastoralCaseActions", { caseId: item._id, actorUserId: access.user._id, type: "assigned", notes: args.notes.trim() || "Responsable actualizado.", createdAt: now });
+  await logAudit(ctx, { token: args.token, action: "pastoral_case.reassigned", entityType: "pastoralCase", entityId: String(item._id), previousValue: { assignedToUserId: item.assignedToUserId }, newValue: { assignedToUserId: args.assignedToUserId }, sensitivityLevel: "sensitive" });
+}});
