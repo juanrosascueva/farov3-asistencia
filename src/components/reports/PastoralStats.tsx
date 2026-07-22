@@ -9,12 +9,12 @@ interface Props {
 }
 
 const CATEGORY_META: Record<string, { label: string; color: string }> = {
-  call: { label: "Llamada", color: "#0B7285" },
-  visit: { label: "Visita", color: "#26815E" },
+  call: { label: "Llamada", color: "#6849FF" },
+  visit: { label: "Visita", color: "#38C793" },
   chat: { label: "WhatsApp", color: "#25D366" },
-  counseling: { label: "Consejería", color: "#E08F22" },
-  prayer: { label: "Oración", color: "#C94C0A" },
-  other: { label: "Nota", color: "#8B8FA3" },
+  counseling: { label: "Consejería", color: "#FF9F1C" },
+  prayer: { label: "Oración", color: "#8066FF" },
+  other: { label: "Nota", color: "#8A8798" },
 };
 
 export default function PastoralStats({ teens, allJournal, followUps, pastoralTargetCoverage = 80 }: Props) {
@@ -34,7 +34,7 @@ export default function PastoralStats({ teens, allJournal, followUps, pastoralTa
     .map(([key, count]) => ({
       name: CATEGORY_META[key]?.label || key,
       value: count,
-      color: CATEGORY_META[key]?.color || "#8B8FA3",
+      color: CATEGORY_META[key]?.color || "#8A8798",
     }));
 
   const uniqueFollowUpTeens = new Set(followUps.map((e) => e.teenId));

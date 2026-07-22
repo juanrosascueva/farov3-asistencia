@@ -79,9 +79,9 @@ export default function AttendanceCharts({ teens, filteredDates, attendanceMap }
                 <Line
                   type="monotone"
                   dataKey="pct"
-                  stroke="#0B7285"
+                  stroke="#6849FF"
                   strokeWidth={2.5}
-                  dot={{ r: 3, fill: "#0B7285" }}
+                  dot={{ r: 3, fill: "#6849FF" }}
                   activeDot={{ r: 5 }}
                 />
                 </LineChart>

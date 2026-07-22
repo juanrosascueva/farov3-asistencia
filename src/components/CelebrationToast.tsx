@@ -20,7 +20,7 @@ export default function CelebrationToast({ name, streakTier, newBadges, onDone }
   const [particles, setParticles] = useState<any[]>([]);
 
   useEffect(() => {
-    const colors = ["#2DD4BF", "#F43F5E", "#FB923C", "#FBBF24", "#3B82F6", "#A855F7", "#10B981"];
+    const colors = ["#6849FF", "#FF5A5F", "#FF9F1C", "#FFC43D", "#2F80ED", "#8066FF", "#38C793"];
     const temp: any[] = [];
     const count = 60;
 

@@ -98,10 +98,10 @@ export default function Jovenes({
   const ringColor = (risk: RiskInfo) => {
     const colors: Record<RiskInfo["color"], string> = {
       gray: "#6B7280",
-      teal: "#0B7285",
-      amber: "#F0A33C",
-      coral: "#E8590C",
-      red: "#DC2626",
+      teal: "#6849FF",
+      amber: "#FF9F1C",
+      coral: "#FF5A5F",
+      red: "#D94349",
     };
     return colors[risk.color];
   };

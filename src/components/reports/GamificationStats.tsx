@@ -77,7 +77,7 @@ export default function GamificationStats({ teens, attendanceMap }: Props) {
                   <XAxis dataKey="name" tick={{ fontSize: 10 }} interval={0} axisLine={false} tickLine={false} />
                   <YAxis allowDecimals={false} tick={{ fontSize: 11 }} axisLine={false} tickLine={false} />
                   <Tooltip />
-                  <Bar dataKey="value" radius={[6, 6, 0, 0]} fill="#0B7285" />
+                  <Bar dataKey="value" radius={[6, 6, 0, 0]} fill="#6849FF" />
                   </BarChart>
                 </ResponsiveContainer>
               </div>
