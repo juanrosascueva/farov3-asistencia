@@ -3,6 +3,16 @@ import { query } from "./_generated/server";
 import { filterTeensByScope, requireAccess, normalizeRole } from "./authz";
 
 const openTaskStatuses = new Set(["pending", "in_progress", "rescheduled", "escalated"]);
+const optionalCampusId = v.optional(v.union(v.id("campus"), v.literal("")));
+const optionalMinistryId = v.optional(v.union(v.id("ministry"), v.literal("")));
+const optionalGroupId = v.optional(v.union(v.id("group"), v.literal("")));
+
+function matchesActiveScope(record: { campusId?: any; ministryId?: any; groupId?: any }, scope: { campusId?: any; ministryId?: any; groupId?: any }) {
+  if (scope.groupId) return String(record.groupId || "") === String(scope.groupId);
+  if (scope.ministryId) return String(record.ministryId || "") === String(scope.ministryId);
+  if (scope.campusId) return String(record.campusId || "") === String(scope.campusId);
+  return true;
+}
 
 function monthOf(date: string) {
   return date.slice(0, 7);
@@ -22,11 +32,12 @@ function roleVariant(role: string) {
 }
 
 export const getRoleSummary = query({
-  args: { token: v.string() },
+  args: { token: v.string(), campusId: optionalCampusId, ministryId: optionalMinistryId, groupId: optionalGroupId },
   handler: async (ctx, args) => {
     const access = await requireAccess(ctx, args.token, "helper");
     const allTeens = await ctx.db.query("teens").collect();
-    const teens = filterTeensByScope(access, allTeens);
+    const activeScope = { campusId: args.campusId || undefined, ministryId: args.ministryId || undefined, groupId: args.groupId || undefined };
+    const teens = filterTeensByScope(access, allTeens).filter((teen) => matchesActiveScope(teen, activeScope));
     const teenIds = new Set(teens.map((teen) => String(teen._id)));
     const attendance = (await ctx.db.query("attendance").collect()).filter((a) => teenIds.has(String(a.teenId)));
     const tasks = (await ctx.db.query("pastoralTasks").collect()).filter((task) => teenIds.has(String(task.teenId)));

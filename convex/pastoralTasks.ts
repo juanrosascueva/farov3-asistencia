@@ -14,9 +14,19 @@ const taskStatus = v.union(
   v.literal("escalated")
 );
 const taskSource = v.union(v.literal("manual"), v.literal("plan"), v.literal("crisis"), v.literal("ai"));
+const optionalCampusId = v.optional(v.union(v.id("campus"), v.literal("")));
+const optionalMinistryId = v.optional(v.union(v.id("ministry"), v.literal("")));
+const optionalGroupId = v.optional(v.union(v.id("group"), v.literal("")));
 
 const openStatuses = new Set(["pending", "in_progress", "rescheduled", "escalated"]);
 const priorityRank: Record<string, number> = { critical: 4, high: 3, medium: 2, low: 1 };
+
+function matchesActiveScope(record: { campusId?: any; ministryId?: any; groupId?: any }, scope: { campusId?: any; ministryId?: any; groupId?: any }) {
+  if (scope.groupId) return String(record.groupId || "") === String(scope.groupId);
+  if (scope.ministryId) return String(record.ministryId || "") === String(scope.ministryId);
+  if (scope.campusId) return String(record.campusId || "") === String(scope.campusId);
+  return true;
+}
 
 async function requireTeenAccess(ctx: any, token: string | undefined, teenId: any) {
   const access = await requireAccess(ctx, token, "helper");
@@ -70,11 +80,12 @@ export const listByTeen = query({
 });
 
 export const listOpenForDashboard = query({
-  args: { token: v.string() },
+  args: { token: v.string(), campusId: optionalCampusId, ministryId: optionalMinistryId, groupId: optionalGroupId },
   handler: async (ctx, args) => {
     const access = await requireAccess(ctx, args.token, "helper");
     const allTeens = await ctx.db.query("teens").collect();
-    const allowedIds = new Set(filterTeensByScope(access, allTeens).map((teen) => teen._id));
+    const activeScope = { campusId: args.campusId || undefined, ministryId: args.ministryId || undefined, groupId: args.groupId || undefined };
+    const allowedIds = new Set(filterTeensByScope(access, allTeens).filter((teen) => matchesActiveScope(teen, activeScope)).map((teen) => teen._id));
     const tasks = (await ctx.db.query("pastoralTasks").collect())
       .filter((task) => allowedIds.has(task.teenId) && openStatuses.has(task.status));
     const enriched = await Promise.all(tasks.map((task) => withNames(ctx, task)));
