@@ -2,6 +2,7 @@ import { v } from "convex/values";
 import { mutation, query } from "./_generated/server";
 import { getEffectiveAccess, filterTeensByScope, requireAccess, canAccessTeen } from "./authz";
 import { logAudit } from "./auditLog";
+import { reassignOpenTasksForTeen, resolveEffectiveLeader } from "./leaderAssignment";
 
 const teenStatus = v.union(
   v.literal("activo"),
@@ -533,6 +534,26 @@ export const update = mutation({
     await ctx.db.patch(args.id, payload);
     await syncPersonEnrollment(ctx, args.id, payload, current.personId);
     await syncFamilyRecords(ctx, args.id, payload, access.user._id);
+    const leaderChanged = String(current.liderPrincipalId || "") !== String(payload.liderPrincipalId || "");
+    const inheritedLeaderChanged = !payload.liderPrincipalId && String(current.groupId || "") !== String(payload.groupId || "");
+    if (leaderChanged || inheritedLeaderChanged) {
+      const resolvedLeader = await resolveEffectiveLeader(ctx, payload);
+      await reassignOpenTasksForTeen(ctx, {
+        teenId: args.id,
+        assignedToUserId: resolvedLeader.userId,
+        token: args.token,
+        reason: "Reasignación automática por cambio de líder responsable del adolescente.",
+      });
+      await logAudit(ctx, {
+        token: args.token,
+        action: "teen.leader_changed",
+        entityType: "teen",
+        entityId: String(args.id),
+        previousValue: { liderPrincipalId: current.liderPrincipalId },
+        newValue: { liderPrincipalId: payload.liderPrincipalId, leaderSource: resolvedLeader.source },
+        details: inheritedLeaderChanged ? `${payload.nombre} ${payload.apellido} · cambio de grupo` : `${payload.nombre} ${payload.apellido}`,
+      });
+    }
     if (String(current.groupId || "") !== String(payload.groupId || "")) {
       await ctx.db.insert("teenGroupHistory", {
         teenId: args.id,
@@ -561,6 +582,58 @@ export const update = mutation({
       previousValue: current,
       newValue: payload,
       details: `${payload.nombre} ${payload.apellido}`,
+    });
+  },
+});
+
+export const bulkAssignLeader = mutation({
+  args: {
+    token: v.string(),
+    teenIds: v.array(v.id("teens")),
+    liderPrincipalId: v.optional(v.id("users")),
+    useGroupLeader: v.boolean(),
+  },
+  handler: async (ctx, args) => {
+    const access = await requireAccess(ctx, args.token, "coordinador");
+    const now = new Date().toISOString();
+    for (const teenId of args.teenIds) {
+      const teen = await ctx.db.get(teenId);
+      if (!teen || !canAccessTeen(access, teen)) continue;
+      const liderPrincipalId = args.useGroupLeader ? undefined : args.liderPrincipalId;
+      const updatedTeen = { ...teen, liderPrincipalId };
+      const resolvedLeader = await resolveEffectiveLeader(ctx, updatedTeen);
+      await ctx.db.patch(teenId, { liderPrincipalId });
+      await reassignOpenTasksForTeen(ctx, {
+        teenId,
+        assignedToUserId: resolvedLeader.userId,
+        token: args.token,
+        reason: "Reasignación automática por actualización masiva de líder responsable.",
+      });
+      await logAudit(ctx, {
+        token: args.token,
+        action: "teen.leader_changed",
+        entityType: "teen",
+        entityId: String(teenId),
+        previousValue: { liderPrincipalId: teen.liderPrincipalId },
+        newValue: { liderPrincipalId, leaderSource: resolvedLeader.source },
+        details: "Líder responsable actualizado de forma masiva.",
+      });
+    }
+    return { updated: args.teenIds.length, updatedAt: now };
+  },
+});
+
+export const listLeaderAssignments = query({
+  args: { token: v.string() },
+  handler: async (ctx, args) => {
+    const access = await requireAccess(ctx, args.token, "helper");
+    const groups = new Map((await ctx.db.query("group").collect()).map((group) => [String(group._id), group]));
+    const users = new Map((await ctx.db.query("users").collect()).map((user) => [String(user._id), user.name]));
+    const teens = filterTeensByScope(access, await ctx.db.query("teens").collect());
+    return teens.map((teen) => {
+      const userId = teen.liderPrincipalId || groups.get(String(teen.groupId || ""))?.leaderId;
+      const source = teen.liderPrincipalId ? "individual" : userId ? "group" : "unassigned";
+      return { teenId: teen._id, userId, userName: userId ? users.get(String(userId)) || "Líder" : "Sin responsable", source };
     });
   },
 });

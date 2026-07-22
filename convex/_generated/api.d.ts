@@ -25,6 +25,7 @@ import type * as group from "../group.js";
 import type * as guardians from "../guardians.js";
 import type * as images from "../images.js";
 import type * as journal from "../journal.js";
+import type * as leaderAssignment from "../leaderAssignment.js";
 import type * as migration from "../migration.js";
 import type * as ministry from "../ministry.js";
 import type * as pastoralPlans from "../pastoralPlans.js";
@@ -61,6 +62,7 @@ declare const fullApi: ApiFromModules<{
   guardians: typeof guardians;
   images: typeof images;
   journal: typeof journal;
+  leaderAssignment: typeof leaderAssignment;
   migration: typeof migration;
   ministry: typeof ministry;
   pastoralPlans: typeof pastoralPlans;

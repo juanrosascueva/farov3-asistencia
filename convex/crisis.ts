@@ -2,6 +2,7 @@ import { v } from "convex/values";
 import { internalMutation, mutation, query } from "./_generated/server";
 import { canAccessTeen, filterTeensByScope, requireAccess } from "./authz";
 import { logAudit } from "./auditLog";
+import { resolveEffectiveLeader } from "./leaderAssignment";
 
 const severity = v.union(v.literal("low"), v.literal("medium"), v.literal("high"), v.literal("critical"));
 const status = v.union(
@@ -33,9 +34,7 @@ function mapSeverity(riskLevel?: string, suggested?: string) {
 }
 
 async function getAssignedLeader(ctx: any, teen: any) {
-  if (!teen?.groupId) return undefined;
-  const group = await ctx.db.get(teen.groupId);
-  return group?.leaderId;
+  return (await resolveEffectiveLeader(ctx, teen)).userId;
 }
 
 async function insertAction(ctx: any, alertId: any, actionType: any, notes: string, actorUserId?: any) {

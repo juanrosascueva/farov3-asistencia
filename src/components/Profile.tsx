@@ -109,6 +109,8 @@ export default function Profile({
 
   const familyRecords = useQuery(api.guardians.listByTeen, token ? { teenId: teen._id as any, token } : "skip");
   const personRecord = useQuery(api.people.getByTeen, token ? { teenId: teen._id as any, token } : "skip");
+  const leaderAssignments = useQuery(api.teens.listLeaderAssignments, token ? { token } : "skip") ?? [];
+  const leaderAssignment = leaderAssignments.find((item: any) => String(item.teenId) === String(teen._id));
 
   const statusMap: Record<string, { label: string; cls: string }> = {
     present: { label: "Presente", cls: "bg-sage-50 text-sage-600" },
@@ -396,6 +398,7 @@ export default function Profile({
         <h2 className="font-display font-semibold text-base">
           Guardianes y consentimientos
         </h2>
+        <p className="text-xs text-ink/50"><span className="font-semibold text-ink/65">Líder responsable:</span> {leaderAssignment?.userName || "Sin responsable"} <span className="text-ink/35">· {leaderAssignment?.source === "individual" ? "Asignación individual" : leaderAssignment?.source === "group" ? "Líder del grupo" : "Sin responsable"}</span></p>
         {familyRecords?.guardians?.length ? (
           <div className="grid gap-2">
             {familyRecords.guardians.map((guardian: any) => (
