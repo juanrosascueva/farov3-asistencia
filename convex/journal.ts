@@ -2,6 +2,18 @@ import { v } from "convex/values";
 import { mutation, query } from "./_generated/server";
 import { getUserFromToken } from "./authHelper";
 import { logAudit } from "./auditLog";
+import { filterTeensByScope, requireAccess } from "./authz";
+
+const optionalCampusId = v.optional(v.union(v.id("campus"), v.literal("")));
+const optionalMinistryId = v.optional(v.union(v.id("ministry"), v.literal("")));
+const optionalGroupId = v.optional(v.union(v.id("group"), v.literal("")));
+
+function matchesActiveScope(record: { campusId?: any; ministryId?: any; groupId?: any }, scope: { campusId?: any; ministryId?: any; groupId?: any }) {
+  if (scope.groupId) return String(record.groupId || "") === String(scope.groupId);
+  if (scope.ministryId) return String(record.ministryId || "") === String(scope.ministryId);
+  if (scope.campusId) return String(record.campusId || "") === String(scope.campusId);
+  return true;
+}
 
 function canViewSensitivePastoral(user: any): boolean {
   return Boolean(
@@ -94,19 +106,29 @@ export const remove = mutation({
 });
 
 export const listAll = query({
-  handler: async (ctx) => {
+  args: { token: v.string(), campusId: optionalCampusId, ministryId: optionalMinistryId, groupId: optionalGroupId },
+  handler: async (ctx, args) => {
+    const access = await requireAccess(ctx, args.token, "helper");
+    const scope = { campusId: args.campusId || undefined, ministryId: args.ministryId || undefined, groupId: args.groupId || undefined };
+    const teens = filterTeensByScope(access, await ctx.db.query("teens").collect()).filter((teen) => matchesActiveScope(teen, scope));
+    const teenIds = new Set(teens.map((teen) => String(teen._id)));
     const entries = await ctx.db.query("journal").order("desc").collect();
-    return entries.filter((entry) => !entry.isConfidential);
+    return entries.filter((entry) => teenIds.has(String(entry.teenId)) && (!entry.isConfidential || canViewSensitivePastoral(access.user)));
   },
 });
 
 export const listFollowUps = query({
-  handler: async (ctx) => {
+  args: { token: v.string(), campusId: optionalCampusId, ministryId: optionalMinistryId, groupId: optionalGroupId },
+  handler: async (ctx, args) => {
+    const access = await requireAccess(ctx, args.token, "helper");
+    const scope = { campusId: args.campusId || undefined, ministryId: args.ministryId || undefined, groupId: args.groupId || undefined };
+    const teens = filterTeensByScope(access, await ctx.db.query("teens").collect()).filter((teen) => matchesActiveScope(teen, scope));
+    const teenIds = new Set(teens.map((teen) => String(teen._id)));
     const entries = await ctx.db
       .query("journal")
       .withIndex("by_followUp", (q) => q.eq("followUp", true))
       .order("desc")
       .collect();
-    return entries.filter((entry) => !entry.isConfidential);
+    return entries.filter((entry) => teenIds.has(String(entry.teenId)) && (!entry.isConfidential || canViewSensitivePastoral(access.user)));
   },
 });

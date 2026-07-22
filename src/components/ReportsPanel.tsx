@@ -9,20 +9,28 @@ import PastoralStats from "./reports/PastoralStats";
 import GamificationStats from "./reports/GamificationStats";
 import RegistryStats from "./reports/RegistryStats";
 import { usePastoralTarget } from "../hooks/usePastoralTarget";
+import { useAuth } from "../hooks/useAuth";
+import { useScope } from "../hooks/useScope";
+import AiPanel from "./AiPanel";
 
 interface ReportsPanelProps {
   teens: Doc<"teens">[];
   attendanceMap: AttendanceMap;
+  onOpenProfile: (id: string) => void;
+  initialTab?: Tab;
 }
 
-type Tab = "attendance" | "pastoral" | "levels" | "fichas";
+type Tab = "attendance" | "pastoral" | "levels" | "fichas" | "ia";
 type Range = "30d" | "3m" | "all";
 
-export default function ReportsPanel({ teens, attendanceMap }: ReportsPanelProps) {
-  const [tab, setTab] = useState<Tab>("attendance");
+export default function ReportsPanel({ teens, attendanceMap, onOpenProfile, initialTab = "attendance" }: ReportsPanelProps) {
+  const { canUseAi, token } = useAuth();
+  const { scope, scopeLabel } = useScope();
+  const [tab, setTab] = useState<Tab>(initialTab);
   const [range, setRange] = useState<Range>("30d");
-  const allJournal = useQuery(api.journal.listAll) ?? [];
-  const followUps = useQuery(api.journal.listFollowUps) ?? [];
+  const scopeArgs = { campusId: scope.campusId as any, ministryId: scope.ministryId as any, groupId: scope.groupId as any };
+  const allJournal = useQuery(api.journal.listAll, token ? { token, ...scopeArgs } : "skip") ?? [];
+  const followUps = useQuery(api.journal.listFollowUps, token ? { token, ...scopeArgs } : "skip") ?? [];
   const { pastoralTargetCoverage } = usePastoralTarget();
 
   const dates = allDatesSorted(attendanceMap);
@@ -46,6 +54,7 @@ export default function ReportsPanel({ teens, attendanceMap }: ReportsPanelProps
     { id: "pastoral", label: "Pastoral", icon: "📋" },
     { id: "levels", label: "Niveles", icon: "🏆" },
     { id: "fichas", label: "Fichas", icon: "🗂️" },
+    ...(canUseAi ? [{ id: "ia" as Tab, label: "Tendencias IA", icon: "✦" }] : []),
   ];
 
   return (
@@ -54,7 +63,8 @@ export default function ReportsPanel({ teens, attendanceMap }: ReportsPanelProps
         <p className="text-xs font-semibold text-teal-700 tracking-wide uppercase">
           Analíticas
         </p>
-        <h1 className="font-display text-2xl font-bold mt-0.5">Reportes</h1>
+        <h1 className="font-display text-2xl font-bold mt-0.5">Analítica</h1>
+        <p className="mt-1 text-sm text-ink/50">{scopeLabel}</p>
       </div>
 
       <div className="space-y-3">
@@ -105,6 +115,7 @@ export default function ReportsPanel({ teens, attendanceMap }: ReportsPanelProps
         <GamificationStats teens={teens} attendanceMap={attendanceMap} />
       )}
       {tab === "fichas" && <RegistryStats teens={teens} />}
+      {tab === "ia" && canUseAi && <AiPanel teens={teens} attendanceMap={attendanceMap} onOpenProfile={onOpenProfile} embedded />}
     </div>
   );
 }

@@ -14,6 +14,16 @@ const FREE_MODELS = [
 ];
 
 const PASTORAL_DISCLAIMER = "Esta sugerencia no es un diagnóstico y requiere revisión humana pastoral.";
+const optionalCampusId = v.optional(v.union(v.id("campus"), v.literal("")));
+const optionalMinistryId = v.optional(v.union(v.id("ministry"), v.literal("")));
+const optionalGroupId = v.optional(v.union(v.id("group"), v.literal("")));
+
+function matchesActiveScope(record: { campusId?: any; ministryId?: any; groupId?: any }, scope: { campusId?: any; ministryId?: any; groupId?: any }) {
+  if (scope.groupId) return String(record.groupId || "") === String(scope.groupId);
+  if (scope.ministryId) return String(record.ministryId || "") === String(scope.ministryId);
+  if (scope.campusId) return String(record.campusId || "") === String(scope.campusId);
+  return true;
+}
 
 const PASTORAL_STYLE_GUIDE = `Guía de lenguaje pastoral:
 - Escribe con tono humano, cercano, sobrio y respetuoso.
@@ -390,8 +400,14 @@ export const getAnalysisByTeen = query({
 });
 
 export const getAllAnalyses = query({
-  handler: async (ctx) => {
-    return await ctx.db.query("journalAnalysis").order("desc").collect();
+  args: { token: v.string(), campusId: optionalCampusId, ministryId: optionalMinistryId, groupId: optionalGroupId },
+  handler: async (ctx, args) => {
+    const access = await getEffectiveAccess(ctx, args.token);
+    if (!access) throw new Error("No autenticado");
+    const scope = { campusId: args.campusId || undefined, ministryId: args.ministryId || undefined, groupId: args.groupId || undefined };
+    const teens = filterTeensByScope(access, await ctx.db.query("teens").collect()).filter((teen) => matchesActiveScope(teen, scope));
+    const teenIds = new Set(teens.map((teen) => String(teen._id)));
+    return (await ctx.db.query("journalAnalysis").order("desc").collect()).filter((analysis) => teenIds.has(String(analysis.teenId)));
   },
 });
 

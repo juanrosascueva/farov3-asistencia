@@ -6,6 +6,7 @@ import type { JournalAnalysis } from "../lib/types";
 import { VULNERABILITY_TAGS } from "../lib/types";
 import { fmtDate, esc } from "../lib/utils";
 import { useAuth } from "../hooks/useAuth";
+import { useScope } from "../hooks/useScope";
 import Modal from "./Modal";
 
 interface JournalProps {
@@ -54,12 +55,13 @@ const reviewStatusLabel: Record<string, string> = {
 
 export default function JournalTimeline({ teenId }: JournalProps) {
   const { user, token } = useAuth();
+  const { scope } = useScope();
   const entries = useQuery(api.journal.list, { teenId: teenId as any, token: token ?? undefined });
   const createEntry = useMutation(api.journal.create);
   const deleteEntry = useMutation(api.journal.remove);
   const analyzeEntry = useAction(api.ai.analyzeJournalEntry as any);
   const reviewAnalysis = useMutation(api.ai.reviewAnalysis);
-  const allAnalyses = useQuery(api.ai.getAllAnalyses);
+  const allAnalyses = useQuery(api.ai.getAllAnalyses, token ? { token, campusId: scope.campusId as any, ministryId: scope.ministryId as any, groupId: scope.groupId as any } : "skip");
   const recordJournalView = useMutation(api.auditLog.recordJournalView);
 
   const [showForm, setShowForm] = useState(false);

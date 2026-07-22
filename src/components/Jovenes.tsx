@@ -67,13 +67,14 @@ export default function Jovenes({
   const recalcPpp = useAction(api.ppp.calculateAllPpp as any);
   const [pppRecalculating, setPppRecalculating] = useState(false);
 
-  const followUps = useQuery(api.journal.listFollowUps);
+  const scopeArgs = { campusId: scope.campusId as any, ministryId: scope.ministryId as any, groupId: scope.groupId as any };
+  const followUps = useQuery(api.journal.listFollowUps, token ? { token, ...scopeArgs } : "skip");
   const followUpTeenIds = useMemo(() => {
     if (!followUps) return new Set<string>();
     return new Set(followUps.map((e) => e.teenId));
   }, [followUps]);
 
-  const allAnalyses = useQuery(api.ai.getAllAnalyses) ?? [];
+  const allAnalyses = useQuery(api.ai.getAllAnalyses, token ? { token, ...scopeArgs } : "skip") ?? [];
   const teenHighRiskMap = useMemo(() => {
     const map = new Map<string, { hasHigh: boolean; hasMedium: boolean }>();
     for (const a of allAnalyses as any[]) {
